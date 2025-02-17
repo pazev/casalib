@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import boto3
 import pandas as pd
@@ -7,6 +7,7 @@ import pandas as pd
 from ..base import ConnectionAbstract, Metadata
 
 from .metadata import get_table_metadata, get_query_metadata
+from .querying import run_query_get_pandas, run_table_get_pandas
 
 
 @dataclass
@@ -45,19 +46,38 @@ class AthenaConnection(ConnectionAbstract):
     s3_staging_dir: str
     data_catalog: str
     boto3_session_maker: Boto3SessionMaker
+    table_prefix: str = ''
 
     def query(self, query: str) -> pd.DataFrame:
         """ Retorna o resultado da query como um DataFrame """
+        return run_query_get_pandas(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            s3_output=self.s3_staging_dir,
+            table_prefix=self.table_prefix,
+            query=query
+        )
 
-    def table(self, table_name: str) -> pd.DataFrame:
-        """ Retorna todos os registros da tabela """
-
-    def sample(
-        self, table_name: str, samples: int = 100
+    def table(
+        self, table_name: str, samples: Union[int, None] = 100
     ) -> pd.DataFrame:
-        """ Retorna uma amostra da tabela com o tamanho
-            especificado
+        """ Retorna uma amostra da tabela. O padrão são 100
+            registros, mas este número pode ser alterado no
+            parâmetro `samples`. Caso `samples` receba um número
+            negativo ou None retorna a tabela inteira.
         """
+        return run_table_get_pandas(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            s3_output=self.s3_staging_dir,
+            table_prefix=self.table_prefix,
+            table_name=table_name,
+            samples=samples,
+        )
 
     def metadata(
         self, query: Optional[str] = None,
@@ -78,10 +98,9 @@ class AthenaConnection(ConnectionAbstract):
             )
 
         # Cria a sessão
-        boto3_session = self.boto3_session_maker.make()
         param = {
-            'boto3_session': boto3_session,
-            'data _catalog': self.data_catalog,
+            'boto3_session': self.boto3_session_maker.make(),
+            'data_catalog': self.data_catalog,
             'default_schema_name': self.schema_name,
             'workgroup': self.workgroup,
         }

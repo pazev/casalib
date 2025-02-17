@@ -28,12 +28,12 @@ def get_table_metadata(
     )['TableMetadata']
 
     columns = {
-        c[ 'Name' ]: c['Type']
+        c['Name']: c['Type']
         for c in metadata_dict['Columns']
     }
     partition_keys = {
         c['Name']: c['Type']
-        for c in metadata_dict [ 'PartitionKeys']
+        for c in metadata_dict['PartitionKeys']
     }
 
     # Cria o obieto Metadata
@@ -67,7 +67,7 @@ def get_query_metadata(
         schema_name=default_schema_name,
         data_catalog=data_catalog,
         workgroup=workgroup,
-        boto3_session=boto3_session,
+        boto3_session=boto3_session
     )
 
     result_set_list = query_obj.get_query_results(boto3_session)

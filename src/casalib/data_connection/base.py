@@ -25,15 +25,13 @@ class ConnectionAbstract(ABC):
         """ Retorna o resultado da query como um DataFrame """
 
     @abstractmethod
-    def table(self, tablename: str) -> pd.DataFrame:
-        """ Retorna todos os registros da tabela """
-
-    @abstractmethod
-    def sample(
-        self, tablename: str, samples: int = 100
+    def table(
+        self, table_name: str, samples: Union[int, None] = 100
     ) -> pd.DataFrame:
-        """ Retorna uma amostra da tabela com o tamanho
-            especificado
+        """ Retorna uma amostra da tabela. O padrão são 100
+            registros, mas este número pode ser alterado no
+            parâmetro `samples`. Caso `samples` receba um número
+            negativo ou None retorna a tabela inteira.
         """
 
     @abstractmethod

@@ -28,23 +28,23 @@ class QueryExec:
     def get_status(self, boto3_session: boto3.Session) -> str:
         """ Captura status de uma query """
         res = self.get_execution_info_(boto3_session)
-        return res ['QueryExecution'][ 'Status ']['State']
+        return res['QueryExecution']['Status']['State']
 
     def wait(self, boto3_session: boto3.Session) -> "QueryExec":
         """ Espera a execução da query """
         import time
         while True:
             status = self.get_status(boto3_session)
-            if status in ['CANCELLED' ]:
+            if status in ['CANCELLED']:
                 raise RuntimeError('Query cancelled by user')
 
             if status in ['FAILED']:
                 error_message = (
                     self.get_execution_info_(boto3_session)
-                    ['QueryExecution' ]
+                    ['QueryExecution']
                     ['Status']
                     ['AthenaError']
-                    ['ErrorMessage' ]
+                    ['ErrorMessage']
                 )
 
                 raise RuntimeError(
@@ -59,11 +59,11 @@ class QueryExec:
 
         return self
 
-    def get_query_results(self, boto_session: boto3.Session):
+    def get_query_results(self, boto3_session: boto3.Session):
         """ Captura resultados da query """
-        athena = boto_session.client('athena')
+        athena = boto3_session.client('athena')
 
-        self.wait(boto_session)
+        self.wait(boto3_session)
 
         tkn_key_detect = 'NextToken'
         tkn_key = 'NextToken'
@@ -85,7 +85,7 @@ class QueryExec:
             if tkn_key not in res:
                 break
 
-            return results
+        return results
 
 
 def run_query(
