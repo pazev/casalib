@@ -1,3 +1,4 @@
+TEMPLATE = """
 insert into {{ schema_name }}.{{ table_name }}
 with
 input_ as (
@@ -12,3 +13,4 @@ reordering as (
         input_
 )
 select * from reordering
+"""

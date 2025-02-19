@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 import boto3
-import jinja2
 
 from ..base import Metadata
 from .boto3_querying import run_query
 from .metadata import get_table_metadata, get_query_metadata
+from .templates import templates_dict
 
 
 def make_create_schema_query_(
@@ -16,11 +16,7 @@ def make_create_schema_query_(
     partition_columns_types: Dict[str, str],
     s3_output: str,
 ):
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path(__file__).parent /
-                                       'templates')
-    )
-    template = env.get_template('create_table.sql')
+    template = templates_dict['create_table']
 
     query = template.render(
         schema_name=schema_name,
@@ -77,11 +73,7 @@ def make_insert_query_(
     columns_types: Dict[str, str],
     query: str,
 ):
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path(__file__).parent /
-                                       'templates')
-    )
-    template = env.get_template('insert.sql')
+    template = templates_dict['insert_table']
 
     query_insert = template.render(
         schema_name=schema_name,

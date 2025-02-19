@@ -1,3 +1,4 @@
+TEMPLATE = """
 CREATE EXTERNAL TABLE {{schema_name}}.{{table_name}}
 (
     {%- for col, type in columns_types.items() %}
@@ -13,3 +14,4 @@ PARTITIONED BY (
 {%- endif %}
 STORED AS PARQUET
 LOCATION '{{ s3_output }}/{{ location }}'
+"""

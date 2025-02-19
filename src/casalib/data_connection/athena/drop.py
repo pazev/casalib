@@ -13,16 +13,24 @@ def drop_table(
     default_schema_name: str,
     workgroup: str,
     table_name: str,
-):
+    ignore_if_not_exist: bool = True
+) -> None:
     """ Drop a table in Athena """
     # Get table metadata
-    metadata = get_table_metadata(
-        boto3_session=boto3_session,
-        data_catalog=data_catalog,
-        default_schema_name=default_schema_name,
-        workgroup=workgroup,
-        table_name=table_name,
-    )
+    try:
+        metadata = get_table_metadata(
+            boto3_session=boto3_session,
+            data_catalog=data_catalog,
+            default_schema_name=default_schema_name,
+            workgroup=workgroup,
+            table_name=table_name,
+        )
+    except Exception as exc:
+        if 'EntityNotFound' not in exc.args[0]:
+            raise exc
+
+        if ignore_if_not_exist:
+            return
 
     bucket, prefix = re.match(r's3:\/\/(.+?)\/(.*)\/?$',
                               metadata.location
