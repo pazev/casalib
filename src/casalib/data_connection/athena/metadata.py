@@ -43,7 +43,7 @@ def get_table_metadata(
         partition_cols=partition_keys,
         location=metadata_dict['Parameters']['location'],
         table_name=f'{schema}.{table_name}',
-        orig_info=metadata_dict
+        orig_info=metadata_dict,
     )
 
     return metadata_obj

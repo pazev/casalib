@@ -1,13 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import boto3
 import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
+from .create_insert import create_insert
+from .drop import drop_table
 from .metadata import get_table_metadata, get_query_metadata
 from .querying import run_query_get_pandas, run_table_get_pandas
+from .partitions import list_partitions, drop_partitions
+from .send_pandas import create_table_pandas_dataframe
 
 
 @dataclass
@@ -113,4 +117,80 @@ class AthenaConnection(ConnectionAbstract):
 
         return get_query_metadata(
             query=query, **param
+        )
+
+    def drop(self, table_name: str) -> "AthenaConnection":
+        """ Dropa uma tabela
+        """
+        drop_table(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            table_name=table_name,
+        )
+        return self
+
+    def create_insert(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None,
+    ) -> "AthenaConnection":
+        """ Cria uma tabela se não existir e insere dados.
+            Realiza reordenação de colunas se necessário.
+        """
+        create_insert(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            s3_output=self.s3_staging_dir,
+            table_name=table_name,
+            partition_cols=partition_cols,
+            query=query,
+        )
+        return self
+
+    def list_partitions(
+        self,
+        table_name: str,
+    ) -> Dict[Tuple[str], str]:
+        """ Lista as partições """
+        return list_partitions(
+            boto3_session=self.boto3_session_maker.make(),
+            default_schema_name=self.schema_name,
+            table_name=table_name,
+        )
+
+    def drop_partitions(
+        self,
+        table_name: str,
+        partitions_to_drop: List[Tuple[str]],
+    ) -> "AthenaConnection":
+        """ Dropa partições indicadas na tabela """
+        drop_partitions(
+            boto3_session=self.boto3_session_maker.make(),
+            default_schema_name=self.schema_name,
+            table_name=table_name,
+            partitions_to_drop=partitions_to_drop
+        )
+        return self
+
+    def send_pandas(
+        self,
+        dff: pd.DataFrame,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None
+    ) -> Metadata:
+        """ Envia um pandas DataFrame para o banco """
+        return create_table_pandas_dataframe(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            workgroup=self.workgroup,
+            default_schema_name=self.schema_name,
+            table_name=table_name,
+            s3_output=self.s3_staging_dir,
+            dff=dff,
+            partition_cols=partition_cols,
         )

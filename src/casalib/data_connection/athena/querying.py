@@ -79,7 +79,7 @@ def run_table_get_pandas(
 
     template_str = textwrap.dedent('''
     select * from {{schema}}.{{table}}
-    {%- if samples %}
+    {%- if samples and samples >= 1 %}
     limit {{samples}}
     {%- endif %}
     ''')
