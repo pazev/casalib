@@ -1,2 +1,2 @@
 include version
-include *.template
+graft src/casalib/scaffolding/templates/

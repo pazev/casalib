@@ -1,6 +1,6 @@
 import setuptools
 
-module = 'casalib'
+module = '{{ cookiecutter.project_name }}'
 
 with open("version", "r", encoding="utf-8") as fh:
     version = fh.read()
@@ -14,9 +14,9 @@ with open(f"src/{module}/version.py", "w") as f:
 setuptools.setup(
     name=module,
     version=version,
-    author="Paulo Azevedo",
-    email="pazevedojr@gmail.com",
-    description="A library to automate some activities",
+    author="{{ cookiecutter.author }}",
+    email="{{ cookiecutter.author_email }}",
+    description="{{ cookiecutter.short_description }}",
     long_description=description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -28,14 +28,5 @@ setuptools.setup(
     package=setuptools.find_packages(where="src"),
     python_require=">=3.10",
     include_package_data=True,
-    install_requires=[
-        "awswrangler",
-        "boto3",
-        "cookiecutter",
-        "fire",
-        "jinja2",
-        "numpy",
-        "pandas",
-        "pygit2",
-    ]
+    install_requires=[]
 )
