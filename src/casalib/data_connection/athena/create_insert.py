@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Union
 
+import awswrangler as wr
 import boto3
 
 from ..base import Metadata
@@ -188,7 +189,9 @@ def create_insert(
                 col: type_adj
                 for col, type_ in query_meta.columns.items()
                 for type_adj in [
-                    'string' if 'varchar' in type_ else type_
+                    'string' if 'varchar' in type_ else
+                    'double' if type_ == 'real' else
+                    type_
                 ]
                 if col not in partition_cols
             },
@@ -197,7 +200,9 @@ def create_insert(
                 for col in partition_cols
                 for type_ in [query_meta.columns[col]]
                 for type_adj in [
-                    'string' if 'varchar' in type_ else type_
+                    'string' if 'varchar' in type_ else
+                    'double' if type_ == 'real' else
+                    type_
                 ]
             },
             s3_output=s3_output,
@@ -231,3 +236,40 @@ def create_insert(
     )
 
     return metadata
+
+
+def create(
+    boto3_session: boto3.Session,
+    data_catalog: str,
+    default_schema_name: str,
+    workgroup: str,
+    s3_output: str,
+    table_name: str,
+    partition_cols: Union[List[str], None],
+    query: str,
+):
+    partition_cols = partition_cols or []
+
+    # Trata nome da tabela
+    schema_name, table_name = [
+        default_schema_name,
+        *table_name.split('.')
+    ][-2:]
+
+    s3_output = f'{s3_output}/{table_name}'
+
+    params = {
+        'sql': query,
+        'database': schema_name,
+        'ctas_table': table_name,
+        'ctas_database': schema_name,
+        'workgroup': workgroup,
+        'boto3_session': boto3_session,
+        's3_output': s3_output,
+        'partitioning_info': partition_cols,
+        'wait': True,
+    }
+
+    res = wr.athena.create_ctas_table(**params)
+
+    return res

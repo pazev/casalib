@@ -6,7 +6,7 @@ import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
-from .create_insert import create_insert
+from .create_insert import create_insert, create
 from .drop import drop_table
 from .metadata import get_table_metadata, get_query_metadata
 from .querying import run_query_get_pandas, run_table_get_pandas
@@ -141,6 +141,25 @@ class AthenaConnection(ConnectionAbstract):
             Realiza reordenação de colunas se necessário.
         """
         create_insert(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            s3_output=self.s3_staging_dir,
+            table_name=table_name,
+            partition_cols=partition_cols,
+            query=query,
+        )
+        return self
+
+    def create(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None,
+    ) -> "AthenaConnection":
+        """ Cria uma tabela com CTAS """
+        create(
             boto3_session=self.boto3_session_maker.make(),
             data_catalog=self.data_catalog,
             default_schema_name=self.schema_name,
