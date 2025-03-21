@@ -30,12 +30,14 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         "awswrangler",
+        "beautifulsoup4",
         "boto3",
         "cookiecutter",
         "fire",
         "jinja2",
         "numpy",
         "pandas",
+        "requests",
         "pygit2",
     ]
 )
