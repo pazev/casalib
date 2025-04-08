@@ -41,12 +41,17 @@ def create_schema(
     s3_output: str,
 ) -> Metadata:
     """ Cria tabela com o schema passado """
+    schema_name, table_name = [
+        schema_name,
+        *table_name.split('.')
+    ][-2:]
+
     query_create = make_create_schema_query_(
         schema_name=schema_name,
         table_name=table_name,
         columns_types=columns_types,
         partition_columns_types=partition_columns_types,
-        s3_output=f'{s3_output}/{table_name}'
+        s3_output=f'{s3_output}/{schema_name}.{table_name}'
     )
 
     query_exec = run_query(
@@ -236,40 +241,3 @@ def create_insert(
     )
 
     return metadata
-
-
-def create(
-    boto3_session: boto3.Session,
-    data_catalog: str,
-    default_schema_name: str,
-    workgroup: str,
-    s3_output: str,
-    table_name: str,
-    partition_cols: Union[List[str], None],
-    query: str,
-):
-    partition_cols = partition_cols or []
-
-    # Trata nome da tabela
-    schema_name, table_name = [
-        default_schema_name,
-        *table_name.split('.')
-    ][-2:]
-
-    s3_output = f'{s3_output}/{table_name}'
-
-    params = {
-        'sql': query,
-        'database': schema_name,
-        'ctas_table': table_name,
-        'ctas_database': schema_name,
-        'workgroup': workgroup,
-        'boto3_session': boto3_session,
-        's3_output': s3_output,
-        'partitioning_info': partition_cols,
-        'wait': True,
-    }
-
-    res = wr.athena.create_ctas_table(**params)
-
-    return res

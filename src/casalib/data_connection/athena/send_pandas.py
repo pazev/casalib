@@ -18,7 +18,31 @@ def create_table_pandas_dataframe(
     partition_cols: Union[List[str], None],
 ) -> Metadata:
     """ Envia um pandas DataFrame para a localização indicada """
-    partition_cols = partition_cols or []
+    location = None
+    partition_cols_tab = None
+
+    try:
+        metadata = get_table_metadata(
+            boto3_session=boto3_session,
+            data_catalog=data_catalog,
+            default_schema_name=default_schema_name,
+            workgroup=workgroup,
+            table_name=table_name,
+        )
+
+        location = metadata.location
+        partition_cols_tab = list(metadata.partition_cols)
+    except:
+        pass
+
+    partition_cols = partition_cols or partition_cols_tab or []
+
+    if partition_cols_tab and (partition_cols != partition_cols_tab):
+        raise ValueError(
+            "partition_cols is invalid; table already "
+            "exists. Please leave the partition_cols "
+            "argument empty."
+        )
 
     # Envia o arquivo
     schema_name, table_name = [
@@ -26,7 +50,9 @@ def create_table_pandas_dataframe(
         *table_name.split('.')
     ][-2:]
 
-    s3_output = f'{s3_output}/{table_name}'
+    s3_output = (
+        location or f'{s3_output}/{schema_name}.{table_name}'
+    )
 
     params = {
         'df': dff,
