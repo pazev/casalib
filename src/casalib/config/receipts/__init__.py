@@ -1,3 +1,10 @@
+"""
+Módulo implementa estrutura de plugin para as receitas
+do inclusas neste diretório.
+
+Basta que o arquivo .py implemente uma função make(**params)
+que a estrutura irá carregá-lo normalmente.
+"""
 import importlib
 import os
 from pathlib import Path

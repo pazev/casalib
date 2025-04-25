@@ -1,6 +1,10 @@
+"""
+Template para rodar a receita de um objeto salvo em uma
+configuração.
+"""
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 
 import yaml
 
@@ -21,7 +25,7 @@ def default_cfg_() -> Path:
 
 def load_cfg_() -> Dict:
     """ Carrega as configurações """
-    with open(default_cfg_(), 'r') as f:
+    with open(default_cfg_(), 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     return config
@@ -47,6 +51,6 @@ def load_obj(name: str) -> Any:
         raise KeyError(
             f'A configuração {key_error} não existe; temos as '
             f'seguintes configurações: {known_configs}'
-        )
+        ) from exc
 
     return make_obj_params_(**config_params)

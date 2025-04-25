@@ -1,3 +1,7 @@
+"""
+Módulo com comandos para gerenciamento de templates da
+casalib.
+"""
 import os
 from pathlib import Path
 from typing import List

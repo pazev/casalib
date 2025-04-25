@@ -1,3 +1,7 @@
+"""
+Módulo implementa a funcionalidade de realizar queries ao
+Athena, se valendo da funcionalidade do awswrangler.
+"""
 from datetime import datetime
 import logging
 import textwrap
@@ -50,8 +54,8 @@ def run_query_get_pandas(
         )
 
         logging.error(
-            'Error executing the query below:\n'
-            f'{sql_numbered}'
+            'Error executing the query below:\n%s',
+            sql_numbered
         )
         logging.exception(exc)
         raise exc
@@ -69,7 +73,9 @@ def run_table_get_pandas(
     table_name: str,
     samples: Union[int, None],
 ) -> pd.DataFrame:
-    """ Faz uma query no Athena """
+    """ Faz uma query para obter dados de uma tabela
+        no Athena
+    """
     env = jinja2.Environment()
 
     schema, table_name_final = [

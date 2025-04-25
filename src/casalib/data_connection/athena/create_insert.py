@@ -1,13 +1,16 @@
-from pathlib import Path
+"""
+Módulo implementa funções de criação e inserção de dados em
+tabelas no AWS Athena.
+"""
 from typing import Dict, List, Union
 
-import awswrangler as wr
 import boto3
 
 from ..base import Metadata
 from .boto3_querying import run_query
 from .metadata import get_table_metadata, get_query_metadata
 from .templates import templates_dict
+from .util import split_table_name
 
 
 def make_create_schema_query_(
@@ -17,6 +20,9 @@ def make_create_schema_query_(
     partition_columns_types: Dict[str, str],
     s3_output: str,
 ):
+    """ Make the query to create a table passing the
+        schema
+    """
     template = templates_dict['create_table']
 
     query = template.render(
@@ -34,17 +40,17 @@ def create_schema(
     boto3_session: boto3.Session,
     workgroup: str,
     data_catalog: str,
-    schema_name: str,
+    default_schema_name: str,
     table_name: str,
     columns_types: Dict[str, str],
     partition_columns_types: Dict[str, str],
     s3_output: str,
 ) -> Metadata:
     """ Cria tabela com o schema passado """
-    schema_name, table_name = [
-        schema_name,
-        *table_name.split('.')
-    ][-2:]
+    schema_name, table_name = split_table_name(
+        table_name=table_name,
+        default_schema_name=default_schema_name,
+    )
 
     query_create = make_create_schema_query_(
         schema_name=schema_name,
@@ -73,12 +79,104 @@ def create_schema(
     )
 
 
+def make_create_ctas_query_(
+    schema_name: str,
+    table_name: str,
+    query: str,
+    columns_types: Dict[str, str],
+    partition_columns_types: Union[Dict[str, str], None],
+    s3_output: str
+):
+    """ Make the query to create a table passing the
+        schema
+    """
+    template = templates_dict['create_ctas']
+
+    query = template.render(
+        schema_name=schema_name,
+        table_name=table_name,
+        query=query,
+        columns_types=columns_types,
+        partition_columns_types=partition_columns_types,
+        s3_output=s3_output
+    )
+
+    return query
+
+
+def create_ctas(
+    boto3_session: boto3.Session,
+    workgroup: str,
+    data_catalog: str,
+    default_schema_name: str,
+    table_name: str,
+    query: str,
+    partition_cols: Union[List[str], None],
+    s3_output: str
+) -> Metadata:
+    """ Cria tabela com o método CREATE TABLE AS """
+    partition_cols = partition_cols or []
+
+    schema_name, table_name = split_table_name(
+        table_name=table_name,
+        default_schema_name=default_schema_name
+    )
+
+    # Captura metadata da query
+    query_meta = get_query_metadata(
+        boto3_session=boto3_session,
+        data_catalog=data_catalog,
+        default_schema_name=default_schema_name,
+        workgroup=workgroup,
+        query=query,
+    )
+
+    columns_types = {
+        col: type_
+        for col, type_ in query_meta.columns.items()
+        if col not in partition_cols
+    }
+
+    partition_columns_types = {
+        col: query_meta.columns[col]
+        for col in partition_cols
+    }
+
+    query_create = make_create_ctas_query_(
+        schema_name=schema_name,
+        table_name=table_name,
+        query=query,
+        columns_types=columns_types,
+        partition_columns_types=partition_columns_types,
+        s3_output=f'{s3_output}/{schema_name}.{table_name}'
+    )
+
+    query_exec = run_query(
+        query=query_create,
+        schema_name=schema_name,
+        data_catalog=data_catalog,
+        workgroup=workgroup,
+        boto3_session=boto3_session,
+    )
+
+    query_exec.wait(boto3_session)
+
+    return get_table_metadata(
+        boto3_session=boto3_session,
+        data_catalog=data_catalog,
+        default_schema_name=default_schema_name,
+        workgroup=workgroup,
+        table_name=table_name,
+    )
+
+
 def make_insert_query_(
     schema_name: str,
     table_name: str,
     columns_types: Dict[str, str],
     query: str,
 ):
+    """ Make the INSERT INTO query """
     template = templates_dict['insert_table']
 
     query_insert = template.render(
@@ -93,16 +191,21 @@ def make_insert_query_(
 
 def insert(
     boto3_session: boto3.Session,
+    workgroup: str,
     data_catalog: str,
     default_schema_name: str,
-    workgroup: str,
-    s3_output: str,
-    schema_name: str,
     table_name: str,
     columns_types: Union[List[str], None],
     partition_columns_types: Union[List[str], None],
     query: str,
+    s3_output: str,
 ) -> Metadata:
+    """ Run the create insert into query """
+    schema_name, table_name = split_table_name(
+        table_name=table_name,
+        default_schema_name=default_schema_name
+    )
+
     query_insert = make_insert_query_(
         schema_name=schema_name,
         table_name=table_name,
@@ -131,23 +234,18 @@ def insert(
 
 def create_insert(
     boto3_session: boto3.Session,
+    workgroup: str,
     data_catalog: str,
     default_schema_name: str,
-    workgroup: str,
-    s3_output: str,
     table_name: str,
-    partition_cols: Union[List[str], None],
     query: str,
+    partition_cols: Union[List[str], None],
+    s3_output: str,
 ):
-    """ Cria uma tabela se não existir, e insere dados na mesma.
+    """ Cria uma tabela se não existir, e insere dados na
+        mesma.
     """
     partition_cols = partition_cols or []
-
-    # Trata nome da tabela
-    schema_name, table_name = [
-        default_schema_name,
-        *table_name.split('.')
-    ][-2:]
 
     # Captura metadata da query
     query_meta = get_query_metadata(
@@ -188,7 +286,7 @@ def create_insert(
             boto3_session=boto3_session,
             workgroup=workgroup,
             data_catalog=data_catalog,
-            schema_name=schema_name,
+            default_schema_name=default_schema_name,
             table_name=table_name,
             columns_types={
                 col: type_adj
@@ -227,16 +325,15 @@ def create_insert(
         )
 
     # Insere os dados
-    res = insert(
+    insert(
         boto3_session=boto3_session,
+        workgroup=workgroup,
         data_catalog=data_catalog,
         default_schema_name=default_schema_name,
-        workgroup=workgroup,
-        s3_output=s3_output,
-        schema_name=schema_name,
         table_name=table_name,
         columns_types=metadata.columns,
         partition_columns_types=metadata.partition_cols,
+        s3_output=s3_output,
         query=query,
     )
 

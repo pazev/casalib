@@ -1,3 +1,7 @@
+"""
+Módulo implementa a funcionalidade de enviar um dataframe
+pandas para o banco de dados.
+"""
 from typing import List, Union
 
 import awswrangler as wr
@@ -17,7 +21,9 @@ def create_table_pandas_dataframe(
     dff: pd.DataFrame,
     partition_cols: Union[List[str], None],
 ) -> Metadata:
-    """ Envia um pandas DataFrame para a localização indicada """
+    """ Envia um pandas DataFrame para a localização
+        indicada
+    """
     location = None
     partition_cols_tab = None
 
@@ -32,7 +38,7 @@ def create_table_pandas_dataframe(
 
         location = metadata.location
         partition_cols_tab = list(metadata.partition_cols)
-    except:
+    except Exception as exc:
         pass
 
     partition_cols = partition_cols or partition_cols_tab or []

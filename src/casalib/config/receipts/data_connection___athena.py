@@ -1,3 +1,4 @@
+""" Receita para criação rápida de uma conexão Athena """
 from typing import Optional
 
 from casalib.data_connection.athena.athena import (

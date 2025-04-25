@@ -1,4 +1,8 @@
+"""
+Módulo para rodar queries em Athena utilizando a boto3
+"""
 from dataclasses import dataclass, field
+import time
 from typing import Dict
 
 import boto3
@@ -32,7 +36,6 @@ class QueryExec:
 
     def wait(self, boto3_session: boto3.Session) -> "QueryExec":
         """ Espera a execução da query """
-        import time
         while True:
             status = self.get_status(boto3_session)
             if status in ['CANCELLED']:

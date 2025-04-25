@@ -19,7 +19,10 @@ def download_file(
             message='Unverified HTTPS request'
         )
         response = requests.get(
-            url=url, verify=verify_ssl, stream=True
+            url=url,
+            verify=verify_ssl,
+            stream=True,
+            timeout=60,
         )
 
         shutil.copyfileobj(response.raw, fileobj)

@@ -1,3 +1,11 @@
+"""
+Módulo contém a implementação do drop de tabelas no Athena.
+
+No Athena, o simples drop ainda mantém os dados presentes no
+S3. Assim, precisamos utilizar do boto3 para listar os
+arquivos e apagar os arquivos físicos presentes no S3.
+
+"""
 import re
 
 import boto3

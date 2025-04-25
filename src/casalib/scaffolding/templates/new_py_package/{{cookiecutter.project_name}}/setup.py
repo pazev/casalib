@@ -1,6 +1,10 @@
+""" Arquivo setup.py """
+import textwrap
 import setuptools
 
-module = '{{ cookiecutter.project_name }}'
+
+MODULE = '{{ cookiecutter.project_name }}'
+
 
 with open("version", "r", encoding="utf-8") as fh:
     version = fh.read()
@@ -8,11 +12,19 @@ with open("version", "r", encoding="utf-8") as fh:
 with open("README.md", "r", encoding="utf-8") as fh:
     description = fh.read()
 
-with open(f"src/{module}/version.py", "w") as f:
-    f.write(f'__version__ = "{version}"')
+with open(
+    f"src/{MODULE}/version.py",
+    "w",
+    encoding="utf-8"
+) as f:
+    f.write(textwrap.dedent(f'''
+        """ version.py """
+        __version__ = "{version}"
+    '''))
+
 
 setuptools.setup(
-    name=module,
+    name=MODULE,
     version=version,
     author="{{ cookiecutter.author }}",
     email="{{ cookiecutter.author_email }}",

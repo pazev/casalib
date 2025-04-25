@@ -1,3 +1,6 @@
+"""
+Módulo com funções para lidar com partições de tabelas.
+"""
 from typing import List, Tuple
 
 import awswrangler as wr

@@ -1,3 +1,8 @@
+"""
+Módulo para lidar com metadados de tabelas
+"""
+import json
+
 import boto3
 
 from .boto3_querying import run_query
@@ -6,12 +11,13 @@ from ..base import Metadata
 
 def get_table_metadata(
     boto3_session: boto3.Session,
+    workgroup: str,
     data_catalog: str,
     default_schema_name: str,
-    workgroup: str,
     table_name: str
 ):
-    """ Captura o metadado de uma tabela Athena usando a boto3
+    """
+    Captura o metadado de uma tabela Athena usando a boto3
     """
     athena = boto3_session.client('athena')
 
@@ -57,8 +63,6 @@ def get_query_metadata(
     query: str
 ):
     """ Captura o metadado da query """
-    import json
-
     # Captura o JSON explain
     query_explain = f'explain (format json)\n{query}'
 

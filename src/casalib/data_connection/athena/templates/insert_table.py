@@ -1,3 +1,6 @@
+"""
+Template para inserir dados em uma tabela.
+"""
 TEMPLATE = """
 insert into {{ schema_name }}.{{ table_name }}
 with

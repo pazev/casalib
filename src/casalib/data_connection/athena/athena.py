@@ -1,3 +1,18 @@
+"""
+Módulo contém a implementação do data_connection para o
+AWS Athena.
+
+A class Boto3SessionMaker gerencia a criação da conexão com
+o AWS Athena sempre que necessário.
+
+Já a classe AthenaConnection faz a gestão dos dados da
+conexão e implementa os métodos requeridos pela classe
+data_connection.ConnectionAbstract
+
+Vale ressaltar que para melhor manutenção do código,
+a classe AthenaConnection faz chamadas diversas a diversas
+funções Python implantadas em outros códigos.
+"""
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -6,7 +21,7 @@ import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
-from .create_insert import create_insert
+from .create_insert import create_insert, create_ctas
 from .drop import drop_table
 from .metadata import get_table_metadata, get_query_metadata
 from .querying import run_query_get_pandas, run_table_get_pandas
@@ -16,6 +31,9 @@ from .send_pandas import create_table_pandas_dataframe
 
 @dataclass
 class Boto3SessionMaker:
+    """ Classe responsável por guardar e gerenciar a criação
+        de conexões ao boto3, sempre que necessário.
+    """
     aws_access_key_id: Optional[str] = None
     aws_secret_access_key: Optional[str] = None
     aws_session_token: Optional[str] = None
@@ -84,7 +102,8 @@ class AthenaConnection(ConnectionAbstract):
         )
 
     def metadata(
-        self, query: Optional[str] = None,
+        self,
+        query: Optional[str] = None,
         table_name: Optional[str] = None
     ) -> Metadata:
         """ Retorna o metadados da tabela ou query. Somente um
@@ -150,6 +169,27 @@ class AthenaConnection(ConnectionAbstract):
             partition_cols=partition_cols,
             query=query,
         )
+        return self
+
+    def create_ctas(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None,
+    ) -> "AthenaConnection":
+        """ Cria uma tabela através de um CREATE TABLE AS
+        """
+        create_ctas(
+            boto3_session=self.boto3_session_maker.make(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+            s3_output=self.s3_staging_dir,
+            table_name=table_name,
+            partition_cols=partition_cols,
+            query=query,
+        )
+
         return self
 
     def list_partitions(

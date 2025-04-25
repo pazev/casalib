@@ -12,8 +12,12 @@ Temos duas funções:
    função get_index_page, gerando a lista de links
    disponíveis.
 """
+import re
 from typing import Any, Dict
 import warnings
+
+from bs4 import BeautifulSoup
+import requests
 
 
 def get_index_page(
@@ -22,14 +26,16 @@ def get_index_page(
     **kwargs
 ) -> Dict[str, Any]:
     """ Captura a lista de meses """
-    import requests
-
     # Carrega lista
     with warnings.catch_warnings():
         warnings.filterwarnings(
             action='ignore', message='Unverified HTTPS request'
         )
-        response = requests.get(url, verify=verify_ssl)
+        response = requests.get(
+            url=url,
+            verify=verify_ssl,
+            timeout=30,
+        )
 
     if response.status_code != 200:
         raise RuntimeError(
@@ -49,10 +55,6 @@ def process_index_page(
     """ Processa a lista HTML, extraindo os parámetros
         desejados em um dicionário
     """
-    import re
-
-    from bs4 import BeautifulSoup
-
     soup = BeautifulSoup(content, 'html.parser')
     elems = soup.select('li a')
 

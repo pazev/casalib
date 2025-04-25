@@ -1,3 +1,8 @@
+"""
+Template para criar uma tabela através da especificação de
+um schema.
+"""
+
 TEMPLATE = """
 CREATE EXTERNAL TABLE {{schema_name}}.{{table_name}}
 (
