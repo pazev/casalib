@@ -23,8 +23,8 @@ SELECT
     {{col}}{% if not loop.last %},{% endif %}
     {%- endfor %}
     {%- if partition_columns_types %}
-    {%- for col, type in partition_columns_types.items() %}
     ,
+    {%- for col, type in partition_columns_types.items() %}
     {{col}}{% if not loop.last %},{% endif %}
     {%- endfor %}
     {%- endif %}
