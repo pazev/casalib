@@ -6,10 +6,10 @@ from typing import Dict, List, Union
 
 import boto3
 
-from ..base import Metadata
+from ...base import Metadata
 from .boto3_querying import run_query
 from .metadata import get_table_metadata, get_query_metadata
-from .templates import templates_dict
+from ..templates import templates_dict
 from .util import split_table_name
 
 

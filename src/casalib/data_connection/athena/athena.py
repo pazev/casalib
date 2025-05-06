@@ -21,12 +21,12 @@ import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
-from .create_insert import create_insert, create_ctas
-from .drop import drop_table
-from .metadata import get_table_metadata, get_query_metadata
-from .querying import run_query_get_pandas, run_table_get_pandas
-from .partitions import list_partitions, drop_partitions
-from .send_pandas import create_table_pandas_dataframe
+from .modules.create_insert import create_insert, create_ctas
+from .modules.drop import drop_table
+from .modules.metadata import get_table_metadata, get_query_metadata
+from .modules.partitions import list_partitions, drop_partitions
+from .modules.querying import run_query_get_pandas, run_table_get_pandas
+from .modules.send_pandas import create_table_pandas_dataframe
 
 
 @dataclass

@@ -6,7 +6,7 @@ import json
 import boto3
 
 from .boto3_querying import run_query
-from ..base import Metadata
+from ...base import Metadata
 
 
 def get_table_metadata(
