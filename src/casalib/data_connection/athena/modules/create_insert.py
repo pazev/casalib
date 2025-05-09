@@ -10,7 +10,7 @@ from ...base import Metadata
 from .boto3_querying import run_query
 from .metadata import get_table_metadata, get_query_metadata
 from ..templates import templates_dict
-from .util import split_table_name
+from .util import split_table_name, treat_column_type
 
 
 def make_create_schema_query_(
@@ -289,24 +289,14 @@ def create_insert(
             default_schema_name=default_schema_name,
             table_name=table_name,
             columns_types={
-                col: type_adj
+                col: treat_column_type(type_)
                 for col, type_ in query_meta.columns.items()
-                for type_adj in [
-                    'string' if 'varchar' in type_ else
-                    'double' if type_ == 'real' else
-                    type_
-                ]
                 if col not in partition_cols
             },
             partition_columns_types={
-                col: type_adj
+                col: treat_column_type(type_)
                 for col in partition_cols
                 for type_ in [query_meta.columns[col]]
-                for type_adj in [
-                    'string' if 'varchar' in type_ else
-                    'double' if type_ == 'real' else
-                    type_
-                ]
             },
             s3_output=s3_output,
         )
@@ -320,7 +310,7 @@ def create_insert(
 
     if not_found_table_cols:
         raise ValueError(
-            f'As colunas {not_found_part_cols} não foram '
+            f'As colunas {not_found_table_cols} não foram '
             'encontradas na query.'
         )
 

@@ -21,3 +21,27 @@ def split_table_name(
     ][-2:]
 
     return schema_name, table_name
+
+
+def treat_column_type(
+    column_type: str
+) -> str:
+    """ Adjust the column type """
+    if 'array' in column_type:
+        column_type = re.sub(
+            r'array\((.*)\)',
+            r'array<\1>',
+            column_type
+        )
+
+    if 'real' in column_type:
+        return column_type.replace('real', 'double')
+
+    if 'varchar' in column_type:
+        return re.sub(
+            r'varchar(\(\d+\))?',
+            r'string',
+            column_type
+        )
+
+    return column_type
