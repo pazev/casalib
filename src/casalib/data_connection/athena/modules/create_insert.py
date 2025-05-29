@@ -90,7 +90,7 @@ def make_create_ctas_query_(
     """ Make the query to create a table passing the
         schema
     """
-    template = templates_dict['create_ctas']
+    template = templates_dict['create_table_ctas']
 
     query = template.render(
         schema_name=schema_name,

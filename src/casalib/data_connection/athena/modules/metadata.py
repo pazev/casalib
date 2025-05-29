@@ -102,7 +102,7 @@ def get_query_metadata(
     metadata_obj = Metadata(
         connection_type='athena.AthenaConnection',
         columns=types,
-        partition_cols=[],
+        partition_cols={},
         location=None,
         query=query,
     )

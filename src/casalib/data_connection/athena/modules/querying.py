@@ -6,6 +6,7 @@ from datetime import datetime
 import logging
 import textwrap
 from typing import Union
+from uuid import uuid4
 
 import awswrangler as wr
 from awswrangler.typing import AthenaCTASSettings
@@ -25,7 +26,8 @@ def run_query_get_pandas(
 ) -> pd.DataFrame:
     """ Faz uma query no Athena """
     dttm = datetime.now().strftime('%Y%m%d%H%M%S')
-    temp_table_name = f'{table_prefix}__temp__{dttm}'
+    uuid_str = uuid4().hex
+    temp_table_name = f'{table_prefix}__temp__{dttm}__{uuid_str}'
 
     ctas_settings = AthenaCTASSettings(
         database=default_schema_name,
