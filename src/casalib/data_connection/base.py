@@ -101,3 +101,18 @@ class ConnectionAbstract(ABC):
         partition_cols: Optional[List[str]] = None,
     ) -> Metadata:
         """ Envia um pandas DataFrame para o banco """
+
+    @abstractmethod
+    def agg_query(
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count: Optional[List[str]] = None,
+        count_distinct: Optional[List[str]] = None,
+        sum: Optional[List[str]] = None,
+        mean: Optional[List[str]] = None,
+        min: Optional[List[str]] = None,
+        max: Optional[List[str]] = None,
+        percentile: Dict[int, List[str]] = None,
+    ) -> pd.DataFrame:
+        """ Realiza uma agregação na query indicada """

@@ -21,6 +21,7 @@ import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
+from .modules.agg import agg_query
 from .modules.create_insert import create_insert, create_ctas
 from .modules.drop import drop_table
 from .modules.metadata import get_table_metadata, get_query_metadata
@@ -234,3 +235,31 @@ class AthenaConnection(ConnectionAbstract):
             dff=dff,
             partition_cols=partition_cols,
         )
+
+    def agg_query(
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count: Optional[List[str]] = None,
+        count_distinct: Optional[List[str]] = None,
+        sum: Optional[List[str]] = None,
+        mean: Optional[List[str]] = None,
+        min: Optional[List[str]] = None,
+        max: Optional[List[str]] = None,
+        percentile: Dict[int, List[str]] = None,
+    ) -> pd.DataFrame:
+        """ Realiza uma agregação na query indicada """
+        dff = agg_query(
+            query_function=self.query,
+            query=query,
+            groupby=groupby,
+            count=count,
+            count_distinct=count_distinct,
+            sum=sum,
+            mean=mean,
+            min=min,
+            max=max,
+            percentile=percentile,
+        )
+
+        return dff
