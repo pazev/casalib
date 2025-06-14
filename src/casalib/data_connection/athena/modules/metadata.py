@@ -39,6 +39,9 @@ def get_table_metadata(
     }
     partition_keys = {
         c['Name']: c['Type']
+
+        for metadata_dict in [metadata_dict]
+        if 'PartitionKeys' in metadata_dict
         for c in metadata_dict['PartitionKeys']
     }
 

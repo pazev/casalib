@@ -1,3 +1,7 @@
+"""
+Transpose template
+"""
+
 from typing import List, Literal, Tuple, Union
 import jinja2
 
@@ -136,7 +140,7 @@ select * from transpose_
 '''
 
 
-def transpose_function(
+def make_transpose_info_month(
     input_query: str,
     mesref: str,
     keys: List[Union[str, Tuple[str, str]]],
