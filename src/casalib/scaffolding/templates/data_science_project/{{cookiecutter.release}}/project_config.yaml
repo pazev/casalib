@@ -1,0 +1,5 @@
+project_name: {{ cookiecutter.project_name }}
+project_slug: {{ cookiecutter.project_slug }}
+release: {{ cookiecutter.release }}
+description: >
+    {{ cookiecutter.description }}
