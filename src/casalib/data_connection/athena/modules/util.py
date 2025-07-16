@@ -44,4 +44,7 @@ def treat_column_type(
             column_type
         )
 
+    if 'timestamp' in column_type:
+        return 'timestamp'
+
     return column_type
