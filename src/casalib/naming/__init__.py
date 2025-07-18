@@ -1,0 +1,1 @@
+from .base import naming_generator_factory
