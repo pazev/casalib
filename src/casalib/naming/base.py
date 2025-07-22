@@ -83,7 +83,7 @@ def naming_generator_factory(
         )
 
     def as_tuple(self) -> Tuple[str]:
-        return tuple([getattr(fld, self) for fld in fields])
+        return tuple([getattr(self, fld) for fld in fields])
 
     def __post_init__(self):
         for f in fields:
