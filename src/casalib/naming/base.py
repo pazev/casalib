@@ -1,5 +1,5 @@
 from dataclasses import make_dataclass
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Tuple
 
 
 def naming_generator_factory(
@@ -8,7 +8,7 @@ def naming_generator_factory(
     sep: str = '___',
     prefix_: str = '',
     suffix_: str = '',
-    validation_procedures: Optional[Dict[str, Callable[[str], bool]]] = None,
+    validation_procedures: Optional[Dict[str, List[Callable[[str], bool]]]] = None,
     constraints: Optional[Dict[str, List[str]]] = None,
 ) -> Type[Any]:
     ''' Generates a new dataclass with the given name and fields. '''
@@ -41,8 +41,8 @@ def naming_generator_factory(
             return generated_name
 
         raise ValueError(
-            "Was not possible generate a valid name with the "
-            "parameters passed."
+            "Was not possible generate the same object from "
+            f"the parameters passed. {self} != {other}."
         )
 
 
@@ -61,7 +61,9 @@ def naming_generator_factory(
 
         parts = core.split(sep)
         if len(parts) != len(fields):
-            raise ValueError("Invalid number of components")
+            raise ValueError(
+                f"Invalid number of components. {fields} != {parts}"
+            )
 
         return cls(*parts)
 
@@ -80,7 +82,7 @@ def naming_generator_factory(
             )
         )
 
-    def as_tuple(self):
+    def as_tuple(self) -> Tuple[str]:
         return tuple([getattr(fld, self) for fld in fields])
 
     def __post_init__(self):
@@ -95,10 +97,11 @@ def naming_generator_factory(
                 if value not in allowed:
                     raise ValueError(f"Field '{f}' must be one of {allowed}, got: {value}")
 
-            validator = validation_procedures.get(f)
-            if validator:
-                if not validator(value):
-                    raise ValueError(f"Validation failed for field '{f}': {value}")
+            validators = validation_procedures.get(f)
+                for validator in validators:
+                    if validator:
+                        if not validator(value):
+                            raise ValueError(f"Validation failed for field '{f}': {value}")
 
     cls = make_dataclass(
         cls_name=class_name,
