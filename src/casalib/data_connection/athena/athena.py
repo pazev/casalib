@@ -24,6 +24,7 @@ from ..base import ConnectionAbstract, Metadata
 from .modules.agg import agg_query
 from .modules.create_insert import create_insert, create_ctas
 from .modules.drop import drop_table
+from .modules.input_tables import get_input_tables
 from .modules.metadata import get_table_metadata, get_query_metadata
 from .modules.partitions import list_partitions, drop_partitions
 from .modules.querying import run_query_get_pandas, run_table_get_pandas
@@ -263,3 +264,13 @@ class AthenaConnection(ConnectionAbstract):
         )
 
         return dff
+
+    def get_input_tables(self, query: str) -> List[str]:
+        """ Get the required tables for the given query """
+        return get_input_tables(
+            query=query,
+            boto3_session=self.boto3_session_maker(),
+            data_catalog=self.data_catalog,
+            default_schema_name=self.schema_name,
+            workgroup=self.workgroup,
+        )

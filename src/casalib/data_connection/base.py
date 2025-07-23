@@ -116,3 +116,7 @@ class ConnectionAbstract(ABC):
         percentile: Dict[int, List[str]] = None,
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
+
+    @abstractmethod
+    def get_input_tables(self, query: str) -> List[str]:
+        """ Get the required tables for the given query """

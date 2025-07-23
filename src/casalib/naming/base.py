@@ -97,11 +97,10 @@ def naming_generator_factory(
                 if value not in allowed:
                     raise ValueError(f"Field '{f}' must be one of {allowed}, got: {value}")
 
-            validators = validation_procedures.get(f)
-                for validator in validators:
-                    if validator:
-                        if not validator(value):
-                            raise ValueError(f"Validation failed for field '{f}': {value}")
+            validators = validation_procedures.get(f, [])
+            for validator in validators:
+                if not validator(value):
+                    raise ValueError(f"Validation failed for field '{f}': {value}")
 
     cls = make_dataclass(
         cls_name=class_name,

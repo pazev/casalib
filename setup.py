@@ -42,6 +42,7 @@ setuptools.setup(
         "cookiecutter",
         "fire",
         "jinja2",
+        "makefun",
         "numpy",
         "pandas",
         "requests",
