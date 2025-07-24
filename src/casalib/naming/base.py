@@ -1,3 +1,8 @@
+"""
+Module define a factory to create names using attributes and
+recover these attributes from the name.
+"""
+
 from dataclasses import make_dataclass
 from typing import (
     Any, Callable, Dict, List, Optional, Type, Tuple

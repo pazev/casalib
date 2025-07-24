@@ -56,12 +56,17 @@ def make_agg(
     col_ops_dict = defaultdict(list)
 
     # Functions without parameters
-    no_param_function_ = [
-        'count', 'count_distinct', 'sum', 'mean', 'min', 'max',
-    ]
+    no_param_function_ = {
+        'count': count,
+        'count_distinct': count_distinct,
+        'sum': sum,
+        'mean': mean,
+        'min': min,
+        'max': max,
+    }
 
-    for func in no_param_function_:
-        for var in (locals()[func] or []):
+    for func, list_vars in no_param_function_.items():
+        for var in (list_vars or []):
             col_ops_dict[var].append((func,))
 
     # Percentile - We have to unpack the dictionary

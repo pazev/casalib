@@ -1,3 +1,4 @@
+""" Module to collect the input tables from a query """
 from collections import namedtuple
 import re
 from typing import List

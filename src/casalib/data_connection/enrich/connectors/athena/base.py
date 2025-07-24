@@ -1,3 +1,7 @@
+"""
+Functions to create the base objects for an Athena
+connection
+"""
 from typing import List, Optional
 
 from casalib.data_connection.athena import AthenaConnection

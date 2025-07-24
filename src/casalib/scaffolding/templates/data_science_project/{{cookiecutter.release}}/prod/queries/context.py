@@ -26,6 +26,9 @@ def discover_proj_root_fld(
             proj_root_fld = cur_fld
             break
 
+        if idx == MAX_DEPTH:
+            break
+
         cur_fld = cur_fld.parent
 
     if proj_root_fld is None:

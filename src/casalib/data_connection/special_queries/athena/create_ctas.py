@@ -1,7 +1,7 @@
 """
 Create table as.
 """
-from typing import Dict, List, Optional
+from typing import List, Optional
 import jinja2
 
 

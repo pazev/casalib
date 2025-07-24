@@ -1,3 +1,4 @@
+""" Module defines an object to manage tables """
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from typing import Callable, Dict, List, Optional, Tuple

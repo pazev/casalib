@@ -1,6 +1,8 @@
+"""
+Module define enrich functions for an Athena Connection
+"""
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
-from uuid import uuid4
 
 import jinja2
 
@@ -168,6 +170,10 @@ def compile_last_query(
 
 @dataclass
 class AthenaCompiler:
+    """
+    Compiler for an Athena connection. Generate the SQL
+    queries to enrich the public.
+    """
     prefix: str
     study: str
 

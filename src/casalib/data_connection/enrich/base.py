@@ -1,3 +1,6 @@
+"""
+Base classes for enrich module.
+"""
 from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Callable, Dict, List, Optional
@@ -5,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 @dataclass
 class Public:
+    """ Class that defines a Public to be enriched """
     event_ymd_column: str
     columns: List[str]
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -26,6 +30,10 @@ class Public:
 
 @dataclass
 class Source:
+    """
+    Class that defines the an info source, to be used to
+    enrich the public.
+    """
     keys: List[str] = field(repr=False)
     info_ymd_column: str = field(repr=False)
     ingestion_column: str = field(repr=False)
@@ -64,6 +72,10 @@ class Source:
 
 @dataclass
 class EnrichmentPlan:
+    """
+    Class that defines the enrichment plan, the step that
+    must be executed.
+    """
     public: Public = field(repr=False)
     source: Source
     included_columns: List[str] = (
@@ -184,6 +196,8 @@ class EnrichmentPlan:
 
 @dataclass
 class Enricher:
+    """ Class to create the queries that enrich the public
+    """
     public: Public
     steps: List[EnrichmentPlan] = (
         field(default_factory=list)
