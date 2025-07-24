@@ -269,7 +269,7 @@ class AthenaConnection(ConnectionAbstract):
         """ Get the required tables for the given query """
         return get_input_tables(
             query=query,
-            boto3_session=self.boto3_session_maker(),
+            boto3_session=self.boto3_session_maker.make(),
             data_catalog=self.data_catalog,
             default_schema_name=self.schema_name,
             workgroup=self.workgroup,
