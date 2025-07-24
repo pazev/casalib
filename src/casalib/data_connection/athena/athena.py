@@ -21,14 +21,34 @@ import pandas as pd
 
 from ..base import ConnectionAbstract, Metadata
 
-from .modules.agg import agg_query
-from .modules.create_insert import create_insert, create_ctas
-from .modules.drop import drop_table
-from .modules.input_tables import get_input_tables
-from .modules.metadata import get_table_metadata, get_query_metadata
-from .modules.partitions import list_partitions, drop_partitions
-from .modules.querying import run_query_get_pandas, run_table_get_pandas
-from .modules.send_pandas import create_table_pandas_dataframe
+from .modules.agg import (
+    agg_query,
+)
+from .modules.create_insert import (
+    create_insert,
+    create_ctas,
+)
+from .modules.drop import (
+    drop_table,
+)
+from .modules.input_tables import (
+    get_input_tables,
+)
+from .modules.metadata import (
+    get_table_metadata,
+    get_query_metadata,
+)
+from .modules.partitions import (
+    list_partitions,
+    drop_partitions,
+)
+from .modules.querying import (
+    run_query_get_pandas,
+    run_table_get_pandas,
+)
+from .modules.send_pandas import (
+    create_table_pandas_dataframe,
+)
 
 
 @dataclass
@@ -46,7 +66,9 @@ class Boto3SessionMaker:
         par = {}
 
         if self.aws_access_key_id is not None:
-            par['aws_access_key_id'] = self.aws_access_key_id
+            par['aws_access_key_id'] = (
+                self.aws_access_key_id
+            )
 
         if self.aws_secret_access_key is not None:
             par['aws_secret_access_key'] = (
@@ -54,7 +76,9 @@ class Boto3SessionMaker:
             )
 
         if self.aws_session_token is not None:
-            par['aws_session_token'] = self.aws_session_token
+            par['aws_session_token'] = (
+                self.aws_session_token
+            )
 
         if self.region_name is not None:
             par['region_name'] = self.region_name
@@ -73,7 +97,9 @@ class AthenaConnection(ConnectionAbstract):
     table_prefix: str = ''
 
     def query(self, query: str) -> pd.DataFrame:
-        """ Retorna o resultado da query como um DataFrame """
+        """
+        Retorna o resultado da query como um DataFrame
+        """
         return run_query_get_pandas(
             boto3_session=self.boto3_session_maker.make(),
             data_catalog=self.data_catalog,
@@ -85,12 +111,15 @@ class AthenaConnection(ConnectionAbstract):
         )
 
     def table(
-        self, table_name: str, samples: Union[int, None] = 100
+        self,
+        table_name: str,
+        samples: Union[int, None] = 100
     ) -> pd.DataFrame:
         """ Retorna uma amostra da tabela. O padrão são 100
             registros, mas este número pode ser alterado no
-            parâmetro `samples`. Caso `samples` receba um número
-            negativo ou None retorna a tabela inteira.
+            parâmetro `samples`. Caso `samples` receba um
+            número negativo ou None retorna a tabela
+            inteira.
         """
         return run_table_get_pandas(
             boto3_session=self.boto3_session_maker.make(),
@@ -108,23 +137,26 @@ class AthenaConnection(ConnectionAbstract):
         query: Optional[str] = None,
         table_name: Optional[str] = None
     ) -> Metadata:
-        """ Retorna o metadados da tabela ou query. Somente um
-            dos dois deve ser setado.
+        """ Retorna o metadados da tabela ou query.
+            Somente um dos dois deve ser setado.
         """
         # Controle de entrada
         if (query or table_name) is None:
             raise ValueError(
-                "Ou `query` ou `tablename` precisa ser setado."
+                "Ou `query` ou `tablename` precisa ser "
+                "setado."
             )
 
         if (query is not None) and (table_name is not None):
             raise ValueError(
-                "Ou `query` ou `tablename` precisa ser setado."
+                "Ou `query` ou `tablename` precisa ser "
+                "setado."
             )
 
         # Cria a sessão
         param = {
-            'boto3_session': self.boto3_session_maker.make(),
+            'boto3_session':
+                self.boto3_session_maker.make(),
             'data_catalog': self.data_catalog,
             'default_schema_name': self.schema_name,
             'workgroup': self.workgroup,

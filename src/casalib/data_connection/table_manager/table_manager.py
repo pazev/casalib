@@ -14,7 +14,9 @@ class TableManager():
     """ Query Manager """
     query_template: str
     table_name: str
-    conn_maker: Optional[Callable[[], ConnectionAbstract]] = None
+    conn_maker: Optional[
+        Callable[[], ConnectionAbstract]
+    ] = None
     partition_cols: Optional[List[str]] = None
 
     def set_conn_maker(
@@ -27,7 +29,9 @@ class TableManager():
 
     def make_query_(self, **params) -> str:
         """ Make the query that will be executed """
-        env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+        env = jinja2.Environment(
+            undefined=jinja2.StrictUndefined
+        )
         template = env.from_string(self.query_template)
         query = template.render(**params)
         return query
@@ -74,27 +78,38 @@ class TableManager():
 
         filtered_partitions = [
             part
-            for part, path in conn.list_partitions(self.table_name).items()
-            for filter_ in [all(map(lambda part_patt_: fnmatch(*part_patt_), zip(part, filters)))]
+            for part, path in (
+                conn
+                .list_partitions(self.table_name)
+                .items()
+            )
+            for filter_ in [
+                all(map(
+                    lambda part_patt_: fnmatch(*part_patt_),
+                    zip(part, filters)
+                ))
+            ]
             if filter_
         ]
 
         return filtered_partitions
 
-    def drop_partitions_filter(self, *filters: List[str]) -> "TableManager":
+    def drop_partitions_filter(
+        self, *filters: List[str]
+    ) -> "TableManager":
         """
         Drop partitions using the fnmatch filter passed.
         """
         conn = self.conn_maker()
 
-        filtered_partitions = [
-            part
-            for part, path in conn.list_partitions(self.table_name).items()
-            for filter_ in [all(map(lambda part_patt_: fnmatch(*part_patt_), zip(part, filters)))]
-            if filter_
-        ]
+        filtered_partitions = self.list_partitions_filter(
+            *filters
+        )
 
-        conn.drop_partitions(self.table_name, filtered_partitions)
+        conn.drop_partitions(
+            self.table_name,
+            filtered_partitions
+        )
 
         return self
 
@@ -103,7 +118,10 @@ class TableManager():
         Select some sample from the table.
         """
         conn = self.conn_maker()
-        return conn.table(table_name=self.table_name, samples=samples)
+        return conn.table(
+            table_name=self.table_name,
+            samples=samples
+        )
 
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
@@ -114,4 +132,6 @@ class TableManager():
         """ List the variables in the template """
         env = jinja2.Environment()
         parsed_content = env.parse(self.query_template)
-        return list(meta.find_undeclared_variables(parsed_content))
+        return list(
+            meta.find_undeclared_variables(parsed_content)
+        )

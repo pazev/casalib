@@ -60,13 +60,18 @@ def drop_table(
     schema_name, table_name = metadata.table_name.split('.')
 
     drop_query = run_query(
-        query=f'drop table if exists {schema_name}.{table_name}',
+        query=(
+            'drop table if exists '
+            f'{schema_name}.{table_name}'
+        ),
         schema_name=schema_name,
         data_catalog=data_catalog,
         workgroup=workgroup,
         boto3_session=boto3_session,
     )
 
-    drop_query.get_query_results(boto3_session=boto3_session)
+    drop_query.get_query_results(
+        boto3_session=boto3_session
+    )
 
     return drop_query, files_list, metadata

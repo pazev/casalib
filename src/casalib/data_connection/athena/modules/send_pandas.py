@@ -41,9 +41,14 @@ def create_table_pandas_dataframe(
     except Exception as exc:
         pass
 
-    partition_cols = partition_cols or partition_cols_tab or []
+    partition_cols = (
+        partition_cols or partition_cols_tab or []
+    )
 
-    if partition_cols_tab and (partition_cols != partition_cols_tab):
+    if (
+        partition_cols_tab and
+        (partition_cols != partition_cols_tab)
+    ):
         raise ValueError(
             "partition_cols is invalid; table already "
             "exists. Please leave the partition_cols "
@@ -57,7 +62,8 @@ def create_table_pandas_dataframe(
     ][-2:]
 
     s3_output = (
-        location or f'{s3_output}/{schema_name}.{table_name}'
+        location or
+        f'{s3_output}/{schema_name}.{table_name}'
     )
 
     params = {

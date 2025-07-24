@@ -10,7 +10,8 @@ import boto3
 
 @dataclass
 class QueryExec:
-    """ Classe para gerenciar a execução de queries usando boto3
+    """
+    Classe para gerenciar a execução de queries usando boto3
     """
     query: str = field(repr=False)
     query_id: str
@@ -29,17 +30,25 @@ class QueryExec:
         )
         return query_exec
 
-    def get_status(self, boto3_session: boto3.Session) -> str:
+    def get_status(
+        self,
+        boto3_session: boto3.Session
+    ) -> str:
         """ Captura status de uma query """
         res = self.get_execution_info_(boto3_session)
         return res['QueryExecution']['Status']['State']
 
-    def wait(self, boto3_session: boto3.Session) -> "QueryExec":
+    def wait(
+        self,
+        boto3_session: boto3.Session
+    ) -> "QueryExec":
         """ Espera a execução da query """
         while True:
             status = self.get_status(boto3_session)
             if status in ['CANCELLED']:
-                raise RuntimeError('Query cancelled by user')
+                raise RuntimeError(
+                    'Query cancelled by user'
+                )
 
             if status in ['FAILED']:
                 error_message = (
@@ -62,7 +71,10 @@ class QueryExec:
 
         return self
 
-    def get_query_results(self, boto3_session: boto3.Session):
+    def get_query_results(
+        self,
+        boto3_session: boto3.Session
+    ):
         """ Captura resultados da query """
         athena = boto3_session.client('athena')
 

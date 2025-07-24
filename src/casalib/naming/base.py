@@ -1,5 +1,7 @@
 from dataclasses import make_dataclass
-from typing import Any, Callable, Dict, List, Optional, Type, Tuple
+from typing import (
+    Any, Callable, Dict, List, Optional, Type, Tuple
+)
 
 
 def naming_generator_factory(
@@ -8,10 +10,18 @@ def naming_generator_factory(
     sep: str = '___',
     prefix_: str = '',
     suffix_: str = '',
-    validation_procedures: Optional[Dict[str, List[Callable[[str], bool]]]] = None,
+    validation_procedures: Optional[
+        Dict[
+            str,
+            List[Callable[[str], bool]]
+        ]
+    ] = None,
     constraints: Optional[Dict[str, List[str]]] = None,
 ) -> Type[Any]:
-    ''' Generates a new dataclass with the given name and fields. '''
+    '''
+    Generates a new dataclass with the given name and
+    fields.
+    '''
     validation_procedures = validation_procedures or {}
     constraints = constraints or {}
 
@@ -41,14 +51,18 @@ def naming_generator_factory(
             return generated_name
 
         raise ValueError(
-            "Was not possible generate the same object from "
-            f"the parameters passed. {self} != {other}."
+            "Was not possible generate the same object "
+            "from the parameters passed. "
+            f"{self} != {other}."
         )
 
 
     @classmethod
     def process_name(cls, name: str):
-        if not name.startswith(prefix_) or not name.endswith(suffix_):
+        if (
+            not name.startswith(prefix_) or
+            not name.endswith(suffix_)
+        ):
             raise ValueError("Prefix or suffix mismatch")
 
         core = name
@@ -62,7 +76,8 @@ def naming_generator_factory(
         parts = core.split(sep)
         if len(parts) != len(fields):
             raise ValueError(
-                f"Invalid number of components. {fields} != {parts}"
+                "Invalid number of components. "
+                f"{fields} != {parts}"
             )
 
         return cls(*parts)
@@ -90,17 +105,26 @@ def naming_generator_factory(
             value = getattr(self, f)
 
             if sep in value:
-                raise ValueError(f"Field '{f}' cannot contain the separator '{sep}'")
+                raise ValueError(
+                    f"Field '{f}' cannot contain the "
+                    f"separator '{sep}'"
+                )
 
             allowed = constraints.get(f)
             if allowed is not None:
                 if value not in allowed:
-                    raise ValueError(f"Field '{f}' must be one of {allowed}, got: {value}")
+                    raise ValueError(
+                        f"Field '{f}' must be one of "
+                        f"{allowed}, got: {value}"
+                    )
 
             validators = validation_procedures.get(f, [])
             for validator in validators:
                 if not validator(value):
-                    raise ValueError(f"Validation failed for field '{f}': {value}")
+                    raise ValueError(
+                        "Validation failed for field "
+                        f"'{f}': {value}"
+                    )
 
     cls = make_dataclass(
         cls_name=class_name,

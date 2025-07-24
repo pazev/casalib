@@ -10,7 +10,9 @@ import boto3
 
 
 def get_bucket_prefix(uri: str) -> Tuple[str, str]:
-    """ Dado um URI, extrai o bucket e o prefixo do objeto """
+    """
+    Dado um URI, extrai o bucket e o prefixo do objeto
+    """
     bucket, prefix = re.match(
         r's3:\/\/(.+?)\/(.*)\/?$',
         uri

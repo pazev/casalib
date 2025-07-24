@@ -18,7 +18,12 @@ def default_cfg_() -> Path:
         os.environ.get('USERPROFILE') or
         os.environ.get('HOME')
     )
-    dft_file = dft_fld / '.config' / 'casalib' / 'config.yaml'
+    dft_file = (
+        dft_fld /
+        '.config' /
+        'casalib' /
+        'config.yaml'
+    )
 
     return dft_file
 
@@ -49,8 +54,8 @@ def load_obj(name: str) -> Any:
         known_configs = list(config.keys())
 
         raise KeyError(
-            f'A configuração {key_error} não existe; temos as '
-            f'seguintes configurações: {known_configs}'
+            f'A configuração {key_error} não existe; temos '
+            f'as seguintes configurações: {known_configs}'
         ) from exc
 
     return make_obj_params_(**config_params)

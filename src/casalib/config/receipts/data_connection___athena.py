@@ -27,7 +27,9 @@ def make(
         table_prefix=table_prefix,
         boto3_session_maker=Boto3SessionMaker(
             aws_access_key_id=boto3_aws_access_key_id,
-            aws_secret_access_key=boto3_aws_secret_access_key,
+            aws_secret_access_key=(
+                boto3_aws_secret_access_key
+            ),
             aws_session_token=boto3_aws_session_token,
             region_name=boto3_region_name,
         ),

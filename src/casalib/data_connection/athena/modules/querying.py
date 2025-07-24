@@ -27,7 +27,9 @@ def run_query_get_pandas(
     """ Faz uma query no Athena """
     dttm = datetime.now().strftime('%Y%m%d%H%M%S')
     uuid_str = uuid4().hex
-    temp_table_name = f'{table_prefix}__temp__{dttm}__{uuid_str}'
+    temp_table_name = (
+        f'{table_prefix}__temp__{dttm}__{uuid_str}'
+    )
 
     ctas_settings = AthenaCTASSettings(
         database=default_schema_name,
@@ -51,7 +53,9 @@ def run_query_get_pandas(
         sql_numbered = "\n".join(
             [
                 f'{idx+1:05} {line}'
-                for idx, line in enumerate(query.split('\n'))
+                for idx, line in enumerate(
+                    query.split('\n')
+                )
             ]
         )
 
@@ -95,7 +99,9 @@ def run_table_get_pandas(
     template = env.from_string(template_str)
 
     query = template.render(
-        schema=schema, table=table_name_final, samples=samples
+        schema=schema,
+        table=table_name_final,
+        samples=samples
     )
 
     dff = run_query_get_pandas(

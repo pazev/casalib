@@ -13,8 +13,8 @@ class Public:
         """ Test if the event column is in the columns """
         if self.event_ymd_column not in self.columns:
             raise ValueError(
-                f'event_ymd_column `{self.event_ymd_column}` not in '
-                'columns'
+                'event_ymd_column '
+                f'`{self.event_ymd_column}` not in columns'
             )
 
     def missing_columns(self, cols: List[str]) -> bool:
@@ -43,8 +43,8 @@ class Source:
 
         if self.ingestion_column not in self.columns:
             raise ValueError(
-                f'ingestion_column `{self.ingestion_column}`'
-                'not in columns'
+                'ingestion_column '
+                f'`{self.ingestion_column}` not in columns'
             )
 
         missing_keys = set(self.keys) - set(self.columns)
@@ -66,17 +66,27 @@ class Source:
 class EnrichmentPlan:
     public: Public = field(repr=False)
     source: Source
-    included_columns: List[str] = field(default_factory=list, repr=False)
-    excluded_columns: List[str] = field (default_factory=list, repr=False)
-    renaming_keys: Dict[str, str] = field (default_factory=dict, repr=False)
-    renaming_columns: Dict[str, str] = field(default_factory=dict, repr=False)
+    included_columns: List[str] = (
+        field(default_factory=list, repr=False)
+    )
+    excluded_columns: List[str] = (
+        field(default_factory=list, repr=False)
+    )
+    renaming_keys: Dict[str, str] = (
+        field(default_factory=dict, repr=False)
+    )
+    renaming_columns: Dict[str, str] = (
+        field(default_factory=dict, repr=False)
+    )
 
     @property
     def output_columns(self) -> Dict[str, str]:
         """
         Return the output columns
         """
-        selected_columns = self.included_columns or self.source.columns
+        selected_columns = (
+            self.included_columns or self.source.columns
+        )
         selected_columns_set = (
             set(selected_columns) -
             set(self.excluded_columns)
@@ -97,8 +107,14 @@ class EnrichmentPlan:
             col: (prefix + col_ren)
             for col in self.source.columns
             if col in selected_columns_set
-            for col_ren in [self.renaming_columns.get(col, col)]
-            for prefix in [self.source.prefix if self.source.prefix else '']
+            for col_ren in [
+                self.renaming_columns.get(col, col)
+            ]
+            for prefix in [
+                self.source.prefix
+                if self.source.prefix
+                else ''
+            ]
         }
 
         return renamed_columns
@@ -107,10 +123,10 @@ class EnrichmentPlan:
         """
         Validate the current enrichment plan.
 
-        Will execute all methods in this class that begins with
-        `testv`. Each of these methods must have the signature
-        Callable[[], bool, List[str]], where the returned list of
-        strings explains the found errors.
+        Will execute all methods in this class that begins
+        with `testv`. Each of these methods must have the
+        signature Callable[[], bool, List[str]], where the
+        returned list of strings explains the found errors.
         """
         test_functions = [
             getattr(self, func)
@@ -125,7 +141,9 @@ class EnrichmentPlan:
         ]
         return collected_msgs_
 
-    def testv_source_columns_present_on_public_(self) -> List[str]:
+    def testv_source_columns_present_on_public_(
+        self
+    ) -> List[str]:
         """ Test if the source columns are present in the
             public
         """
@@ -139,17 +157,21 @@ class EnrichmentPlan:
 
         if missed_cols:
             msg = (
-                'Source demands the following key columns not '
-                f'present in the public: {missed_cols}'
+                'Source demands the following key columns '
+                f'not present in the public: {missed_cols}'
             )
             return [msg]
         return []
 
-    def testv_source_included_columns_present_(self) -> List[str]:
-        """ Test if the included columns passed are present in the
-            source
+    def testv_source_included_columns_present_(
+        self
+    ) -> List[str]:
+        """ Test if the included columns passed are present
+            in the source
         """
-        missed_cols = self.source.missing_columns(self.included_columns)
+        missed_cols = self.source.missing_columns(
+            self.included_columns
+        )
 
         if missed_cols:
             msg = (
@@ -163,7 +185,9 @@ class EnrichmentPlan:
 @dataclass
 class Enricher:
     public: Public
-    steps: List[EnrichmentPlan] = field(default_factory=list)
+    steps: List[EnrichmentPlan] = (
+        field(default_factory=list)
+    )
 
     def add(
         self,
@@ -194,9 +218,11 @@ class Enricher:
     def __len__(self) -> int:
         return len(self.steps)
 
-    def compile(self, compiler: Callable[["Enricher"], Any]) -> Any:
-        """ Compile the asked enrichments to an output defined
-            by the compiler
+    def compile(
+        self, compiler: Callable[["Enricher"], Any]
+    ) -> Any:
+        """ Compile the asked enrichments to an output
+            defined by the compiler
         """
         # Validate all the enrichers
         messages = [

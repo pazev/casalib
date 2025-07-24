@@ -209,7 +209,9 @@ def insert(
     query_insert = make_insert_query_(
         schema_name=schema_name,
         table_name=table_name,
-        columns_types=columns_types | partition_columns_types,
+        columns_types=(
+            columns_types | partition_columns_types
+        ),
         query=query
     )
 
@@ -301,11 +303,20 @@ def create_insert(
             s3_output=s3_output,
         )
 
-    # Checa se todas as colunas solicitadas pela tabela estão na
-    # query
+    # Checa se todas as colunas solicitadas pela tabela
+    # estão na query
     not_found_table_cols = (
-        (set(metadata.columns) | set(metadata.partition_cols)) -
-        (set(query_meta.columns) | set(query_meta.partition_cols))
+        (
+            set(metadata.columns)
+            |
+            set(metadata.partition_cols)
+        )
+        -
+        (
+            set(query_meta.columns)
+            |
+            set(query_meta.partition_cols)
+        )
     )
 
     if not_found_table_cols:

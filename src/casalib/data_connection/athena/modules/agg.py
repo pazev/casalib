@@ -32,7 +32,8 @@ def make_agg_sql_(
 
     # Functions without parameters
     no_param_function_ = [
-        'count', 'count_distinct', 'sum', 'mean', 'min', 'max',
+        'count', 'count_distinct', 'sum', 'mean', 'min',
+        'max',
     ]
 
     for func in no_param_function_:

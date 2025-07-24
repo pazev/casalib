@@ -29,7 +29,8 @@ def get_index_page(
     # Carrega lista
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            action='ignore', message='Unverified HTTPS request'
+            action='ignore',
+            message='Unverified HTTPS request',
         )
         response = requests.get(
             url=url,

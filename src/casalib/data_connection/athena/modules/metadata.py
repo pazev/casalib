@@ -77,7 +77,9 @@ def get_query_metadata(
         boto3_session=boto3_session
     )
 
-    result_set_list = query_obj.get_query_results(boto3_session)
+    result_set_list = query_obj.get_query_results(
+        boto3_session
+    )
 
     result_list = [
         line['Data'][0]['VarCharValue']

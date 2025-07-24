@@ -13,7 +13,9 @@ def AthenaPublic(
     metadata = conn.metadata(query=query)
     public = Public(
         event_ymd_column=event_ymd_column,
-        columns=list(metadata.columns | metadata.partition_cols),
+        columns=list(
+            metadata.columns | metadata.partition_cols
+        ),
         metadata={'query': query}
     )
     return public
@@ -30,7 +32,9 @@ def AthenaSource(
     """ Create a Source from Athena Connection """
     metadata = conn.metadata(table_name=table_name)
 
-    columns_dict = metadata.columns | metadata.partition_cols
+    columns_dict = (
+        metadata.columns | metadata.partition_cols
+    )
 
     columns = [
         col

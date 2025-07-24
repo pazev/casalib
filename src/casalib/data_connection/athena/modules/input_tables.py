@@ -7,7 +7,10 @@ import boto3
 from .boto3_querying import run_query
 
 
-TableInput = namedtuple('TableInput', ['schema_name', 'table_name'])
+TableInput = namedtuple(
+    'TableInput',
+    ['schema_name', 'table_name']
+)
 
 
 def get_input_tables(
@@ -26,7 +29,9 @@ def get_input_tables(
         boto3_session=boto3_session
     )
 
-    results = query_execution_id.get_query_results(boto3_session)
+    results = query_execution_id.get_query_results(
+        boto3_session
+    )
 
     # Extract all table names
     table_names = set()
@@ -34,7 +39,10 @@ def get_input_tables(
     for res in results:
         for row in res['ResultSet']['Rows']:
             text = row['Data'][0].get('VarCharValue', '')
-            match = re.search(r'table\s+=\s+([\w\d\.\:]+)', text)
+            match = re.search(
+                r'table\s+=\s+([\w\d\.\:]+)',
+                text
+            )
             if match:
                 table_names.add(match.group(1))
 

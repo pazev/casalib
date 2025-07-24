@@ -24,7 +24,8 @@ source_ as (
 -- ------------------------------- --
 ,
 list_event_ymd_ as (
-    select {{ public.event_ymd_column }} as __event_ymd__ from public_
+    select {{ public.event_ymd_column }} as __event_ymd__
+    from public_
     group by 1
 )
 ,
@@ -65,8 +66,10 @@ source_selected_ as (
         source_
     left join
         selected_info_ymd_ingestion_
-            on  source_.{{source.info_ymd_column}} = selected_info_ymd_ingestion_.__info_ymd__
-            and source_.{{source.ingestion_column}} = selected_info_ymd_ingestion_.__ingestion__
+            on  source_.{{source.info_ymd_column}} =
+                selected_info_ymd_ingestion_.__info_ymd__
+            and source_.{{source.ingestion_column}} =
+                selected_info_ymd_ingestion_.__ingestion__
 )
 -- --------------- --
 -- Public enriched --
@@ -76,15 +79,18 @@ public_enriched_ as (
     select
         public_.*,
         {%- for col, col_ren in renamed_columns.items() %}
-        source_selected_.{{col}} as {{col_ren}}{%if not loop.last%},{%endif%}
+        source_selected_.{{col}} as {{col_ren}}
+        {%if- not loop.last%},{%endif%}
         {%- endfor %}
     from
             public_
         join
             source_selected_
-                on  public_.{{ public.event_ymd_column }} = source_selected_.__event_ymd__
+                on  public_.{{ public.event_ymd_column }}
+                    = source_selected_.__event_ymd__
                 {%- for key in source.keys %}
-                and public_.{{ renamed_keys.get(key, key) }} = source_selected_.{{ key }}
+                and public_.{{ renamed_keys.get(key, key) }}
+                    = source_selected_.{{ key }}
                 {%- endfor %}
 )
 
@@ -107,9 +113,9 @@ t{{ loop.index }}_ as (
 cross_ as (
     select
         public.*,
-        {%- for table_name, output_cols in columns.items() %}
+        {%- for table_name, out_cols in columns.items() %}
         {%- set tnumber = loop.index %}
-        {%- for col, col_ren in output_cols.items() %}
+        {%- for col, col_ren in out_cols.items() %}
         t{{ tnumber }}_.{{ col_ren }},
         {%- endfor %}
         {%- endfor %}
@@ -117,12 +123,13 @@ cross_ as (
     from
             public_
         left join
-            {%- for table_name, output_cols in columns.items() %}
+            {%- for table_name in columns %}
             {%- set tnumber = loop.index %}
             t{{ tnumber }}
                 on
                     {%- for col in public.columns %}
-                    public_.{{col}} = t{{ tnumber }}_.{{col}}
+                    public_.{{col}} =
+                        t{{ tnumber }}_.{{col}}
                     {%- endfor %}
         {%- if not loop.last%}left join{% endif %}
         {%- endfor %}
@@ -131,7 +138,9 @@ select * from cross_
 """
 
 
-def compile_step(plan: EnrichmentPlan) -> Tuple[str, Dict[str, str]]:
+def compile_step(
+    plan: EnrichmentPlan
+) -> Tuple[str, Dict[str, str]]:
     """ Compile a step in a query to be executed """
     env = jinja2.Environment()
     template = env.from_string(STEP_BASE_TEMPLATE)
@@ -144,7 +153,9 @@ def compile_step(plan: EnrichmentPlan) -> Tuple[str, Dict[str, str]]:
     return query, plan.output_columns
 
 
-def compile_last_query(public: Public, columns: Dict[str, str]) -> str:
+def compile_last_query(
+    public: Public, columns: Dict[str, str]
+) -> str:
     """ Compile the last query to be executed """
     env = jinja2.Environment()
     template = env.from_string(FINAL_BASE_TEMPLATE)
