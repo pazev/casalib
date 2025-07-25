@@ -33,6 +33,7 @@ from .modules.drop import (
 )
 from .modules.input_tables import (
     get_input_tables,
+    TableSchema
 )
 from .modules.metadata import (
     get_table_metadata,
@@ -83,7 +84,7 @@ class Boto3SessionMaker:
         if self.region_name is not None:
             par['region_name'] = self.region_name
 
-        return boto3.Session(**par)
+        return boto3.Session(**par) # type: ignore
 
 
 @dataclass
@@ -140,36 +141,34 @@ class AthenaConnection(ConnectionAbstract):
         """ Retorna o metadados da tabela ou query.
             Somente um dos dois deve ser setado.
         """
-        # Controle de entrada
-        if (query or table_name) is None:
-            raise ValueError(
-                "Ou `query` ou `tablename` precisa ser "
-                "setado."
-            )
-
         if (query is not None) and (table_name is not None):
             raise ValueError(
                 "Ou `query` ou `tablename` precisa ser "
                 "setado."
             )
 
-        # Cria a sessão
-        param = {
-            'boto3_session':
-                self.boto3_session_maker.make(),
-            'data_catalog': self.data_catalog,
-            'default_schema_name': self.schema_name,
-            'workgroup': self.workgroup,
-        }
-
         # Captura o metadado
         if table_name is not None:
             return get_table_metadata(
-                table_name=table_name, **param
+                table_name=table_name,
+                boto3_session=self.boto3_session_maker.make(),
+                data_catalog=self.data_catalog,
+                default_schema_name=self.schema_name,
+                workgroup=self.workgroup,
             )
 
-        return get_query_metadata(
-            query=query, **param
+        if query is not None:
+            return get_query_metadata(
+                query=query,
+                boto3_session=self.boto3_session_maker.make(),
+                data_catalog=self.data_catalog,
+                default_schema_name=self.schema_name,
+                workgroup=self.workgroup,
+            )
+
+        raise ValueError(
+            "Ou `query` ou `tablename` precisa ser "
+            "setado."
         )
 
     def drop(self, table_name: str) -> "AthenaConnection":
@@ -229,7 +228,7 @@ class AthenaConnection(ConnectionAbstract):
     def list_partitions(
         self,
         table_name: str,
-    ) -> Dict[Tuple[str], str]:
+    ) -> Dict[Tuple[str, ...], str]:
         """ Lista as partições """
         return list_partitions(
             boto3_session=self.boto3_session_maker.make(),
@@ -240,7 +239,7 @@ class AthenaConnection(ConnectionAbstract):
     def drop_partitions(
         self,
         table_name: str,
-        partitions_to_drop: List[Tuple[str]],
+        partitions_to_drop: List[Tuple[str, ...]],
     ) -> "AthenaConnection":
         """ Dropa partições indicadas na tabela """
         drop_partitions(
@@ -279,7 +278,7 @@ class AthenaConnection(ConnectionAbstract):
         mean_: Optional[List[str]] = None,
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
-        percentile_: Dict[int, List[str]] = None,
+        percentile_: Optional[Dict[int, List[str]]] = None,
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
@@ -298,7 +297,10 @@ class AthenaConnection(ConnectionAbstract):
 
         return dff
 
-    def get_input_tables(self, query: str) -> List[str]:
+    def get_input_tables(
+        self,
+        query: str
+    ) -> List[TableSchema]:
         """ Get the required tables for the given query """
         return get_input_tables(
             query=query,

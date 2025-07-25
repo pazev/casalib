@@ -196,8 +196,8 @@ def insert(
     data_catalog: str,
     default_schema_name: str,
     table_name: str,
-    columns_types: Union[List[str], None],
-    partition_columns_types: Union[List[str], None],
+    columns_types: Dict[str, str],
+    partition_columns_types: Dict[str, str],
     query: str,
     s3_output: str,
 ) -> Metadata:

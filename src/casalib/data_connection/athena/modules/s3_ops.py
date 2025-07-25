@@ -5,7 +5,7 @@ S3 relacionadas com o Athena.
 # pylint: disable=too-many-arguments
 from itertools import chain
 import re
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import boto3
 
@@ -14,18 +14,25 @@ def get_bucket_prefix(uri: str) -> Tuple[str, str]:
     """
     Dado um URI, extrai o bucket e o prefixo do objeto
     """
-    bucket, prefix = re.match(
+    re_obj = re.match(
         r's3:\/\/(.+?)\/(.*)\/?$',
         uri
-    ).groups()
-    return bucket, prefix
+    )
+
+    if re_obj:
+        bucket, prefix = re_obj.groups()
+        return bucket, prefix
+
+    raise ValueError(
+        "uri passed doesn't respect the s3 convention"
+    )
 
 
 def list_files_prefix(
     boto3_session: boto3.Session,
     bucket: str,
     prefix: str,
-) -> List[Tuple[str, str]]:
+) -> List[Dict[str, str]]:
     """ List the objects in a bucket/prefix """
     s3 = boto3_session.client('s3')
     params = {
@@ -57,8 +64,8 @@ def list_files_prefix(
 
 def delete_objects(
     boto3_session: boto3.Session,
-    files_list: List[Tuple[str, str]],
-) -> List[Tuple[str, str]]:
+    files_list: List[Dict[str, str]],
+) -> None:
     """ Delete the objects informed in the list """
     s3 = boto3_session.client('s3')
 

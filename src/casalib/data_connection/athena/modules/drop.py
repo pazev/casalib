@@ -12,7 +12,11 @@ import boto3
 
 from .boto3_querying import run_query
 from .metadata import get_table_metadata
-from .s3_ops import list_files_prefix, delete_objects
+from .s3_ops import (
+    list_files_prefix,
+    delete_objects,
+    get_bucket_prefix
+)
 
 
 def drop_table(
@@ -42,9 +46,9 @@ def drop_table(
 
         raise exc
 
-    bucket, prefix = re.match(r's3:\/\/(.+?)\/(.*)\/?$',
-                              metadata.location
-                              ).groups()
+    bucket, prefix = get_bucket_prefix(
+        str(metadata.location)
+    )
 
     # List files in bucket / prefix
     files_list = list_files_prefix(
@@ -59,7 +63,9 @@ def drop_table(
     )
 
     # Drop athena table from catalog
-    schema_name, table_name = metadata.table_name.split('.')
+    *_, schema_name, table_name = (
+        str(metadata.table_name).split('.')
+    )
 
     drop_query = run_query(
         query=(

@@ -70,17 +70,15 @@ def create_table_pandas_dataframe(
         f'{s3_output}/{schema_name}.{table_name}'
     )
 
-    params = {
-        'df': dff,
-        'path': s3_output,
-        'dataset': True,
-        'database': schema_name,
-        'table': table_name,
-        'partition_cols': partition_cols,
-        'boto3_session': boto3_session,
-    }
-
-    wr.s3.to_parquet(**params)
+    wr.s3.to_parquet(
+        df=dff,
+        path=s3_output,
+        dataset=True,
+        database=schema_name,
+        table=table_name,
+        partition_cols=partition_cols,
+        boto3_session=boto3_session,
+    )
 
     # Captura o metadado
     res = get_table_metadata(

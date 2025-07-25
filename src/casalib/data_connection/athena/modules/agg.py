@@ -1,7 +1,7 @@
 """ Module to run an aggregation query from a function """
 # pylint: disable=too-many-arguments
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ def make_agg_sql_(
     mean_: Optional[List[str]] = None,
     min_: Optional[List[str]] = None,
     max_: Optional[List[str]] = None,
-    percentile_: Dict[int, List[str]] = None,
+    percentile_: Optional[Dict[int, List[str]]] = None,
 ) -> str:
     """
     Create the SQL to calculate the aggregation.
@@ -32,7 +32,10 @@ def make_agg_sql_(
     columns to be used.
     """
     # pylint: disable=too-many-locals
-    col_ops_dict = defaultdict(list)
+    col_ops_dict: Dict[
+        str,
+        List[Tuple[str, Optional[int]]]
+    ] = defaultdict(list)
 
     # Functions without parameters
     no_param_function_ = {
@@ -46,7 +49,7 @@ def make_agg_sql_(
 
     for func, list_vars in no_param_function_.items():
         for var in (list_vars or []):
-            col_ops_dict[var].append((func,))
+            col_ops_dict[var].append((func, None))
 
     # Percentile - We have to unpack the dictionary
     percentile_ = percentile_ or {}
@@ -73,7 +76,7 @@ def agg_query(
     mean_: Optional[List[str]] = None,
     min_: Optional[List[str]] = None,
     max_: Optional[List[str]] = None,
-    percentile_: Dict[int, List[str]] = None,
+    percentile_: Optional[Dict[int, List[str]]] = None,
 ) -> pd.DataFrame:
     """
     Run aggregations for the specified columns.

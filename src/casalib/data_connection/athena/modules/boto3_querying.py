@@ -4,7 +4,7 @@ Módulo para rodar queries em Athena utilizando a boto3
 # pylint: disable=too-many-arguments
 from dataclasses import dataclass, field
 import time
-from typing import Dict
+from typing import Any, Dict
 
 import boto3
 
@@ -83,7 +83,7 @@ class QueryExec:
 
         tkn_key_detect = 'NextToken'
         tkn_key = 'NextToken'
-        res = {}
+        res: Dict[str, Any] = {}
         results = []
 
         while True:

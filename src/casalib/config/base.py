@@ -14,10 +14,15 @@ from . import receipts
 def default_cfg_() -> Path:
     """ Carrega o local padrão das configurações """
     # Default file
-    dft_fld = Path(
+    home_folder = (
         os.environ.get('USERPROFILE') or
         os.environ.get('HOME')
     )
+
+    if home_folder is None:
+        raise ValueError('Can not find home folder.')
+
+    dft_fld = Path(home_folder)
     dft_file = (
         dft_fld /
         '.config' /

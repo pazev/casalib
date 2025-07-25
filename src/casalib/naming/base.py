@@ -31,7 +31,6 @@ def naming_generator_factory(
     validation_procedures = validation_procedures or {}
     constraints = constraints or {}
 
-    @staticmethod
     def make_template_() -> str:
         fields_ = []
         if prefix_:
@@ -41,6 +40,7 @@ def naming_generator_factory(
             fields_.append('suffix_')
 
         return sep.join(map(lambda x: f'{{{x}}}', fields_))
+
 
     def make_name(self) -> str:
         template = getattr(self, 'make_template_')()
@@ -63,7 +63,6 @@ def naming_generator_factory(
         )
 
 
-    @classmethod
     def process_name(cls, name: str):
         if (
             not name.startswith(prefix_) or
@@ -136,9 +135,9 @@ def naming_generator_factory(
         cls_name=class_name,
         fields=[(field, str) for field in fields],
         namespace={
-            'make_template_': make_template_,
+            'make_template_': staticmethod(make_template_),
             'make_name': make_name,
-            'process_name': process_name,
+            'process_name': classmethod(process_name),
             '__reduce__': __reduce__,
             '__post_init__': __post_init__,
             'as_tuple': as_tuple,
@@ -156,7 +155,9 @@ def _reconstruct_instance(
     sep: str,
     prefix: str,
     suffix: str,
-    validation_procedures: Dict[str, Callable[[str], bool]],
+    validation_procedures: Dict[
+        str, List[Callable[[str], bool]]
+    ],
     constraints: Dict[str, List[str]],
     values: tuple,
 ):

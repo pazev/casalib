@@ -21,7 +21,7 @@ class Public:
                 f'`{self.event_ymd_column}` not in columns'
             )
 
-    def missing_columns(self, cols: List[str]) -> bool:
+    def missing_columns(self, cols: List[str]) -> List[str]:
         """ Returns True if contains all columns passed """
         if cols is None:
             return True
@@ -63,7 +63,7 @@ class Source:
                 f'{missing_keys}'
             )
 
-    def missing_columns(self, cols: List[str]) -> bool:
+    def missing_columns(self, cols: List[str]) -> List[str]:
         " Returns True if contains all columns passed """
         if cols is None:
             return []
@@ -164,7 +164,7 @@ class EnrichmentPlan:
             for col in self.source.keys
         }
         missed_cols = self.public.missing_columns(
-            source_keys_ren.values()
+            list(source_keys_ren.values())
         )
 
         if missed_cols:
@@ -251,4 +251,4 @@ class Enricher:
         if messages:
             raise ValueError(messages)
 
-        return compiler(self.steps)
+        return compiler(self)

@@ -6,7 +6,7 @@ Athena, se valendo da funcionalidade do awswrangler.
 from datetime import datetime
 import logging
 import textwrap
-from typing import Union
+from typing import Dict, Union
 from uuid import uuid4
 
 import awswrangler as wr
@@ -38,19 +38,17 @@ def run_query_get_pandas(
         temp_table_name=temp_table_name
     )
 
-    params = {
-        'ctas_parameters': ctas_settings,
-        'boto3_session': boto3_session,
-        'database': default_schema_name,
-        'workgroup': workgroup,
-        's3_output': f'{s3_output}',
-        'ctas_approach': True,
-        'use_threads': True,
-        'sql': query,
-    }
-
     try:
-        dff = wr.athena.read_sql_query(**params)
+        dff = wr.athena.read_sql_query(
+            ctas_parameters=ctas_settings,
+            boto3_session=boto3_session,
+            database=default_schema_name,
+            workgroup=workgroup,
+            s3_output=f'{s3_output}',
+            ctas_approach=True,
+            use_threads=True,
+            sql=query,
+        )
     except Exception as exc:
         sql_numbered = "\n".join(
             [

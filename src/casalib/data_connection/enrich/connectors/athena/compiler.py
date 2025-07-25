@@ -156,7 +156,7 @@ def compile_step(
 
 
 def compile_last_query(
-    public: Public, columns: Dict[str, str]
+    public: Public, columns: Dict[str, Dict[str, str]]
 ) -> str:
     """ Compile the last query to be executed """
     env = jinja2.Environment()
@@ -182,12 +182,15 @@ class AthenaCompiler:
         idx = f'{idx:03}' if isinstance(idx, int) else idx
         return f'{self.prefix}{self.study}_table_{idx}'
 
-    def compile(self, enricher: Enricher) -> List[str]:
+    def compile(
+        self,
+        enricher: Enricher
+    ) -> List[Dict[str, str]]:
         """ Compile the queries """
         table_queries = {}
         table_columns = {}
 
-        for idx, enr_plan in enumerate(enricher):
+        for idx, enr_plan in enumerate(iter(enricher)):
             table_name = self.make_table_name_(idx)
             query, out_cols = compile_step(enr_plan)
 

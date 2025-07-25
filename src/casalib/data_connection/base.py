@@ -4,10 +4,17 @@ dados.
 """
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+
+
+TableSchema = namedtuple(
+    'TableSchema',
+    ['schema_name', 'table_name']
+)
 
 
 @dataclass
@@ -51,8 +58,10 @@ class ConnectionAbstract(ABC):
 
     @abstractmethod
     def metadata(
-        self, query: str, table_name: str
-    ) -> Dict[str, Dict]:
+        self,
+        query: Optional[str] = None,
+        table_name: Optional[str] = None,
+    ) -> Metadata:
         """ Retorna o metadados da tabela ou query. Somente
             um dos dois deve ser setado.
         """
@@ -86,14 +95,14 @@ class ConnectionAbstract(ABC):
     def list_partitions(
         self,
         table_name: str,
-    ) -> Dict[Tuple[str], str]:
+    ) -> Dict[Tuple[str, ...], str]:
         """ Lista as partições """
 
     @abstractmethod
     def drop_partitions(
         self,
         table_name: str,
-        partitions_to_drop: List[Tuple[str]],
+        partitions_to_drop: List[Tuple[str, ...]],
     ) -> "ConnectionAbstract":
         """ Dropa as partições indicadas na tabela """
 
@@ -117,11 +126,14 @@ class ConnectionAbstract(ABC):
         mean_: Optional[List[str]] = None,
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
-        percentile_: Dict[int, List[str]] = None,
+        percentile_: Optional[Dict[int, List[str]]] = None,
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
 
     @abstractmethod
-    def get_input_tables(self, query: str) -> List[str]:
+    def get_input_tables(
+        self,
+        query: str
+    ) -> List[TableSchema]:
         """ Get the required tables for the given query """

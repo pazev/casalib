@@ -2,7 +2,7 @@
 Módulo com funções para lidar com partições de tabelas.
 """
 # pylint: disable=too-many-arguments
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import awswrangler as wr
 import boto3
@@ -18,7 +18,7 @@ def list_partitions(
     boto3_session: boto3.Session,
     default_schema_name: str,
     table_name: str,
-):
+) -> Dict[Tuple[str, ...], str]:
     """ Lista partições da tabela """
     schema_name, table_name = [
         default_schema_name,
@@ -43,7 +43,7 @@ def drop_partitions(
     boto3_session: boto3.Session,
     default_schema_name: str,
     table_name: str,
-    partitions_to_drop: List[Tuple[str]]
+    partitions_to_drop: List[Tuple[str, ...]]
 ):
     """ Dropa as partições indicadas na tabela """
     # Quebra nome da tabela
@@ -76,6 +76,8 @@ def drop_partitions(
     wr.catalog.delete_partitions(
         table=table_name,
         database=schema_name,
-        partitions_values=partitions_to_drop,
+        partitions_values=[
+            list(par) for par in partitions_to_drop
+        ],
         boto3_session=boto3_session,
     )

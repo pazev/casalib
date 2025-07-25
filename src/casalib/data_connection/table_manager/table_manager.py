@@ -28,6 +28,15 @@ class TableManager():
         self.conn_maker = conn_maker
         return self
 
+    def get_conn(self) -> ConnectionAbstract:
+        """ Get the conn maker """
+        if self.conn_maker is None:
+            raise AttributeError(
+                'The conn_maker attribute was not '
+                'initialized'
+            )
+        return self.conn_maker()
+
     def make_query_(self, **params) -> str:
         """ Make the query that will be executed """
         env = jinja2.Environment(
@@ -39,14 +48,14 @@ class TableManager():
 
     def drop(self) -> "TableManager":
         """ Drop the table """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         conn.drop(self.table_name)
 
         return self
 
     def create_insert(self, **params) -> "TableManager":
         """ Create/insert the query on table """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         conn.create_insert(
             query=self.make_query_(**params),
             table_name=self.table_name,
@@ -56,30 +65,33 @@ class TableManager():
 
     def drop_partitions(
         self,
-        partitions_to_drop: List[Tuple[str]]
+        partitions_to_drop: List[Tuple[str, ...]]
     ) -> "TableManager":
         """ Drop partitions """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         conn.drop_partitions(
             table_name=self.table_name,
             partitions_to_drop=partitions_to_drop
         )
         return self
 
-    def list_partitions(self) -> Dict[Tuple[str], str]:
+    def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         return conn.list_partitions(self.table_name)
 
-    def list_partitions_filter(self, *filters: List[str]):
+    def list_partitions_filter(
+        self,
+        *filters: str
+    ) -> List[Tuple[str, ...]]:
         """
         Filter the partitions list using the filter passed.
         """
-        conn = self.conn_maker()
+        conn = self.get_conn()
 
         filtered_partitions = [
             part
-            for part, path in (
+            for part, _ in (
                 conn
                 .list_partitions(self.table_name)
                 .items()
@@ -96,12 +108,13 @@ class TableManager():
         return filtered_partitions
 
     def drop_partitions_filter(
-        self, *filters: List[str]
+        self,
+        *filters: str
     ) -> "TableManager":
         """
         Drop partitions using the fnmatch filter passed.
         """
-        conn = self.conn_maker()
+        conn = self.get_conn()
 
         filtered_partitions = self.list_partitions_filter(
             *filters
@@ -118,7 +131,7 @@ class TableManager():
         """
         Select some sample from the table.
         """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         return conn.table(
             table_name=self.table_name,
             samples=samples
@@ -126,7 +139,7 @@ class TableManager():
 
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
-        conn = self.conn_maker()
+        conn = self.get_conn()
         return conn.metadata(table_name=self.table_name)
 
     def input_vars(self) -> List[str]:

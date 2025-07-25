@@ -63,7 +63,7 @@ def process_index_page(
     links = [
         elem.attrs['href']
         for elem in elems
-        if regex.match(elem.attrs['href'])
+        if regex.match(str(elem.attrs['href']))
     ]
 
     return {

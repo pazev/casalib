@@ -2,7 +2,7 @@
 Aggregation template
 """
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import jinja2
 
 
@@ -48,14 +48,17 @@ def make_agg(
     mean_: Optional[List[str]] = None,
     min_: Optional[List[str]] = None,
     max_: Optional[List[str]] = None,
-    percentile_: Dict[int, List[str]] = None,
+    percentile_: Optional[Dict[int, List[str]]] = None,
 ) -> str:
     """
     Generate an aggregation query using the information passed.
     """
     # pylint: disable=too-many-arguments,too-many-locals
 
-    col_ops_dict = defaultdict(list)
+    col_ops_dict: Dict[
+        str,
+        List[Tuple[str, Optional[int]]]
+    ] = defaultdict(list)
 
     # Functions without parameters
     no_param_function_ = {
@@ -69,7 +72,7 @@ def make_agg(
 
     for func, list_vars in no_param_function_.items():
         for var in (list_vars or []):
-            col_ops_dict[var].append((func,))
+            col_ops_dict[var].append((func, None))
 
     # Percentile - We have to unpack the dictionary
     percentile_ = percentile_ or {}
