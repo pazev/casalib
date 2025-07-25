@@ -1,6 +1,7 @@
 """
 File to add project context to any file in the project.
 """
+# pylint: disable=duplicate-code
 import os
 from pathlib import Path
 import sys

@@ -273,26 +273,27 @@ class AthenaConnection(ConnectionAbstract):
         self,
         query: str,
         groupby: Optional[List[str]] = None,
-        count: Optional[List[str]] = None,
-        count_distinct: Optional[List[str]] = None,
-        sum: Optional[List[str]] = None,
-        mean: Optional[List[str]] = None,
-        min: Optional[List[str]] = None,
-        max: Optional[List[str]] = None,
-        percentile: Dict[int, List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_distinct_: Optional[List[str]] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Dict[int, List[str]] = None,
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
+        # pylint: disable=too-many-arguments
         dff = agg_query(
             query_function=self.query,
             query=query,
             groupby=groupby,
-            count=count,
-            count_distinct=count_distinct,
-            sum=sum,
-            mean=mean,
-            min=min,
-            max=max,
-            percentile=percentile,
+            count_=count_,
+            count_distinct_=count_distinct_,
+            sum_=sum_,
+            mean_=mean_,
+            min_=min_,
+            max_=max_,
+            percentile_=percentile_,
         )
 
         return dff

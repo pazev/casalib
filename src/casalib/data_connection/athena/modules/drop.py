@@ -4,8 +4,8 @@ Módulo contém a implementação do drop de tabelas no Athena.
 No Athena, o simples drop ainda mantém os dados presentes no
 S3. Assim, precisamos utilizar do boto3 para listar os
 arquivos e apagar os arquivos físicos presentes no S3.
-
 """
+# pylint: disable=too-many-arguments
 import re
 
 import boto3
@@ -40,6 +40,8 @@ def drop_table(
         if ignore_if_not_exist:
             return
 
+        raise exc
+
     bucket, prefix = re.match(r's3:\/\/(.+?)\/(.*)\/?$',
                               metadata.location
                               ).groups()
@@ -73,5 +75,3 @@ def drop_table(
     drop_query.get_query_results(
         boto3_session=boto3_session
     )
-
-    return drop_query, files_list, metadata

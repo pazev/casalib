@@ -1,10 +1,10 @@
 """ Module to clear all caches and jupyter checkpoints """
-import context
-
 import os
 from pathlib import Path
 import shutil
 from typing import Optional
+
+import context
 
 
 def clear_python_cache(root: Optional[Path] = None):

@@ -27,6 +27,7 @@ def naming_generator_factory(
     Generates a new dataclass with the given name and
     fields.
     '''
+    # pylint: disable=too-many-arguments
     validation_procedures = validation_procedures or {}
     constraints = constraints or {}
 
@@ -103,7 +104,7 @@ def naming_generator_factory(
         )
 
     def as_tuple(self) -> Tuple[str]:
-        return tuple([getattr(self, fld) for fld in fields])
+        return tuple(getattr(self, fld) for fld in fields)
 
     def __post_init__(self):
         for f in fields:
@@ -159,6 +160,7 @@ def _reconstruct_instance(
     constraints: Dict[str, List[str]],
     values: tuple,
 ):
+    # pylint: disable=too-many-arguments
     cls = naming_generator_factory(
         class_name,
         fields,

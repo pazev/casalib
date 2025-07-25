@@ -6,7 +6,7 @@ from typing import List, Literal, Tuple, Union
 import jinja2
 
 
-template_str = '''
+TEMPLATE_STR = '''
 with
 input_ as (
     {{ input_query | indent(4) }}
@@ -147,8 +147,12 @@ def make_transpose_info_month(
     partition_col: str,
     num_months: int,
     table_type: Literal['monthly', 'last_partition_before'],
-    columns_to_transpose_tuples: List[Union[str, Tuple[str, str]]],
-    additional_columns_tuples: List[Union[str, Tuple[str, str]]],
+    columns_to_transpose_tuples: List[
+        Union[str, Tuple[str, str]]
+    ],
+    additional_columns_tuples: List[
+        Union[str, Tuple[str, str]]
+    ],
 ) -> str:
     '''
     Generate a query that transposes an input query into
@@ -194,18 +198,22 @@ def make_transpose_info_month(
     Returns:
         Query to be executed.
     '''
+    # pylint: disable=too-many-arguments
+
     # Checks
-    acceptable_table_type = ['monthly', 'last_partition_before']
+    acceptable_table_type = [
+        'monthly',
+        'last_partition_before'
+    ]
     if table_type not in acceptable_table_type:
         raise ValueError(
-            'table_type must be in {}. Please check (= `{}`).'
-            .format(acceptable_table_type, table_type)
+            f'table_type must be in {acceptable_table_type}'
+            f'. Please check (= `{table_type}`).'
         )
 
     if num_months <= 0:
         raise ValueError(
-            'num_months must be >= 1 (= `{}`)'
-            .format(num_months)
+            f'num_months must be >= 1 (= `{num_months}`)'
         )
 
     # Adjust List[Union[str, Tuple[str, str]] to List[Tuple[str, str]]
@@ -228,7 +236,7 @@ def make_transpose_info_month(
     ]
 
     env = jinja2.Environment()
-    template = env.from_string(template_str)
+    template = env.from_string(TEMPLATE_STR)
 
     query = template.render(
         input_query=input_query,

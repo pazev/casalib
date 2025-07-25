@@ -1,6 +1,7 @@
 """
 Módulo para rodar queries em Athena utilizando a boto3
 """
+# pylint: disable=too-many-arguments
 from dataclasses import dataclass, field
 import time
 from typing import Dict

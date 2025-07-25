@@ -2,6 +2,7 @@
 Módulo implementa a funcionalidade de realizar queries ao
 Athena, se valendo da funcionalidade do awswrangler.
 """
+# pylint: disable=too-many-arguments
 from datetime import datetime
 import logging
 import textwrap
@@ -25,6 +26,7 @@ def run_query_get_pandas(
     query: str
 ) -> pd.DataFrame:
     """ Faz uma query no Athena """
+    # pylint: disable=unused-argument
     dttm = datetime.now().strftime('%Y%m%d%H%M%S')
     uuid_str = uuid4().hex
     temp_table_name = (

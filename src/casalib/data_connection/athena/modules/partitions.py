@@ -1,6 +1,7 @@
 """
 Módulo com funções para lidar com partições de tabelas.
 """
+# pylint: disable=too-many-arguments
 from typing import List, Tuple
 
 import awswrangler as wr

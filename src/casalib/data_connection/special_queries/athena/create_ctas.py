@@ -5,7 +5,7 @@ from typing import List, Optional
 import jinja2
 
 
-template_str = """
+TEMPLATE_STR = """
 CREATE TABLE {% if schema_name %}{{schema_name}}.{%endif%}{{table_name}}
 {%- if location or partition_columns_types %}
 WITH (
@@ -40,7 +40,7 @@ def make_create_ctas(
 ) -> str:
     """ Generate CREATE TABLE AS query """
     env = jinja2.Environment()
-    template = env.from_string(template_str)
+    template = env.from_string(TEMPLATE_STR)
 
     return template.render(
         schema_name=schema_name,

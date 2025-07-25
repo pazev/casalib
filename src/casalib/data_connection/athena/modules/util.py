@@ -1,4 +1,5 @@
 """ Utils to work with Athena tables """
+# pylint: disable=too-many-arguments
 import re
 from typing import Tuple
 

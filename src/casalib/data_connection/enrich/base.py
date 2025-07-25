@@ -214,6 +214,8 @@ class Enricher:
         """
         Add a new enrichment request to the handler
         """
+        # pylint: disable=too-many-arguments
+
         plan = EnrichmentPlan(
             public=self.public,
             source=source,

@@ -5,7 +5,7 @@ from typing import Dict, Optional
 import jinja2
 
 
-template_str = """
+TEMPLATE_STR = """
 CREATE EXTERNAL TABLE {%if schema_name%}{{schema_name}}.{%endif%}{{table_name}}
 (
     {%- for col, type in columns_types.items() %}
@@ -35,7 +35,7 @@ def make_create_schema(
 ) -> str:
     """ Generate CREATE TABLE query """
     env = jinja2.Environment()
-    template = env.from_string(template_str)
+    template = env.from_string(TEMPLATE_STR)
 
     return template.render(
         schema_name=schema_name,

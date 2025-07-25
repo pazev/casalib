@@ -2,6 +2,7 @@
 Módulo de utilidades, para realizar operações diversas no
 S3 relacionadas com o Athena.
 """
+# pylint: disable=too-many-arguments
 from itertools import chain
 import re
 from typing import List, Tuple

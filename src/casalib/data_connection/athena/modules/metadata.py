@@ -1,6 +1,7 @@
 """
 Módulo para lidar com metadados de tabelas
 """
+# pylint: disable=too-many-arguments
 import json
 
 import boto3
@@ -15,10 +16,11 @@ def get_table_metadata(
     data_catalog: str,
     default_schema_name: str,
     table_name: str
-):
+) -> Metadata:
     """
     Captura o metadado de uma tabela Athena usando a boto3
     """
+    # pylint: disable=unused-argument
     athena = boto3_session.client('athena')
 
     schema, table_name = [

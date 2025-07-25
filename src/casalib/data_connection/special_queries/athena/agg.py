@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import jinja2
 
 
-template_str = """
+TEMPLATE_STR = """
 WITH
 input_query_ AS (
     {{ input_query | indent(4) }}
@@ -42,27 +42,29 @@ GROUP BY
 def make_agg(
     input_query: str,
     groupby: Optional[List[str]] = None,
-    count: Optional[List[str]] = None,
-    count_distinct: Optional[List[str]] = None,
-    sum: Optional[List[str]] = None,
-    mean: Optional[List[str]] = None,
-    min: Optional[List[str]] = None,
-    max: Optional[List[str]] = None,
-    percentile: Dict[int, List[str]] = None,
+    count_: Optional[List[str]] = None,
+    count_distinct_: Optional[List[str]] = None,
+    sum_: Optional[List[str]] = None,
+    mean_: Optional[List[str]] = None,
+    min_: Optional[List[str]] = None,
+    max_: Optional[List[str]] = None,
+    percentile_: Dict[int, List[str]] = None,
 ) -> str:
     """
     Generate an aggregation query using the information passed.
     """
+    # pylint: disable=too-many-arguments,too-many-locals
+
     col_ops_dict = defaultdict(list)
 
     # Functions without parameters
     no_param_function_ = {
-        'count': count,
-        'count_distinct': count_distinct,
-        'sum': sum,
-        'mean': mean,
-        'min': min,
-        'max': max,
+        'count': count_,
+        'count_distinct': count_distinct_,
+        'sum': sum_,
+        'mean': mean_,
+        'min': min_,
+        'max': max_,
     }
 
     for func, list_vars in no_param_function_.items():
@@ -70,13 +72,13 @@ def make_agg(
             col_ops_dict[var].append((func,))
 
     # Percentile - We have to unpack the dictionary
-    percentile = percentile or {}
-    for perc, cols in percentile.items():
+    percentile_ = percentile_ or {}
+    for perc, cols in percentile_.items():
         for var in cols:
             col_ops_dict[var].append(('percentile', perc))
 
     env = jinja2.Environment()
-    template = env.from_string(template_str)
+    template = env.from_string(TEMPLATE_STR)
     query_final = template.render(
         input_query=input_query,
         col_ops_dict=col_ops_dict,

@@ -2,6 +2,7 @@
 Módulo implementa funções de criação e inserção de dados em
 tabelas no AWS Athena.
 """
+# pylint: disable=too-many-arguments
 from typing import Dict, List, Union
 
 import boto3
@@ -201,6 +202,7 @@ def insert(
     s3_output: str,
 ) -> Metadata:
     """ Run the create insert into query """
+    # pylint: disable=unused-argument
     schema_name, table_name = split_table_name(
         table_name=table_name,
         default_schema_name=default_schema_name
@@ -247,6 +249,8 @@ def create_insert(
     """ Cria uma tabela se não existir, e insere dados na
         mesma.
     """
+    # pylint: disable=broad-exception-caught
+
     partition_cols = partition_cols or []
 
     # Captura metadata da query

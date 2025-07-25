@@ -2,6 +2,7 @@
 Módulo implementa a funcionalidade de enviar um dataframe
 pandas para o banco de dados.
 """
+# pylint: disable=too-many-arguments
 from typing import List, Union
 
 import awswrangler as wr
@@ -24,6 +25,8 @@ def create_table_pandas_dataframe(
     """ Envia um pandas DataFrame para a localização
         indicada
     """
+    # pylint: disable=broad-exception-caught
+
     location = None
     partition_cols_tab = None
 
@@ -39,7 +42,8 @@ def create_table_pandas_dataframe(
         location = metadata.location
         partition_cols_tab = list(metadata.partition_cols)
     except Exception as exc:
-        pass
+        if 'EntityNotFound' not in exc.args[0]:
+            raise exc
 
     partition_cols = (
         partition_cols or partition_cols_tab or []

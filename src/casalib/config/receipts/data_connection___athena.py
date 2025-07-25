@@ -19,6 +19,7 @@ def make(
     boto3_region_name: str = 'us-east-1'
 ) -> AthenaConnection:
     """ Cria uma conexão com o Athena """
+    # pylint: disable=too-many-arguments
     athena = AthenaConnection(
         schema_name=schema_name,
         workgroup=workgroup,

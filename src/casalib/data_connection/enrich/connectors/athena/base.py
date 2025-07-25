@@ -8,7 +8,7 @@ from casalib.data_connection.athena import AthenaConnection
 from ...base import Source, Public
 
 
-def AthenaPublic(
+def make_athena_public(
     query: str,
     event_ymd_column: str,
     conn: AthenaConnection
@@ -25,7 +25,7 @@ def AthenaPublic(
     return public
 
 
-def AthenaSource(
+def make_athena_source(
     table_name: str,
     keys: List[str],
     info_ymd_column: str,
@@ -34,6 +34,8 @@ def AthenaSource(
     remove_columns: Optional[List[str]] = None,
 ) -> Source:
     """ Create a Source from Athena Connection """
+    # pylint: disable=too-many-arguments
+
     metadata = conn.metadata(table_name=table_name)
 
     columns_dict = (

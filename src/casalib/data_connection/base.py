@@ -111,15 +111,16 @@ class ConnectionAbstract(ABC):
         self,
         query: str,
         groupby: Optional[List[str]] = None,
-        count: Optional[List[str]] = None,
-        count_distinct: Optional[List[str]] = None,
-        sum: Optional[List[str]] = None,
-        mean: Optional[List[str]] = None,
-        min: Optional[List[str]] = None,
-        max: Optional[List[str]] = None,
-        percentile: Dict[int, List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_distinct_: Optional[List[str]] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Dict[int, List[str]] = None,
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
+        # pylint: disable=too-many-arguments
 
     @abstractmethod
     def get_input_tables(self, query: str) -> List[str]:
