@@ -1,0 +1,85 @@
+0. Testes
+    [ ] MakeQueryAthena
+        - Classe criada; recebe a conexão e os mesmos
+          parâmetros que a classe ConnectionAbstract; gera
+          uma lista com strings
+        - Classe criada; necessário testar
+
+
+1. Módulo data_ops
+    a. [ ] Métodos de monitoramento
+    b. [ ] Count nulls, count(*)
+    c. [ ] Percentile
+            [ ] Count elements between percentiles
+    d. [ ] WOE
+    e. [ ] Information Value
+    f. [ ] KS
+    g. [ ] PSI
+
+
+2. TableManagerCollection
+    a. [ ] add_table_manager
+    b. [x] required_vars
+        - Roda os runs, vé o que falta
+    c. [ ] known_variables
+    d. [ ] Add known_tables method and dict
+            - Inicializar passando lista módulos e varrer os
+              mesmos atrás de variáveis TableManager
+            - Passando um diretório
+    e. [ ] Ordenar os tm: quem depende de quem?
+
+
+4. API para obter conhecimento
+
+5. Mecanismo de plugin para importar os módulos da pasta queries
+    - Dicionários
+        - table_manager
+        - runner
+        - source
+
+6. Alteraçõea TableManager
+    a. Adicionar skip
+    b. Query last partition
+        - SQL Gen
+    c. Suportar código Python que gere uma tabela
+        [ ] Módulo movido para um diretório
+        [ ] Classe base para operações gerais
+            [ ] Mapear operações básicas que sempre devem
+                estar disponíveis
+        [ ] Classe para código Python
+            [ ] PythonTableManager
+                - method: Callable[[], pd.DataFrame]
+                - input_tabs: List[str]
+
+    d. Método run, __call__
+        [ ] Adicionada lib makefun para assinatura dinâmica
+        [ ] Post init
+
+7. Adicionar registro de diretórios no scaffolding
+    [ ] PanTemplates
+
+
+
+============================================================
+
+
+
+=====
+FEITO
+=====
+
+3. [X] Query class (namedtuple)
+    - A ideia é ter um método apéos o comando, .query, que
+     permita ver a query gerada.
+        .create_insert(-) -> Roda
+        .create_insert.queries(-) -> retorna as queries
+    - params: Dict[str, str]
+    - method: Callable[[...], Any]
+    - make_query_method: Callable[[...], List[str]]
+        .__call__(self, *args, **kwargs)
+            return self.method(*args, **kwargs)
+        .query(*args, **kwargs)
+            return self.make_query_method(*args, **kwargs)
+
+    - OBSERVAÇÃO: FAZER O SIMPLES - UM OBJETO, make_queries,
+        que gera as queries necessárias

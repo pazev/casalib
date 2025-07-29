@@ -1,0 +1,193 @@
+"""  """
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+from ..base import MakeQueryAbstract, Metadata
+from .athena import AthenaConnection
+
+from .modules.agg import make_agg_sql_
+
+from .modules.create_insert import (
+    make_create_schema_query_,
+    make_create_ctas_query_,
+    make_insert_query_
+)
+
+from .modules.util import split_table_name
+
+
+@dataclass
+class MakeQuery(MakeQueryAbstract):
+    """ Class to create queries when requested """
+    conn: AthenaConnection
+
+    def create_insert(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None,
+    ) -> List[str]:
+        """ Cria uma tabela se não existir e insere dados.
+            Realiza reordenação de colunas se necessário.
+        """
+        output_queries = []
+
+        partition_cols = partition_cols or []
+
+        *_, schema_name, table_name = [
+            self.conn.schema_name,
+            *split_table_name(table_name)
+        ]
+
+        query_meta = self.conn.metadata(query=query)
+
+        not_found_part_cols = (
+            set(partition_cols) - set(query_meta.columns)
+        )
+
+        if not_found_part_cols:
+            raise ValueError(
+                f'The columns {not_found_part_cols} were '
+                'not found in query.'
+            )
+
+        # Get table metadata
+        try:
+            metadata = self.conn.metadata(
+                table_name=table_name
+            )
+        except Exception as exc:
+            if 'EntityNotFound' not in exc.args[0]:
+                raise exc
+
+            columns = {
+                col: type_
+                for col, type_ in query_meta.columns.items()
+                if col not in partition_cols
+            }
+
+            partition_cols = {
+                col: type_
+                for col in partition_cols
+                for type_ in [query_meta.columns[col]]
+            }
+
+            metadata = Metadata(
+                connection_type='athena.AthenaConnection',
+                columns=columns,
+                partition_cols=partition_cols,
+            )
+
+            create_query = make_create_schema_query_(
+                schema_name=schema_name,
+                table_name=table_name,
+                columns_types=metadata.columns,
+                partition_columns_types=(
+                    metadata.partition_cols
+                ),
+                s3_output=self.conn.s3_staging_dir,
+            )
+
+            output_queries.append(create_query)
+
+        # Check if all columns requested by the table
+        # are in the query
+        not_found_table_cols = (
+            (
+                set(metadata.columns)
+                |
+                set(metadata.partition_cols)
+            )
+            -
+            (
+                set(query_meta.columns)
+                |
+                set(query_meta.partition_cols)
+            )
+        )
+
+        if not_found_table_cols:
+            raise ValueError(
+                f'The columns {not_found_table_cols} not '
+                'found in query.'
+            )
+
+        # Generate the insert query
+        insert_query = make_insert_query_(
+            schema_name=schema_name,
+            table_name=table_name,
+            columns_types=(
+                metadata.columns | metadata.partition_cols
+            ),
+            query=query,
+        )
+
+        output_queries.append(insert_query)
+
+        return output_queries
+
+    def create_ctas(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[List[str]] = None,
+    ) -> List[str]:
+        """ Cria uma tabela com comando CREATE TABLE AS
+        """
+        output_queries = []
+
+        partition_cols = partition_cols or []
+
+        query_meta = self.conn.metadata(query=query)
+
+        *_, schema_name, table_name = [
+            self.conn.schema_name,
+            *split_table_name(
+                table_name
+            )
+        ]
+
+        query_ctas = make_create_ctas_query_(
+            schema_name=schema_name,
+            table_name=table_name,
+            query=query,
+            columns_types={
+                col: type_
+                for col, type_ in query_meta.columns.items()
+                if col not in partition_cols
+            },
+            partition_columns_types={
+                col: query_meta.columns[col]
+                for col in partition_cols
+            },
+            s3_output=self.conn.s3_staging_dir,
+        )
+
+        output_queries.append(query_ctas)
+
+    def agg_query(
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_distinct_: Optional[List[str]] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[Dict[int, List[str]]] = None,
+    ) -> List[str]:
+        """ Realiza uma agregação na query indicada """
+        return [
+            make_agg_sql_(
+                query=query,
+                groupby=groupby,
+                count_=count_,
+                count_distinct_=count_distinct_,
+                sum_=sum_,
+                mean_=mean_,
+                min_=min_,
+                max_=max_,
+                percentile_=percentile_,
+            )
+        ]

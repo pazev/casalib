@@ -24,6 +24,15 @@ def make_create_schema_query_(
     """ Make the query to create a table passing the
         schema
     """
+    columns_types = {
+        col: treat_column_type(type_)
+        for col, type_ in columns_types.items()
+    },
+    partition_columns_types = {
+        col: treat_column_type(type_)
+        for col, type_ in partition_columns_types.items()
+    }
+
     template = templates_dict['create_table']
 
     query = template.render(
@@ -31,7 +40,7 @@ def make_create_schema_query_(
         table_name=table_name,
         columns_types=columns_types,
         partition_columns_types=partition_columns_types,
-        s3_output=s3_output
+        s3_output=f'{s3_output}/{schema_name}.{table_name}'
     )
 
     return query
@@ -58,7 +67,7 @@ def create_schema(
         table_name=table_name,
         columns_types=columns_types,
         partition_columns_types=partition_columns_types,
-        s3_output=f'{s3_output}/{schema_name}.{table_name}'
+        s3_output=s3_output,
     )
 
     query_exec = run_query(
@@ -99,7 +108,7 @@ def make_create_ctas_query_(
         query=query,
         columns_types=columns_types,
         partition_columns_types=partition_columns_types,
-        s3_output=s3_output
+        s3_output=f'{s3_output}/{schema_name}.{table_name}'
     )
 
     return query
@@ -149,7 +158,7 @@ def create_ctas(
         query=query,
         columns_types=columns_types,
         partition_columns_types=partition_columns_types,
-        s3_output=f'{s3_output}/{schema_name}.{table_name}'
+        s3_output=s3_output,
     )
 
     query_exec = run_query(
@@ -295,12 +304,12 @@ def create_insert(
             default_schema_name=default_schema_name,
             table_name=table_name,
             columns_types={
-                col: treat_column_type(type_)
+                col: type_
                 for col, type_ in query_meta.columns.items()
                 if col not in partition_cols
             },
             partition_columns_types={
-                col: treat_column_type(type_)
+                col: type_
                 for col in partition_cols
                 for type_ in [query_meta.columns[col]]
             },
