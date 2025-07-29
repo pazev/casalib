@@ -42,10 +42,23 @@
     b. Query last partition
         - SQL Gen
     c. Suportar código Python que gere uma tabela
-        [ ] Módulo movido para um diretório
-        [ ] Classe base para operações gerais
-            [ ] Mapear operações básicas que sempre devem
+        [x] Módulo movido para um diretório
+        [x] Classe base com operações gerais (TableHelper)
+            [x] Mapear operações básicas que sempre devem
                 estar disponíveis
+                    .set_conn_maker()
+                    .get_conn()
+                    .drop()
+                    .drop_partitions()
+                    .list_partitions()
+                    .list_partitions_filter()
+                    .drop_partitions_filter()
+                    .sample()
+                    .metadata()
+        [x] Classe para tabela geral, AnyTableManager
+        [ ] Classe abstrata, com método run, que roda um
+            TableManager Python qualquer
+
         [ ] Classe para código Python
             [ ] PythonTableManager
                 - method: Callable[[], pd.DataFrame]
