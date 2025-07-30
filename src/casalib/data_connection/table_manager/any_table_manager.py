@@ -3,22 +3,18 @@ from typing import Callable, Dict,  List, Optional, Tuple
 
 import pandas as pd
 
-from . base import TableHelper
+from . base import TableHelper, TableManagerAbstract
 from ..base import ConnectionAbstract, Metadata
 
 
 @dataclass
-class AnyTableManager:
+class AnyTableManager(TableManagerAbstract):
     table_name: str
-    conn_maker: Optional[
-        Callable[[], ConnectionAbstract]
-    ] = None
-    helper: TableHelper = field(init=False)
 
     def __post_init__(self):
+        """ Post-init """
         self.helper = TableHelper(
-            table_name=self.table_name,
-            conn_maker=self.conn_maker
+            table_name=self.table_name
         )
 
     def set_conn_maker(

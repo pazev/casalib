@@ -1,5 +1,5 @@
 """ Module defines an object to manage tables """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -7,35 +7,22 @@ import jinja2
 from jinja2 import meta
 import pandas as pd
 
+from .base import TableHelper, TableManagerAbstract
 from ..base import ConnectionAbstract, Metadata
 
 
 @dataclass
-class TableManager():
+class TableManager(TableManagerAbstract):
     """ Query Manager """
-    query_template: str
     table_name: str
-    conn_maker: Optional[
-        Callable[[], ConnectionAbstract]
-    ] = None
+    query_template: str = field(repr=False)
     partition_cols: Optional[List[str]] = None
 
-    def set_conn_maker(
-        self,
-        conn_maker: Callable[[], ConnectionAbstract]
-    ) -> "TableManager":
-        """ Set the connection maker """
-        self.conn_maker = conn_maker
-        return self
-
-    def get_conn(self) -> ConnectionAbstract:
-        """ Get the conn maker """
-        if self.conn_maker is None:
-            raise AttributeError(
-                'The conn_maker attribute was not '
-                'initialized'
-            )
-        return self.conn_maker()
+    def __post_init__(self):
+        """ Post-init """
+        self.helper = TableHelper(
+            table_name=self.table_name
+        )
 
     def make_query_(self, **params) -> str:
         """ Make the query that will be executed """
@@ -46,16 +33,9 @@ class TableManager():
         query = template.render(**params)
         return query
 
-    def drop(self) -> "TableManager":
-        """ Drop the table """
-        conn = self.get_conn()
-        conn.drop(self.table_name)
-
-        return self
-
     def create_insert(self, **params) -> "TableManager":
         """ Create/insert the query on table """
-        conn = self.get_conn()
+        conn = self.helper.get_conn()
         conn.create_insert(
             query=self.make_query_(**params),
             table_name=self.table_name,
@@ -63,22 +43,38 @@ class TableManager():
         )
         return self
 
+    def input_vars(self) -> List[str]:
+        """ List the variables in the template """
+        env = jinja2.Environment()
+        parsed_content = env.parse(self.query_template)
+        return list(
+            meta.find_undeclared_variables(parsed_content)
+        )
+
+    def set_conn_maker(
+        self,
+        conn_maker: Callable[[], ConnectionAbstract]
+    ) -> "TableManager":
+        """ Set the connection maker """
+        self.helper.set_conn_maker(conn_maker)
+        return self
+
+    def drop(self) -> "TableManager":
+        """ Drop the table """
+        self.helper.drop()
+        return self
+
     def drop_partitions(
         self,
         partitions_to_drop: List[Tuple[str, ...]]
     ) -> "TableManager":
         """ Drop partitions """
-        conn = self.get_conn()
-        conn.drop_partitions(
-            table_name=self.table_name,
-            partitions_to_drop=partitions_to_drop
-        )
+        self.helper.drop_partitions(partitions_to_drop)
         return self
 
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
-        conn = self.get_conn()
-        return conn.list_partitions(self.table_name)
+        return self.helper.list_partitions(self.table_name)
 
     def list_partitions_filter(
         self,
@@ -87,24 +83,9 @@ class TableManager():
         """
         Filter the partitions list using the filter passed.
         """
-        conn = self.get_conn()
-
-        filtered_partitions = [
-            part
-            for part, _ in (
-                conn
-                .list_partitions(self.table_name)
-                .items()
-            )
-            for filter_ in [
-                all(map(
-                    lambda part_patt_: fnmatch(*part_patt_),
-                    zip(part, filters)
-                ))
-            ]
-            if filter_
-        ]
-
+        filtered_partitions = (
+            self.helper.list_partitions_filter(*filters)
+        )
         return filtered_partitions
 
     def drop_partitions_filter(
@@ -114,38 +95,15 @@ class TableManager():
         """
         Drop partitions using the fnmatch filter passed.
         """
-        conn = self.get_conn()
-
-        filtered_partitions = self.list_partitions_filter(
-            *filters
-        )
-
-        conn.drop_partitions(
-            self.table_name,
-            filtered_partitions
-        )
-
+        self.helper.drop_partitions_filter(*filters)
         return self
 
     def sample(self, samples: int = 100) -> pd.DataFrame:
         """
         Select some sample from the table.
         """
-        conn = self.get_conn()
-        return conn.table(
-            table_name=self.table_name,
-            samples=samples
-        )
+        return self.helper.sample(samples)
 
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
-        conn = self.get_conn()
-        return conn.metadata(table_name=self.table_name)
-
-    def input_vars(self) -> List[str]:
-        """ List the variables in the template """
-        env = jinja2.Environment()
-        parsed_content = env.parse(self.query_template)
-        return list(
-            meta.find_undeclared_variables(parsed_content)
-        )
+        return self.helper.metadata()

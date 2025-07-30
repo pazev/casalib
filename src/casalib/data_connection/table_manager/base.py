@@ -1,6 +1,6 @@
 """ Module defines an object to manage tables """
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -9,13 +9,66 @@ import pandas as pd
 from ..base import ConnectionAbstract, Metadata
 
 
+class TableManagerAbstract(ABC):
+    """ Methods that must be available to manage tables """
+    @abstractmethod
+    def set_conn_maker(
+        self,
+        conn_maker: Callable[[], ConnectionAbstract]
+    ) -> "TableManagerAbstract":
+        """ Set the connection maker """
+
+    @abstractmethod
+    def drop(self) -> "TableManagerAbstract":
+        """ Drop the table """
+
+    @abstractmethod
+    def drop_partitions(
+        self,
+        partitions_to_drop: List[Tuple[str, ...]]
+    ) -> "TableManagerAbstract":
+        """ Drop partitions """
+
+    @abstractmethod
+    def list_partitions(self) -> Dict[Tuple[str, ...], str]:
+        """ List partitions """
+
+    @abstractmethod
+    def list_partitions_filter(
+        self,
+        *filters: str
+    ) -> List[Tuple[str, ...]]:
+        """
+        Filter the partitions list using the filter passed.
+        """
+
+    @abstractmethod
+    def drop_partitions_filter(
+        self,
+        *filters: str
+    ) -> "TableManagerAbstract":
+        """
+        Drop partitions using the fnmatch filter passed.
+        """
+
+    @abstractmethod
+    def sample(self, samples: int = 100) -> pd.DataFrame:
+        """
+        Select some sample from the table.
+        """
+
+    @abstractmethod
+    def metadata(self) -> Metadata:
+        """ Returns the table metadata """
+
+
 @dataclass
 class TableHelper():
     """ Query Manager """
     table_name: str
     conn_maker: Optional[
         Callable[[], ConnectionAbstract]
-    ] = None
+    ] = field(default=None, init=False, repr=False)
 
     def set_conn_maker(
         self,

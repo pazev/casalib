@@ -56,13 +56,17 @@
                     .sample()
                     .metadata()
         [x] Classe para tabela geral, AnyTableManager
+        [x] Ajustar TableManager, para usar o TableHelper
         [ ] Classe abstrata, com método run, que roda um
-            TableManager Python qualquer
+            método Python qualquer com a missão de Adicionar
+            dados na tabela
 
         [ ] Classe para código Python
             [ ] PythonTableManager
                 - method: Callable[[], pd.DataFrame]
                 - input_tabs: List[str]
+        [ ] Gerar código para capturar última partição
+                - Novo tipo de tabela???
 
     d. Método run, __call__
         [ ] Adicionada lib makefun para assinatura dinâmica
