@@ -14,7 +14,11 @@ from dataclasses import dataclass, field
 
 from .make_query import MakeQuery
 from .base import Boto3SessionMaker, AthenaBaseConnection
-from ..base import ConnectionAbstract
+from ..base import (
+    BaseConnectionAbstract,
+    ConnectionAbstract,
+    MakeQueryAbstract,
+)
 
 
 @dataclass
@@ -26,18 +30,18 @@ class AthenaConnection(ConnectionAbstract):
     data_catalog: str
     boto3_session_maker: Boto3SessionMaker
     table_prefix: str = ''
-    get_connection_: AthenaBaseConnection = field(
+    conn_: AthenaBaseConnection = field(
         init=False,
         repr=False
     )
-    queries: MakeQuery = field(
+    make_query_: MakeQuery = field(
         init=False,
         repr=False
     )
 
     def __post_init__(self):
         """ Create basic modules to use """
-        self.get_connection_ = AthenaBaseConnection(
+        self.conn_ = AthenaBaseConnection(
             schema_name=self.schema_name,
             workgroup=self.workgroup,
             s3_staging_dir=self.s3_staging_dir,
@@ -46,4 +50,18 @@ class AthenaConnection(ConnectionAbstract):
             table_prefix=self.table_prefix,
         )
 
-        self.queries = MakeQuery(self.get_connection_)
+        self.make_query_ = MakeQuery(self.get_connection_)
+
+    @property
+    def queries(self) -> MakeQueryAbstract:
+        """ Returns an object capable of generating the
+            desired query
+        """
+        return self.make_query_
+
+    @property
+    def get_connection_(self) -> BaseConnectionAbstract:
+        """ Return the connection abstract necessary to
+            perform the tasks
+        """
+        return self.conn_
