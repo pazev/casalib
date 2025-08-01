@@ -1,6 +1,7 @@
-""" Module defines an object to manage tables """
+""" Module defines an object to manage tables and its
+    creation
+"""
 from dataclasses import dataclass, field
-from fnmatch import fnmatch
 from typing import Callable, Dict, List, Optional, Tuple
 
 import jinja2
@@ -74,7 +75,7 @@ class TableManager(TableManagerAbstract):
 
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
-        return self.helper.list_partitions(self.table_name)
+        return self.helper.list_partitions()
 
     def list_partitions_filter(
         self,

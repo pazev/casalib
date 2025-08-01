@@ -6,8 +6,6 @@ S3. Assim, precisamos utilizar do boto3 para listar os
 arquivos e apagar os arquivos físicos presentes no S3.
 """
 # pylint: disable=too-many-arguments
-import re
-
 import boto3
 
 from .boto3_querying import run_query

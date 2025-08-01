@@ -1,6 +1,5 @@
 """ Module to collect the input tables from a query """
 # pylint: disable=too-many-arguments
-from collections import namedtuple
 import re
 from typing import List
 

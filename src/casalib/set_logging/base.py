@@ -16,6 +16,7 @@ class FilterPackages(logging.Filter):
     ):
         """ Init """
         self.pkg_ignlevel_message = pkg_ignlevel_message
+        super().__init__()
 
     def filter(self, record):
         """ Filtering method """
@@ -28,8 +29,7 @@ class FilterPackages(logging.Filter):
 
             if not msg:
                 return False
-            else:
-                return not(msg in record.msg)
+            return not msg in record.msg
 
         return True
 

@@ -1,5 +1,8 @@
-from dataclasses import dataclass, field
-from typing import Callable, Dict,  List, Optional, Tuple
+""" Module adds a simple TableManager, to manage some
+    operations as drop, drop_partition, list_partition.
+"""
+from dataclasses import dataclass
+from typing import Callable, Dict,  List, Tuple
 
 import pandas as pd
 
@@ -9,6 +12,9 @@ from ..base import ConnectionAbstract, Metadata
 
 @dataclass
 class AnyTableManager(TableManagerAbstract):
+    """ TableManager to deal with table and partition
+        operations as drop, drop_partitions, list_partitions
+    """
     table_name: str
 
     def __post_init__(self):
@@ -40,7 +46,7 @@ class AnyTableManager(TableManagerAbstract):
 
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
-        return self.helper.list_partitions(self.table_name)
+        return self.helper.list_partitions()
 
     def list_partitions_filter(
         self,

@@ -1,9 +1,12 @@
-"""  """
+"""
+Module defines an object that generate queries to perform
+some operations
+"""
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from ..base import MakeQueryAbstract, Metadata
-from .athena import AthenaConnection
+from .base import AthenaBaseConnection
 
 from .modules.agg import make_agg_sql_
 
@@ -19,7 +22,7 @@ from .modules.util import split_table_name
 @dataclass
 class MakeQuery(MakeQueryAbstract):
     """ Class to create queries when requested """
-    conn: AthenaConnection
+    conn: AthenaBaseConnection
 
     def create_insert(
         self,
@@ -34,10 +37,10 @@ class MakeQuery(MakeQueryAbstract):
 
         partition_cols = partition_cols or []
 
-        *_, schema_name, table_name = [
-            self.conn.schema_name,
-            *split_table_name(table_name)
-        ]
+        schema_name, table_name = split_table_name(
+            table_name=table_name,
+            default_schema_name=self.conn.schema_name
+        )
 
         query_meta = self.conn.metadata(query=query)
 
@@ -52,6 +55,8 @@ class MakeQuery(MakeQueryAbstract):
             )
 
         # Get table metadata
+        # pylint: disable=broad-exception-caught
+
         try:
             metadata = self.conn.metadata(
                 table_name=table_name
@@ -60,13 +65,13 @@ class MakeQuery(MakeQueryAbstract):
             if 'EntityNotFound' not in exc.args[0]:
                 raise exc
 
-            columns = {
+            columns_types = {
                 col: type_
                 for col, type_ in query_meta.columns.items()
                 if col not in partition_cols
             }
 
-            partition_cols = {
+            partition_cols_types = {
                 col: type_
                 for col in partition_cols
                 for type_ in [query_meta.columns[col]]
@@ -74,8 +79,12 @@ class MakeQuery(MakeQueryAbstract):
 
             metadata = Metadata(
                 connection_type='athena.AthenaConnection',
-                columns=columns,
-                partition_cols=partition_cols,
+                columns=columns_types,
+                partition_cols=partition_cols_types,
+                location=None,
+                table_name=None,
+                query=None,
+                orig_info=None
             )
 
             create_query = make_create_schema_query_(
@@ -134,18 +143,18 @@ class MakeQuery(MakeQueryAbstract):
     ) -> List[str]:
         """ Cria uma tabela com comando CREATE TABLE AS
         """
+        # pylint: disable=too-many-arguments
+
         output_queries = []
 
         partition_cols = partition_cols or []
 
         query_meta = self.conn.metadata(query=query)
 
-        *_, schema_name, table_name = [
-            self.conn.schema_name,
-            *split_table_name(
-                table_name
-            )
-        ]
+        schema_name, table_name = split_table_name(
+            table_name=table_name,
+            default_schema_name=self.conn.schema_name
+        )
 
         query_ctas = make_create_ctas_query_(
             schema_name=schema_name,
@@ -165,6 +174,8 @@ class MakeQuery(MakeQueryAbstract):
 
         output_queries.append(query_ctas)
 
+        return output_queries
+
     def agg_query(
         self,
         query: str,
@@ -178,6 +189,8 @@ class MakeQuery(MakeQueryAbstract):
         percentile_: Optional[Dict[int, List[str]]] = None,
     ) -> List[str]:
         """ Realiza uma agregação na query indicada """
+        # pylint: disable=too-many-arguments
+
         return [
             make_agg_sql_(
                 query=query,

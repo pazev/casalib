@@ -27,7 +27,7 @@ def make_create_schema_query_(
     columns_types = {
         col: treat_column_type(type_)
         for col, type_ in columns_types.items()
-    },
+    }
     partition_columns_types = {
         col: treat_column_type(type_)
         for col, type_ in partition_columns_types.items()

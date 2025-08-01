@@ -6,7 +6,7 @@ Athena, se valendo da funcionalidade do awswrangler.
 from datetime import datetime
 import logging
 import textwrap
-from typing import Dict, Union
+from typing import Union
 from uuid import uuid4
 
 import awswrangler as wr
