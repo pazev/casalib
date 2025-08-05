@@ -2,7 +2,14 @@
     creation
 """
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple
+)
 
 import jinja2
 from jinja2 import meta
@@ -121,26 +128,13 @@ class TableManager(TableManagerAbstract):
 
     def get_last_partition_query(
         self,
-        cross_columns_: List[str],
-        max_column_: str,
-        **filters
+        cross_columns_: Optional[List[str]] = None,
+        max_column_: Optional[str] = None,
+        **filters: List[Any]
     ) -> List[str]:
         """ Return last partition query for the table """
-        conn = self.helper.get_conn()
-        meta = conn.metadata(table_name=self.table_name)
-
-        cross_columns_f = cross_columns_ or meta.partition_cols
-        max_column_f = max_column_ or cross_columns_f[-1]
-
-        cross_columns_f = [
-            col
-            for col in cross_columns_f
-            if col != max_column_f
-        ]
-
-        return conn.queries.last_partition(
-            table_name=self.table_name,
-            cross_columns=cross_columns_[:-1],
-            max_column=max_column_f,
+        return self.helper.last_partition_query(
+            cross_columns_=cross_columns_,
+            max_column_=max_column_,
             **filters
         )

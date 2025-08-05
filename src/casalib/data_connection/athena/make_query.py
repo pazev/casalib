@@ -213,16 +213,16 @@ class MakeQuery(MakeQueryAbstract):
     def last_partition(
         self,
         table_name: str,
-        cross_columns: List[str],
-        max_column: str,
-        **filters: Any
+        cross_columns_: List[str],
+        max_column_: str,
+        **filters: List[Any]
     ) -> List[str]:
         """ Create a query to retrieve last partition """
         queries = [
             last_partition(
                 table_name=table_name,
-                cross_columns=cross_columns,
-                max_column=max_column,
+                cross_columns_=cross_columns_,
+                max_column_=max_column_,
                 **filters
             )
         ]

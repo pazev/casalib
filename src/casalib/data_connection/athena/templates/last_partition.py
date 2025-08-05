@@ -5,7 +5,7 @@ Template para selecionar a última partição de uma tabela
 TEMPLATE = r'''
 with
 input__ as (
-    select * from {{table}}
+    select * from {{table_name}}
     {%- if filters %}
     where
             1 = 1

@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from fnmatch import fnmatch
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -60,6 +60,15 @@ class TableManagerAbstract(ABC):
     @abstractmethod
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
+
+    @abstractmethod
+    def last_partition_query(
+        self,
+        partition_columns_: Optional[List[str]] = None,
+        max_column_: Optional[str] = None,
+        **filters: List[Any],
+    ) -> List[str]:
+        """ Return last partition """
 
 
 @dataclass
@@ -175,8 +184,26 @@ class TableHelper():
 
     def last_partition_query(
         self,
-        partition_columns: Optional[List[str]] = None,
-        max_column: Optional[str] = None,
-        **column_filter: str,
-    ) -> str:
+        cross_columns_: Optional[List[str]] = None,
+        max_column_: Optional[str] = None,
+        **filters: List[Any],
+    ) -> List[str]:
         """ Return last partition """
+        conn = self.get_conn()
+        meta = conn.metadata(table_name=self.table_name)
+
+        cross_columns_f = cross_columns_ or list(meta.partition_cols)
+        max_column_f = max_column_ or cross_columns_f[-1]
+
+        cross_columns_f = [
+            col
+            for col in cross_columns_f
+            if col != max_column_f
+        ]
+
+        return conn.queries.last_partition(
+            table_name=self.table_name,
+            cross_columns_=cross_columns_f,
+            max_column_=max_column_f,
+            **filters
+        )

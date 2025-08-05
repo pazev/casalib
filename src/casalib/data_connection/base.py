@@ -169,9 +169,9 @@ class MakeQueryAbstract(ABC):
     def last_partition(
         self,
         table_name: str,
-        cross_columns: List[str],
-        max_column: str,
-        **filters: Any
+        cross_columns_: List[str],
+        max_column_: str,
+        **filters: List[Any]
     ) -> List[str]:
         """ Create a query to retrieve last partition """
 
