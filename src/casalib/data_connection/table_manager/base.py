@@ -172,3 +172,11 @@ class TableHelper():
         """ Returns the table metadata """
         conn = self.get_conn()
         return conn.metadata(table_name=self.table_name)
+
+    def last_partition_query(
+        self,
+        partition_columns: Optional[List[str]] = None,
+        max_column: Optional[str] = None,
+        **column_filter: str,
+    ) -> str:
+        """ Return last partition """

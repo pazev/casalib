@@ -166,6 +166,16 @@ class MakeQueryAbstract(ABC):
         """
 
     @abstractmethod
+    def last_partition(
+        self,
+        table_name: str,
+        cross_columns: List[str],
+        max_column: str,
+        **filters: Any
+    ) -> List[str]:
+        """ Create a query to retrieve last partition """
+
+    @abstractmethod
     def agg_query(
         self,
         query: str,
@@ -326,4 +336,8 @@ class ConnectionAbstract(BaseConnectionAbstract):
         query: str
     ) -> List[TableSchema]:
         """ Get the required tables for the given query """
-        return self.get_connection_.get_input_tables(query)
+        return (
+            self
+            .get_connection_
+            .get_input_tables(query)
+        )

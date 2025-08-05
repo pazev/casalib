@@ -3,7 +3,7 @@ Module defines an object that generate queries to perform
 some operations
 """
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..base import MakeQueryAbstract, Metadata
 from .base import AthenaBaseConnection
@@ -16,7 +16,12 @@ from .modules.create_insert import (
     make_insert_query_
 )
 
+from .modules.last_partition import (
+    last_partition,
+)
+
 from .modules.util import split_table_name
+
 
 
 @dataclass
@@ -204,3 +209,21 @@ class MakeQuery(MakeQueryAbstract):
                 percentile_=percentile_,
             )
         ]
+
+    def last_partition(
+        self,
+        table_name: str,
+        cross_columns: List[str],
+        max_column: str,
+        **filters: Any
+    ) -> List[str]:
+        """ Create a query to retrieve last partition """
+        queries = [
+            last_partition(
+                table_name=table_name,
+                cross_columns=cross_columns,
+                max_column=max_column,
+                **filters
+            )
+        ]
+        return queries

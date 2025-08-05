@@ -4,7 +4,8 @@ um schema.
 """
 
 TEMPLATE = """
-CREATE EXTERNAL TABLE {{schema_name}}.{{table_name}}
+CREATE EXTERNAL TABLE IF NOT EXISTS
+{{schema_name}}.{{table_name}}
 (
     {%- for col, type in columns_types.items() %}
     {{col}} {{type}} {% if not loop.last %},{% endif %}

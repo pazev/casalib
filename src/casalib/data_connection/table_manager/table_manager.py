@@ -9,7 +9,7 @@ from jinja2 import meta
 import pandas as pd
 
 from .base import TableHelper, TableManagerAbstract
-from ..base import ConnectionAbstract, Metadata
+from ..base import ConnectionAbstract, Metadata, TableSchema
 
 
 @dataclass
@@ -108,3 +108,39 @@ class TableManager(TableManagerAbstract):
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
         return self.helper.metadata()
+
+    def get_table_input(
+        self, **params
+    ) -> List[TableSchema]:
+        """ Return the list of table inputs """
+        query = self.make_query_(**params)
+        input_tables = (
+            self.helper.get_conn().get_input_tables(query)
+        )
+        return input_tables
+
+    def get_last_partition_query(
+        self,
+        cross_columns_: List[str],
+        max_column_: str,
+        **filters
+    ) -> List[str]:
+        """ Return last partition query for the table """
+        conn = self.helper.get_conn()
+        meta = conn.metadata(table_name=self.table_name)
+
+        cross_columns_f = cross_columns_ or meta.partition_cols
+        max_column_f = max_column_ or cross_columns_f[-1]
+
+        cross_columns_f = [
+            col
+            for col in cross_columns_f
+            if col != max_column_f
+        ]
+
+        return conn.queries.last_partition(
+            table_name=self.table_name,
+            cross_columns=cross_columns_[:-1],
+            max_column=max_column_f,
+            **filters
+        )

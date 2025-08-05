@@ -1,12 +1,32 @@
 """ Module to collect the input tables from a query """
 # pylint: disable=too-many-arguments
+from itertools import chain
 import re
-from typing import List
+from typing import List, Optional, Tuple
 
 import boto3
 
 from .boto3_querying import run_query
 from ...base import TableSchema
+
+
+def process_line(line: str) -> Optional[List[Tuple[str]]]:
+    """ Process a line, retrieving the table """
+    line = (
+        line
+        .replace('$iceberg-aws', '')
+        .replace('.', ':')
+    )
+
+    match = re.search(
+        r'table\s+=\s+([\w\d\.\:]+)',
+        line
+    )
+
+    if not match:
+        return None
+
+    *_, schema_name, table_name = match.group(1).split(':')
 
 
 def get_input_tables(
@@ -32,20 +52,21 @@ def get_input_tables(
     # Extract all table names
     table_names = set()
 
-    for res in results:
-        for row in res['ResultSet']['Rows']:
-            text = row['Data'][0].get('VarCharValue', '')
-            match = re.search(
-                r'table\s+=\s+([\w\d\.\:]+)',
-                text
-            )
-            if match:
-                table_names.add(match.group(1))
+    tables = [
+        list_tables
+
+        for res in results
+        for row in res['ResultSet']['Rows']
+        for text in [row['Data'][0].get('VarCharValue', '')]
+        for list_tables in [process_line(text)]
+        if list_tables
+    ]
+
+    tables = chain.from_iterable(tables)
 
     table_names_final = [
         TableSchema(schema, table_name)
-        for tab in table_names
-        for *_, schema, table_name in [tab.split(':')]
+        for schema, table_name in set(tables)
     ]
 
     return table_names_final
