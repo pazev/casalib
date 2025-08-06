@@ -195,12 +195,6 @@ class TableHelper():
         cross_columns_f = cross_columns_ or list(meta.partition_cols)
         max_column_f = max_column_ or cross_columns_f[-1]
 
-        cross_columns_f = [
-            col
-            for col in cross_columns_f
-            if col != max_column_f
-        ]
-
         return conn.queries.last_partition(
             table_name=self.table_name,
             cross_columns_=cross_columns_f,

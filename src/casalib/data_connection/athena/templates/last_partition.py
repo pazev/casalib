@@ -51,7 +51,7 @@ max_partition__ as (
 table_select__ as (
     select input__.* from
             input__
-        left join
+        inner join
             max_partition__
                 on
                     {%- for col in groupby_cols %}

@@ -126,7 +126,7 @@ class TableManager(TableManagerAbstract):
         )
         return input_tables
 
-    def get_last_partition_query(
+    def last_partition_query(
         self,
         cross_columns_: Optional[List[str]] = None,
         max_column_: Optional[str] = None,
