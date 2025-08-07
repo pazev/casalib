@@ -18,6 +18,10 @@ from ..base import ConnectionAbstract, Metadata, TableSchema
 class TableManagerAbstract(ABC):
     """ Methods that must be available to manage tables """
     @abstractmethod
+    def get_table_name(self) -> str:
+        """ Returns the table manager """
+
+    @abstractmethod
     def set_conn_maker(
         self,
         conn_maker: Callable[[], ConnectionAbstract]
@@ -76,16 +80,10 @@ class TableManagerAbstract(ABC):
     ) -> List[str]:
         """ Return last partition """
 
-
-class ExecutableTableManagerAbstract(ABC):
-    """
-    Defines functions to define Executable Tables (like SQL,
-    Python, etc tables).
-    """
     @abstractmethod
     def run(
         self, **kwargs
-    ) -> "ExecutableTableManagerAbstract":
+    ) -> "TableManagerAbstract":
         """ Run the query """
 
     @abstractmethod

@@ -13,16 +13,12 @@ import pandas as pd
 from .base import (
     TableHelper,
     TableManagerAbstract,
-    ExecutableTableManagerAbstract,
 )
 from ..base import ConnectionAbstract, Metadata, TableSchema
 
 
 @dataclass
-class TableManager(
-    TableManagerAbstract,
-    ExecutableTableManagerAbstract
-):
+class TableManager(TableManagerAbstract):
     """ Query Manager """
     table_name: str
     query_template: str = field(repr=False)
@@ -33,6 +29,10 @@ class TableManager(
         self.helper = TableHelper(
             table_name=self.table_name
         )
+
+    def get_table_name(self) -> str:
+        """ Return the table_name """
+        return self.table_name
 
     def set_conn_maker(
         self,

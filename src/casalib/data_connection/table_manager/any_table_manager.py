@@ -2,12 +2,14 @@
     operations as drop, drop_partition, list_partition.
 """
 from dataclasses import dataclass
-from typing import Callable, Dict,  List, Tuple
+from typing import (
+    Any, Callable, Dict, List, Optional, Tuple
+)
 
 import pandas as pd
 
 from . base import TableHelper, TableManagerAbstract
-from ..base import ConnectionAbstract, Metadata
+from ..base import ConnectionAbstract, Metadata, TableSchema
 
 
 @dataclass
@@ -22,6 +24,10 @@ class AnyTableManager(TableManagerAbstract):
         self.helper = TableHelper(
             table_name=self.table_name
         )
+
+    def get_table_name(self) -> str:
+        """ Returns the table manager """
+        return self.table_name
 
     def set_conn_maker(
         self,
@@ -79,3 +85,30 @@ class AnyTableManager(TableManagerAbstract):
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
         return self.helper.metadata()
+
+    def last_partition_query(
+        self,
+        cross_columns_: Optional[List[str]] = None,
+        max_column_: Optional[str] = None,
+        **filters: List[Any],
+    ) -> List[str]:
+        """ Return queries to filter the last partition """
+        return self.helper.last_partition_query(
+            cross_columns_=cross_columns_,
+            max_column_=max_column_,
+            **filters
+        )
+
+    def run(self, **kwargs) -> "AnyTableManager":
+        """ Run the TableManager """
+        return self
+
+    def get_table_input(self) -> List[TableSchema]:
+        """ Return the input tables """
+        return []
+
+    def input_vars(self) -> List[str]:
+        """
+        List the variables necessary to run the TableManager
+        """
+        return []

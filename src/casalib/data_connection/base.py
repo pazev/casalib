@@ -382,7 +382,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         return pd.DataFrame(
             list_partitions,
             columns=list(metadata.partition_cols)
-        )
+        ).sort_values(list(metadata.partition_cols))
 
     def drop_partitions_filter(
         self, table_name: str, *filters: str,

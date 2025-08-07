@@ -1,13 +1,14 @@
-
-[x] ConnectionAbstract
-    [x] List partition filter, similar to what is implanted
-        in TableManager, on ConnectionAthena
-        [x] list_partitions_filter
-        [x] drop_partitions_filter
-        [x] adjust TableManager to use connection
-
-        [x] List partition filter as pandas DataFrame
-
+[-] TableManagerCollection
+    [x] add_table_manager
+    [x] required_vars
+        [x] Roda os runs, vé o que falta
+            [x] TableManager: required_vars
+    [ ] known_variables
+    [ ] Add known_tables method and dict
+        [ ] Inicializar passando lista módulos e varrer os
+            mesmos atrás de variáveis TableManager
+        [ ] Passando um diretório
+    [ ] Ordenar os tm: quem depende de quem?
 
 
 [ ] Módulo data_ops
@@ -26,19 +27,6 @@
         [ ] Information Value
         [ ] KS
         [ ] PSI
-
-
-[ ] TableManagerCollection
-    [ ] add_table_manager
-    [ ] required_vars
-        [ ] Roda os runs, vé o que falta
-            [ ] TableManager: required_vars
-    [ ] known_variables
-    [ ] Add known_tables method and dict
-        [ ] Inicializar passando lista módulos e varrer os
-            mesmos atrás de variáveis TableManager
-        [ ] Passando um diretório
-    [ ] Ordenar os tm: quem depende de quem?
 
 
 [ ] API para obter conhecimento
@@ -91,6 +79,15 @@
     [ ] PanTemplates
 
 
+[ ] DataPath
+    [ ] Return DataPath creation
+
+[ ] ConnectionAbstract
+    [ ] Pandas pipeline:
+        [ ] Download the table, using if possible partition_cols
+        [ ] Apply pandas pipeline over the table
+        [ ] Saves the table at Athena
+
 
 ============================================================
 
@@ -115,3 +112,13 @@ FEITO
 
     - OBSERVAÇÃO: FAZER O SIMPLES - UM OBJETO, make_queries,
         que gera as queries necessárias
+
+
+[x] ConnectionAbstract
+    [x] List partition filter, similar to what is implanted
+        in TableManager, on ConnectionAthena
+        [x] list_partitions_filter
+        [x] drop_partitions_filter
+        [x] adjust TableManager to use connection
+
+        [x] List partition filter as pandas DataFrame
