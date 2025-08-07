@@ -1,47 +1,59 @@
-0. Testes
-    [ ] MakeQueryAthena
-        - Classe criada; recebe a conexão e os mesmos
-          parâmetros que a classe ConnectionAbstract; gera
-          uma lista com strings
-        - Classe criada; necessário testar
+
+[x] ConnectionAbstract
+    [x] List partition filter, similar to what is implanted
+        in TableManager, on ConnectionAthena
+        [x] list_partitions_filter
+        [x] drop_partitions_filter
+        [x] adjust TableManager to use connection
+
+        [x] List partition filter as pandas DataFrame
 
 
-1. Módulo data_ops
-    a. [ ] Métodos de monitoramento
-    b. [ ] Count nulls, count(*)
-    c. [ ] Percentile
-            [ ] Count elements between percentiles
-    d. [ ] WOE
-    e. [ ] Information Value
-    f. [ ] KS
-    g. [ ] PSI
+
+[ ] Módulo data_ops
+    [ ] Mapeamento
+        [ ] Contagem de linhas
+        [ ] Contagem de nulos
+        [ ] Contagem de distintos
+        [ ] Contagem de -infty / infty
+        [ ] Percentis (sem common_values)
+        [ ] Valores comuns
+    [ ] Método de Contagem
+        [ ] Dada uma lista de valores, contar valores igual
+            a estes valores e valores entre eles
+    [ ] Métricas
+        [ ] WOE
+        [ ] Information Value
+        [ ] KS
+        [ ] PSI
 
 
-2. TableManagerCollection
-    a. [ ] add_table_manager
-    b. [x] required_vars
-        - Roda os runs, vé o que falta
-    c. [ ] known_variables
-    d. [ ] Add known_tables method and dict
-            - Inicializar passando lista módulos e varrer os
-              mesmos atrás de variáveis TableManager
-            - Passando um diretório
-    e. [ ] Ordenar os tm: quem depende de quem?
+[ ] TableManagerCollection
+    [ ] add_table_manager
+    [ ] required_vars
+        [ ] Roda os runs, vé o que falta
+            [ ] TableManager: required_vars
+    [ ] known_variables
+    [ ] Add known_tables method and dict
+        [ ] Inicializar passando lista módulos e varrer os
+            mesmos atrás de variáveis TableManager
+        [ ] Passando um diretório
+    [ ] Ordenar os tm: quem depende de quem?
 
 
-4. API para obter conhecimento
+[ ] API para obter conhecimento
 
-5. Mecanismo de plugin para importar os módulos da pasta queries
-    - Dicionários
-        - table_manager
-        - runner
-        - source
 
-6. Alteraçõea TableManager
-    a. Adicionar skip
-    b. Query last partition
-        - SQL Gen
-    c. Suportar código Python que gere uma tabela
+[ ] Mecanismo de plugin para importar os módulos da pasta queries
+    [ ] Dicionários
+        [ ] table_manager
+        [ ] runner
+        [ ] source
+
+[ ] Alteraçõea TableManager
+    [ ] Adicionar skip
+    [x] Query last partition
+    [ ] Suportar código Python que gere uma tabela
         [x] Módulo movido para um diretório
         [x] Classe base com operações gerais (TableHelper)
             [x] Mapear operações básicas que sempre devem
@@ -65,14 +77,14 @@
             [ ] PythonTableManager
                 - method: Callable[[], pd.DataFrame]
                 - input_tabs: List[str]
-        [ ] Gerar código para capturar última partição
-                - Novo tipo de tabela???
+        [x] Gerar código para capturar última partição
+                - Novo tipo de tabela
 
-    d. Método run, __call__
+    [ ] Método run, __call__
         [ ] Adicionada lib makefun para assinatura dinâmica
         [ ] Post init
 
-7. Adicionar registro de diretórios no scaffolding
+[ ] Adicionar registro de diretórios no scaffolding
     [ ] PanTemplates
 
 

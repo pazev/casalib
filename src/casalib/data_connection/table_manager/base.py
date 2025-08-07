@@ -64,7 +64,7 @@ class TableManagerAbstract(ABC):
     @abstractmethod
     def last_partition_query(
         self,
-        partition_columns_: Optional[List[str]] = None,
+        cross_columns_: Optional[List[str]] = None,
         max_column_: Optional[str] = None,
         **filters: List[Any],
     ) -> List[str]:
@@ -129,23 +129,9 @@ class TableHelper():
         """
         conn = self.get_conn()
 
-        filtered_partitions = [
-            part
-            for part, _ in (
-                conn
-                .list_partitions(self.table_name)
-                .items()
-            )
-            for filter_ in [
-                all(map(
-                    lambda part_patt_: fnmatch(*part_patt_),
-                    zip(part, filters)
-                ))
-            ]
-            if filter_
-        ]
-
-        return filtered_partitions
+        return conn.list_partition_filter(
+            self.table_name, *filters
+        )
 
     def drop_partitions_filter(
         self,
@@ -156,13 +142,8 @@ class TableHelper():
         """
         conn = self.get_conn()
 
-        filtered_partitions = self.list_partitions_filter(
-            *filters
-        )
-
-        conn.drop_partitions(
-            self.table_name,
-            filtered_partitions
+        conn.drop_partitions_filter(
+            self.table_name, *filters
         )
 
         return self

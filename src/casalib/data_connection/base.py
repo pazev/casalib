@@ -6,6 +6,7 @@ dados.
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
@@ -341,3 +342,58 @@ class ConnectionAbstract(BaseConnectionAbstract):
             .get_connection_
             .get_input_tables(query)
         )
+
+    def list_partition_filter(
+        self, table_name: str, *filters: str,
+    ) -> List[Tuple[str, ...]]:
+        """
+        List the partitions, allowing filtering using
+        fnmatch
+        """
+        filtered_partitions = [
+            part
+            for part, _ in (
+                self
+                .get_connection_
+                .list_partitions(table_name)
+                .items()
+            )
+            for filter_ in [
+                all(map(
+                    lambda part_patt_: fnmatch(*part_patt_),
+                    zip(part, filters)
+                ))
+            ]
+            if filter_
+        ]
+        return filtered_partitions
+
+    def list_partition_filter_pd(
+        self, table_name: str, *filters: str,
+    ) -> pd.DataFrame:
+        """ Return the list of partitions as pd.DataFrame
+        """
+        metadata = self.metadata(table_name=table_name)
+
+        list_partitions = self.list_partition_filter(
+            table_name, *filters
+        )
+
+        return pd.DataFrame(
+            list_partitions,
+            columns=list(metadata.partition_cols)
+        )
+
+    def drop_partitions_filter(
+        self, table_name: str, *filters: str,
+    ) -> "ConnectionAbstract":
+        """
+        Drop partitions using the fnmatch filter passed.
+        """
+        filtered_partitions = self.list_partition_filter(
+            table_name, *filters
+        )
+        self.get_connection_.drop_partitions(
+            table_name, filtered_partitions
+        )
+        return self
