@@ -3,24 +3,26 @@
 """
 from dataclasses import dataclass, field
 from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple
+    Any, Callable, Dict, List, Optional, Tuple
 )
 
 import jinja2
 from jinja2 import meta
 import pandas as pd
 
-from .base import TableHelper, TableManagerAbstract
+from .base import (
+    TableHelper,
+    TableManagerAbstract,
+    ExecutableTableManagerAbstract,
+)
 from ..base import ConnectionAbstract, Metadata, TableSchema
 
 
 @dataclass
-class TableManager(TableManagerAbstract):
+class TableManager(
+    TableManagerAbstract,
+    ExecutableTableManagerAbstract
+):
     """ Query Manager """
     table_name: str
     query_template: str = field(repr=False)
@@ -30,33 +32,6 @@ class TableManager(TableManagerAbstract):
         """ Post-init """
         self.helper = TableHelper(
             table_name=self.table_name
-        )
-
-    def make_query_(self, **params) -> str:
-        """ Make the query that will be executed """
-        env = jinja2.Environment(
-            undefined=jinja2.StrictUndefined
-        )
-        template = env.from_string(self.query_template)
-        query = template.render(**params)
-        return query
-
-    def create_insert(self, **params) -> "TableManager":
-        """ Create/insert the query on table """
-        conn = self.helper.get_conn()
-        conn.create_insert(
-            query=self.make_query_(**params),
-            table_name=self.table_name,
-            partition_cols=self.partition_cols,
-        )
-        return self
-
-    def input_vars(self) -> List[str]:
-        """ List the variables in the template """
-        env = jinja2.Environment()
-        parsed_content = env.parse(self.query_template)
-        return list(
-            meta.find_undeclared_variables(parsed_content)
         )
 
     def set_conn_maker(
@@ -116,16 +91,6 @@ class TableManager(TableManagerAbstract):
         """ Returns the table metadata """
         return self.helper.metadata()
 
-    def get_table_input(
-        self, **params
-    ) -> List[TableSchema]:
-        """ Return the list of table inputs """
-        query = self.make_query_(**params)
-        input_tables = (
-            self.helper.get_conn().get_input_tables(query)
-        )
-        return input_tables
-
     def last_partition_query(
         self,
         cross_columns_: Optional[List[str]] = None,
@@ -137,4 +102,46 @@ class TableManager(TableManagerAbstract):
             cross_columns_=cross_columns_,
             max_column_=max_column_,
             **filters
+        )
+
+    # Class that implement the ExecutableTableManagerAbstract
+    def make_query_(self, **params) -> str:
+        """ Make the query that will be executed """
+        env = jinja2.Environment(
+            undefined=jinja2.StrictUndefined
+        )
+        template = env.from_string(self.query_template)
+        query = template.render(**params)
+        return query
+
+    def create_insert(self, **params) -> "TableManager":
+        """ Create/insert the query on table """
+        conn = self.helper.get_conn()
+        conn.create_insert(
+            query=self.make_query_(**params),
+            table_name=self.table_name,
+            partition_cols=self.partition_cols,
+        )
+        return self
+
+    def run(self, **params) -> "TableManager":
+        """ Run the TableManager """
+        return self.create_insert(**params)
+
+    def get_table_input(
+        self, **params
+    ) -> List[TableSchema]:
+        """ Return the list of table inputs """
+        query = self.make_query_(**params)
+        input_tables = (
+            self.helper.get_conn().get_input_tables(query)
+        )
+        return input_tables
+
+    def input_vars(self) -> List[str]:
+        """ List the variables in the template """
+        env = jinja2.Environment()
+        parsed_content = env.parse(self.query_template)
+        return list(
+            meta.find_undeclared_variables(parsed_content)
         )

@@ -51,9 +51,14 @@
         [ ] source
 
 [ ] Alteraçõea TableManager
-    [ ] Adicionar skip
     [x] Query last partition
-    [ ] Suportar código Python que gere uma tabela
+    [x] Gerar código para capturar última partição
+                - Novo tipo de tabela
+
+    [ ] Adicionar skip
+
+    [x] Ajustar código para expandir tipos de TableManager
+        que podem ser criados
         [x] Módulo movido para um diretório
         [x] Classe base com operações gerais (TableHelper)
             [x] Mapear operações básicas que sempre devem
@@ -69,16 +74,14 @@
                     .metadata()
         [x] Classe para tabela geral, AnyTableManager
         [x] Ajustar TableManager, para usar o TableHelper
-        [ ] Classe abstrata, com método run, que roda um
+        [x] Classe abstrata, com método run, que roda um
             método Python qualquer com a missão de Adicionar
-            dados na tabela
+            dados na tabela >>> ExecutableTableManagerAbstract
 
-        [ ] Classe para código Python
-            [ ] PythonTableManager
-                - method: Callable[[], pd.DataFrame]
-                - input_tabs: List[str]
-        [x] Gerar código para capturar última partição
-                - Novo tipo de tabela
+    [ ] Classe para código Python
+        [ ] PythonTableManager
+            - method: Callable[[], pd.DataFrame]
+            - input_tabs: List[str]
 
     [ ] Método run, __call__
         [ ] Adicionada lib makefun para assinatura dinâmica

@@ -1,12 +1,18 @@
 """ Module defines an object to manage tables """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from fnmatch import fnmatch
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple
+)
 
 import pandas as pd
 
-from ..base import ConnectionAbstract, Metadata
+from ..base import ConnectionAbstract, Metadata, TableSchema
 
 
 class TableManagerAbstract(ABC):
@@ -69,6 +75,28 @@ class TableManagerAbstract(ABC):
         **filters: List[Any],
     ) -> List[str]:
         """ Return last partition """
+
+
+class ExecutableTableManagerAbstract(ABC):
+    """
+    Defines functions to define Executable Tables (like SQL,
+    Python, etc tables).
+    """
+    @abstractmethod
+    def run(
+        self, **kwargs
+    ) -> "ExecutableTableManagerAbstract":
+        """ Run the query """
+
+    @abstractmethod
+    def get_table_input(self) -> List[TableSchema]:
+        """ Return the input tables """
+
+    @abstractmethod
+    def input_vars(self) -> List[str]:
+        """
+        List the variables necessary to run the TableManager
+        """
 
 
 @dataclass
