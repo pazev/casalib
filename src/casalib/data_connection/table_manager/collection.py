@@ -53,14 +53,12 @@ class TableManagerCollection:
 
     def input_vars(self) -> List[str]:
         """ Get input vars for each TableManager """
-        vars = list(
+        vars_ = list(
             set(
-                [
-                    var_
-                    for tm in self.collection.values()
-                    for var_ in tm.input_vars()
-                ]
+                var_
+                for tm in self.collection.values()
+                for var_ in tm.input_vars()
             )
         )
 
-        return vars
+        return vars_

@@ -82,7 +82,7 @@ public_enriched_ as (
         public_.*,
         {%- for col, col_ren in renamed_columns.items() %}
         source_selected_.{{col}} as {{col_ren}}
-        {%if- not loop.last%},{%endif%}
+        {%- if not loop.last%},{%endif%}
         {%- endfor %}
     from
             public_
@@ -114,24 +114,25 @@ t{{ loop.index }}_ as (
 {%- endfor %}
 cross_ as (
     select
-        public.*,
+        public_.*,
         {%- for table_name, out_cols in columns.items() %}
         {%- set tnumber = loop.index %}
         {%- for col, col_ren in out_cols.items() %}
         t{{ tnumber }}_.{{ col_ren }},
         {%- endfor %}
         {%- endfor %}
-        1 as __flag__
+        1 as flag__
     from
             public_
         left join
             {%- for table_name in columns %}
             {%- set tnumber = loop.index %}
-            t{{ tnumber }}
+            t{{ tnumber }}_
                 on
                     {%- for col in public.columns %}
                     public_.{{col}} =
                         t{{ tnumber }}_.{{col}}
+                    {% if not loop.last %}and{% endif %}
                     {%- endfor %}
         {%- if not loop.last%}left join{% endif %}
         {%- endfor %}
@@ -182,6 +183,12 @@ class AthenaCompiler:
         idx = f'{idx:03}' if isinstance(idx, int) else idx
         return f'{self.prefix}{self.study}_table_{idx}'
 
+    def __call__(
+        self, enricher: Enricher
+    ) -> List[Dict[str, str]]:
+        """ Run the compiler """
+        return self.compile(enricher=enricher)
+
     def compile(
         self,
         enricher: Enricher
@@ -207,6 +214,6 @@ class AthenaCompiler:
         table_queries[table_name] = final_query
 
         return [
-            {'tab_name': tab_name, 'query': query}
+            {'table_name': tab_name, 'query': query}
             for tab_name, query in table_queries.items()
         ]

@@ -71,6 +71,19 @@ class TableManager(TableManagerAbstract):
         )
         return filtered_partitions
 
+    def list_partitions_filter_pd(
+        self,
+        *filters: str
+    ) -> pd.DataFrame:
+        """
+        Filter the partitions list using the filter passed.
+        Return the result as pandas DataFrame
+        """
+        filtered_partitions = (
+            self.helper.list_partitions_filter_pd(*filters)
+        )
+        return filtered_partitions
+
     def drop_partitions_filter(
         self,
         *filters: str

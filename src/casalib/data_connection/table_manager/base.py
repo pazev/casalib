@@ -53,6 +53,16 @@ class TableManagerAbstract(ABC):
         """
 
     @abstractmethod
+    def list_partitions_filter_pd(
+        self,
+        *filters: str
+    ) -> pd.DataFrame:
+        """
+        Filter the partitions list using the filter passed.
+        Returns the result as pd.DataFrame.
+        """
+
+    @abstractmethod
     def drop_partitions_filter(
         self,
         *filters: str
@@ -156,6 +166,20 @@ class TableHelper():
         conn = self.get_conn()
 
         return conn.list_partition_filter(
+            self.table_name, *filters
+        )
+
+    def list_partitions_filter_pd(
+        self,
+        *filters: str
+    ) -> pd.DataFrame:
+        """
+        Filter the partitions list using the filter passed.
+        Return result as DataFrame.
+        """
+        conn = self.get_conn()
+
+        return conn.list_partition_filter_pd(
             self.table_name, *filters
         )
 
