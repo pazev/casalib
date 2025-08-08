@@ -7,7 +7,7 @@ from typing import List, Optional, Tuple
 import boto3
 
 from .boto3_querying import run_query
-from ...base import TableSchema
+from ....base import TableSchema
 
 
 def process_line(line: str) -> Optional[List[Tuple[str, str]]]:

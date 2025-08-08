@@ -2,7 +2,7 @@
 Módulo contendo as classes bases para operação de bancos de
 dados.
 """
-
+# pylint: disable=too-many-arguments
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass, field

@@ -10,11 +10,12 @@ Já a classe AthenaConnection junta as funcionalidades de
 AthenaBaseConnection com MakeQueries. A amarração se dá
 via design pattern template, na classe abstrata.
 """
+# pylint: disable=too-many-instance-attributes
 from dataclasses import dataclass, field
 
 from .make_query import MakeQuery
 from .base import Boto3SessionMaker, AthenaBaseConnection
-from ..base import (
+from ...base import (
     BaseConnectionAbstract,
     ConnectionAbstract,
     MakeQueryAbstract,

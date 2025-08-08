@@ -1,7 +1,7 @@
 """ Receita para criação rápida de uma conexão Athena """
 from typing import Optional
 
-from casalib.data_connection.athena.athena import (
+from casalib.data_connection.connectors.athena import (
     AthenaConnection,
     Boto3SessionMaker
 )

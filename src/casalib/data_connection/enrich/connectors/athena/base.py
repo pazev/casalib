@@ -4,7 +4,9 @@ connection
 """
 from typing import List, Optional
 
-from casalib.data_connection.athena import AthenaConnection
+from casalib.data_connection.connectors.athena import (
+    AthenaConnection,
+)
 from ...base import Source, Public
 
 

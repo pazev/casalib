@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import boto3
 import pandas as pd
 
-from ..base import (
+from ...base import (
     BaseConnectionAbstract,
     Metadata,
 )

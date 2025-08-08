@@ -5,7 +5,7 @@ some operations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from ..base import MakeQueryAbstract, Metadata
+from ...base import MakeQueryAbstract, Metadata
 from .base import AthenaBaseConnection
 
 from .modules.agg import make_agg_sql_
