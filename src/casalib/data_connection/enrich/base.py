@@ -34,12 +34,12 @@ class Source:
     Class that defines the an info source, to be used to
     enrich the public.
     """
+    prefix: str
     keys: List[str] = field(repr=False)
     info_ymd_column: str = field(repr=False)
     ingestion_column: str = field(repr=False)
     columns: List[str] = field(repr=False)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    prefix: str = ''
 
     def __post_init__(self):
         """ Test if the event column is in the columns  """
@@ -90,6 +90,7 @@ class EnrichmentPlan:
     renaming_columns: Dict[str, str] = (
         field(default_factory=dict, repr=False)
     )
+    keep_source_date_cols: bool = True
 
     @property
     def output_columns(self) -> Dict[str, str]:
@@ -106,13 +107,14 @@ class EnrichmentPlan:
 
         # Remove keys
         selected_columns_set = (
-            selected_columns_set -
-            set([
-                *self.source.keys,
+            selected_columns_set - set(*self.source.keys)
+        )
+
+        if not self.keep_source_date_cols:
+            selected_columns_set - set([
                 self.source.info_ymd_column,
                 self.source.ingestion_column,
             ])
-        )
 
         # Rename columns
         renamed_columns = {
@@ -122,11 +124,7 @@ class EnrichmentPlan:
             for col_ren in [
                 self.renaming_columns.get(col, col)
             ]
-            for prefix in [
-                self.source.prefix
-                if self.source.prefix
-                else ''
-            ]
+            for prefix in [self.source.prefix]
         }
 
         return renamed_columns
@@ -210,6 +208,7 @@ class Enricher:
         excluded_columns: Optional[List[str]] = None,
         renaming_keys: Optional[Dict[str, str]] = None,
         renaming_columns: Optional[Dict[str, str]] = None,
+        keep_source_date_cols: bool = True,
     ) -> "Enricher":
         """
         Add a new enrichment request to the handler

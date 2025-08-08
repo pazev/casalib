@@ -1,12 +1,12 @@
 """
-Module define enrich functions for an Athena Connection
+Module define enrich functions for an AthenaCompiler
 """
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
 
 import jinja2
 
-from ...base import EnrichmentPlan, Enricher, Public
+from ..base import EnrichmentPlan, Enricher, Public
 
 
 STEP_BASE_TEMPLATE = """

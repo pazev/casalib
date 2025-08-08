@@ -1,19 +1,18 @@
 """
-Functions to create the base objects for an Athena
-connection
+Functions to create the Public and Source using a Connection
 """
 from typing import List, Optional
 
-from casalib.data_connection.connectors.athena import (
-    AthenaConnection,
+from casalib.data_connection.base import (
+    ConnectionAbstract,
 )
-from ...base import Source, Public
+from .base import Source, Public
 
 
-def make_athena_public(
+def make_conn_public(
     query: str,
     event_ymd_column: str,
-    conn: AthenaConnection
+    conn: ConnectionAbstract
 ) -> Public:
     """ Create an Public from Athena Connection """
     metadata = conn.metadata(query=query)
@@ -27,13 +26,14 @@ def make_athena_public(
     return public
 
 
-def make_athena_source(
+def make_conn_source(
     table_name: str,
     keys: List[str],
     info_ymd_column: str,
     ingestion_column: str,
-    conn: AthenaConnection,
+    conn: ConnectionAbstract,
     remove_columns: Optional[List[str]] = None,
+    prefix: str = '',
 ) -> Source:
     """ Create a Source from Athena Connection """
     # pylint: disable=too-many-arguments
@@ -55,6 +55,7 @@ def make_athena_source(
         info_ymd_column=info_ymd_column,
         ingestion_column=ingestion_column,
         columns=columns,
-        metadata={'table_name': table_name}
+        metadata={'table_name': table_name},
+        prefix=prefix
     )
     return source
