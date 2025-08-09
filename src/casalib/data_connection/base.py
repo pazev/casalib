@@ -4,18 +4,11 @@ dados.
 """
 # pylint: disable=too-many-arguments
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
-
-
-TableSchema = namedtuple(
-    'TableSchema',
-    ['schema_name', 'table_name']
-)
 
 
 @dataclass
@@ -136,7 +129,7 @@ class BaseConnectionAbstract(ABC):
     def get_input_tables(
         self,
         query: str
-    ) -> List[TableSchema]:
+    ) -> List[str]:
         """ Get the required tables for the given query """
 
 
@@ -335,7 +328,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
     def get_input_tables(
         self,
         query: str
-    ) -> List[TableSchema]:
+    ) -> List[str]:
         """ Get the required tables for the given query """
         return (
             self

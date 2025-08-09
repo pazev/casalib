@@ -14,7 +14,7 @@ from .base import (
     TableHelper,
     TableManagerAbstract,
 )
-from ..base import ConnectionAbstract, Metadata, TableSchema
+from ..base import ConnectionAbstract, Metadata
 
 
 @dataclass
@@ -143,7 +143,7 @@ class TableManager(TableManagerAbstract):
 
     def get_table_input(
         self, **params
-    ) -> List[TableSchema]:
+    ) -> List[str]:
         """ Return the list of table inputs """
         query = self.make_query_(**params)
         input_tables = (

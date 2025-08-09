@@ -2,15 +2,16 @@
 # pylint: disable=too-many-arguments
 from itertools import chain
 import re
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import boto3
 
 from .boto3_querying import run_query
-from ....base import TableSchema
 
 
-def process_line(line: str) -> Optional[List[Tuple[str, str]]]:
+def process_line(
+    line: str, default_schema_name: str
+) -> Optional[List[str]]:
     """ Process a line, retrieving the table """
     line = (
         line
@@ -28,7 +29,13 @@ def process_line(line: str) -> Optional[List[Tuple[str, str]]]:
 
     *_, schema_name, table_name = match.group(1).split(':')
 
-    return [(schema_name, table_name), ]
+    return [
+        ".".join([
+            default_schema_name,
+            schema_name,
+            table_name
+        ][-2:])
+    ]
 
 
 def get_input_tables(
@@ -37,7 +44,7 @@ def get_input_tables(
     data_catalog: str,
     default_schema_name: str,
     workgroup: str,
-) -> List[TableSchema]:
+) -> List[str]:
     """ Get the Input tables for a query """
     query_execution_id = run_query(
         query=f'explain {query}',
@@ -58,15 +65,12 @@ def get_input_tables(
         for res in results
         for row in res['ResultSet']['Rows']
         for text in [row['Data'][0].get('VarCharValue', '')]
-        for list_tables in [process_line(text)]
+        for list_tables in [
+            process_line(text, default_schema_name)
+        ]
         if list_tables
     ]
 
     tables_flatten = chain.from_iterable(tables)
 
-    table_names_final = [
-        TableSchema(schema, table_name)
-        for schema, table_name in set(tables_flatten)
-    ]
-
-    return table_names_final
+    return list(tables_flatten)

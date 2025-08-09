@@ -12,7 +12,7 @@ from typing import (
 
 import pandas as pd
 
-from ..base import ConnectionAbstract, Metadata, TableSchema
+from ..base import ConnectionAbstract, Metadata
 
 
 class TableManagerAbstract(ABC):
@@ -97,7 +97,7 @@ class TableManagerAbstract(ABC):
         """ Run the query """
 
     @abstractmethod
-    def get_table_input(self) -> List[TableSchema]:
+    def get_table_input(self) -> List[str]:
         """ Return the input tables """
 
     @abstractmethod

@@ -9,7 +9,7 @@ from typing import (
 import pandas as pd
 
 from . base import TableHelper, TableManagerAbstract
-from ..base import ConnectionAbstract, Metadata, TableSchema
+from ..base import ConnectionAbstract, Metadata
 
 
 @dataclass
@@ -116,7 +116,7 @@ class AnyTableManager(TableManagerAbstract):
         """ Run the TableManager """
         return self
 
-    def get_table_input(self) -> List[TableSchema]:
+    def get_table_input(self) -> List[str]:
         """ Return the input tables """
         return []
 

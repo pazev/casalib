@@ -35,10 +35,7 @@ from .modules.create_insert import (
 from .modules.drop import (
     drop_table,
 )
-from .modules.input_tables import (
-    get_input_tables,
-    TableSchema
-)
+from .modules.input_tables import get_input_tables
 from .modules.metadata import (
     get_table_metadata,
     get_query_metadata,
@@ -304,7 +301,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
     def get_input_tables(
         self,
         query: str
-    ) -> List[TableSchema]:
+    ) -> List[str]:
         """ Get the required tables for the given query """
         return get_input_tables(
             query=query,

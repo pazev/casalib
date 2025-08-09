@@ -111,10 +111,12 @@ class EnrichmentPlan:
         )
 
         if not self.keep_source_date_cols:
-            selected_columns_set - set([
-                self.source.info_ymd_column,
-                self.source.ingestion_column,
-            ])
+            selected_columns_set = (
+                selected_columns_set - set([
+                    self.source.info_ymd_column,
+                    self.source.ingestion_column,
+                ])
+            )
 
         # Rename columns
         renamed_columns = {
@@ -222,6 +224,7 @@ class Enricher:
             excluded_columns=excluded_columns or [],
             renaming_keys=renaming_keys or {},
             renaming_columns=renaming_columns or {},
+            keep_source_date_cols=keep_source_date_cols,
         )
         self.steps.append(plan)
 
