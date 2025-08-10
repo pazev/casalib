@@ -4,6 +4,7 @@ Module to deal with data paths.
 Data paths are data structures to represent operations to be
 applied over a structured table.
 """
+# pylint: disable=too-few-public-methods
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -76,7 +77,7 @@ class PathMetadata:
         name: str,
         col_type: ColumnTypeAbstract,
         orig_cols: Optional[List[str]] = None,
-        input: Optional[InputAbstract] = None
+        input_: Optional[InputAbstract] = None
     ) -> "PathMetadata":
         """Returns a new PathMetadata with an added column.
 
@@ -94,7 +95,7 @@ class PathMetadata:
                 including the added column.
         """
         new_column = ColumnMetadata(
-            name, col_type, orig_cols, input
+            name, col_type, orig_cols, input_
         )
         columns = {**self.columns, name: new_column}
         return PathMetadata(columns)

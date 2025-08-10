@@ -1,16 +1,3 @@
-[-] TableManagerCollection
-    [x] add_table_manager
-    [x] required_vars
-        [x] Roda os runs, vé o que falta
-            [x] TableManager: required_vars
-    [ ] known_variables
-    [ ] Add known_tables method and dict
-        [ ] Inicializar passando lista módulos e varrer os
-            mesmos atrás de variáveis TableManager
-        [ ] Passando um diretório
-    [ ] Ordenar os tm: quem depende de quem?
-
-
 [ ] Módulo data_ops
     [ ] Mapeamento
         [ ] Contagem de linhas
@@ -122,3 +109,15 @@ FEITO
         [x] adjust TableManager to use connection
 
         [x] List partition filter as pandas DataFrame
+
+[x] TableManagerCollection
+    [x] add_table_manager
+    [x] required_vars
+        [x] Roda os runs, vé o que falta
+            [x] TableManager: required_vars
+    [x] known_variables
+    [x] Add known_tables method and dict
+        [x] Inicializar passando lista módulos e varrer os
+            mesmos atrás de variáveis TableManager
+        [x] Passando um diretório
+    [x] Ordenar os tm: quem depende de quem?

@@ -1,6 +1,7 @@
 """
 Module with functions to configure the logging package
 """
+#pylint: disable=too-few-public-methods
 import logging
 from typing import List, Optional, Tuple
 

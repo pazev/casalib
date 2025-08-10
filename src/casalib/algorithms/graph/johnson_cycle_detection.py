@@ -1,7 +1,14 @@
 """
 Implementation of Johnson algorithm, that detect all cycles
 in a graph.
+
+This code was created by ChatGPT, and must be checked in the
+future.
 """
+# pylint: disable=too-many-locals
+# pylint: disable=invalid-name
+# pylint: disable=stop-iteration-return
+# pylint: disable=too-many-statements
 
 from collections import defaultdict
 from typing import (

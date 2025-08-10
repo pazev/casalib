@@ -12,6 +12,7 @@ Temos duas funções:
    função get_index_page, gerando a lista de links
    disponíveis.
 """
+# pylint: disable=unused-argument
 import re
 from typing import Any, Dict
 import warnings

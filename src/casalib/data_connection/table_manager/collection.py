@@ -5,7 +5,7 @@ TableManager at once
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Tuple
 
-from casalib.algorithms.graph.kahn_toposort import kahn_toposort
+from casalib.algorithms.graph import Graph
 
 from ..base import ConnectionAbstract
 from .base import TableManagerAbstract
@@ -118,21 +118,16 @@ class TableManagerCollection:
         """
         Sort the TableManagers in the collection.
         """
-        edges = self.get_dependency_edges_()
-        names = list(self.tm_collection)
+        ordered = Graph.from_edges_nodes(
+            edges=self.get_dependency_edges_(),
+            nodes=list(self.tm_collection)
+        ).toposort()
 
-        ordered = kahn_toposort(
-            edges=edges,
-            nodes=names
-        )
-
-        final_tm_col = {
+        self.tm_collection = {
             tm_name: self[tm_name]
             for tm_name in ordered
-            if tm_name in names
+            if tm_name in self.tm_collection
         }
-
-        self.tm_collection = final_tm_col
 
         return self
 

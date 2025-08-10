@@ -1,4 +1,5 @@
 """ Module to clear all caches and jupyter checkpoints """
+# pylint: disable=import-error
 import os
 from pathlib import Path
 import shutil

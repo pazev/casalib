@@ -7,7 +7,9 @@ from dataclasses import dataclass, field
 from typing import (
     Generic,
     Hashable,
+    Iterable,
     List,
+    Optional,
     Set,
     TypeVar,
     Tuple,
@@ -26,6 +28,21 @@ class Graph(Generic[T]):
     relations: defaultdict[T, Set[T]] = field(
         default_factory=lambda: defaultdict(set)
     )
+
+    @classmethod
+    def from_edges_nodes(
+        cls,
+        edges: Iterable[Tuple[T, T]],
+        nodes: Optional[Iterable[T]] = None
+    ) -> "Graph":
+        """ Create a graph from edges and nodes """
+        graph = cls()
+        nodes = nodes or []
+        for u, v in edges:
+            graph.add_edge(u, v)
+        for u in nodes:
+            graph.add_node(u)
+        return graph
 
     def add_node(self, node: T) -> "Graph":
         """ Add a node to the graph """
@@ -64,8 +81,8 @@ class Graph(Generic[T]):
             )
         )
 
-    def sort_nodes(self) -> List[T]:
-        """ Sort the nodes """
+    def toposort(self) -> List[T]:
+        """ Topological sort the nodes """
         try:
             sorted_ = kahn_toposort(
                 edges=self.get_edges(),
