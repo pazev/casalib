@@ -5,6 +5,8 @@ TableManager at once
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Tuple
 
+from casalib.algorithms.graph.kahn_toposort import kahn_toposort
+
 from ..base import ConnectionAbstract
 from .base import TableManagerAbstract
 
@@ -75,6 +77,7 @@ class TableManagerCollection:
             self[table_name] = tm
             self[name] = tm
 
+        self.sort_()
         return self
 
     def set_conn_maker(
@@ -110,6 +113,28 @@ class TableManagerCollection:
         )
 
         return list(edges_set_)
+
+    def sort_(self) -> "TableManagerCollection":
+        """
+        Sort the TableManagers in the collection.
+        """
+        edges = self.get_dependency_edges_()
+        names = list(self.tm_collection)
+
+        ordered = kahn_toposort(
+            edges=edges,
+            nodes=names
+        )
+
+        final_tm_col = {
+            tm_name: self[tm_name]
+            for tm_name in ordered
+            if tm_name in names
+        }
+
+        self.tm_collection = final_tm_col
+
+        return self
 
     def run(self, **kwargs) -> "TableManagerCollection":
         """
