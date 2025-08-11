@@ -3,6 +3,7 @@ Module defines TableManagerCollection, to manage several
 TableManager at once
 """
 from dataclasses import dataclass, field
+import logging
 from typing import Any, Callable, Dict, List, Tuple
 
 from casalib.algorithms.graph import Graph
@@ -73,11 +74,8 @@ class TableManagerCollection:
 
         self.tm_collection[table_name] = tm
 
-        for name in [table_name, *other_names]:
-            self[table_name] = tm
+        for name in set([table_name, *other_names]):
             self[name] = tm
-
-        self.sort_()
         return self
 
     def set_conn_maker(
@@ -102,24 +100,28 @@ class TableManagerCollection:
 
         return list(vars_ - set(['KN']))
 
-    def get_dependency_edges_(self) -> List[Tuple[str, str]]:
+    def get_dependency_edges_(
+        self, **params: str
+    ) -> List[Tuple[str, str]]:
         """ Return the dependency edge """
         edges_set_ = set(
             (input_table, tm_name)
 
             for tm in self.tm_collection.values()
             for tm_name in [tm.get_table_name()]
-            for input_table in tm.get_table_input()
+            for input_table in tm.get_table_input(**params)
         )
 
         return list(edges_set_)
 
-    def sort_(self) -> "TableManagerCollection":
+    def sort(
+        self, **params: str
+    ) -> "TableManagerCollection":
         """
         Sort the TableManagers in the collection.
         """
         ordered = Graph.from_edges_nodes(
-            edges=self.get_dependency_edges_(),
+            edges=self.get_dependency_edges_(**params),
             nodes=list(self.tm_collection)
         ).toposort()
 
@@ -137,6 +139,10 @@ class TableManagerCollection:
         TableManagers inside it).
         """
         for tm in self.tm_collection.values():
+            logging.info(
+                'Running tm for table %s',
+                tm.table_name
+            )
             tm.run(KN=self.known_names, **kwargs)
 
         return self
