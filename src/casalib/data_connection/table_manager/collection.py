@@ -141,7 +141,7 @@ class TableManagerCollection:
         for tm in self.tm_collection.values():
             logging.info(
                 'Running tm for table %s',
-                tm.table_name
+                tm.get_table_name()
             )
             tm.run(KN=self.known_names, **kwargs)
 

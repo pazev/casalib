@@ -14,11 +14,11 @@ via design pattern template, na classe abstrata.
 from dataclasses import dataclass, field
 
 from .make_query import MakeQuery
+from .utils import AthenaConnectionUtils
 from .base import Boto3SessionMaker, AthenaBaseConnection
 from ...base import (
     BaseConnectionAbstract,
     ConnectionAbstract,
-    MakeQueryAbstract,
 )
 
 
@@ -51,14 +51,23 @@ class AthenaConnection(ConnectionAbstract):
             table_prefix=self.table_prefix,
         )
 
-        self.make_query_ = MakeQuery(self.get_connection_)
+        self.make_query_ = MakeQuery(self.conn_)
+
+        self.utils_ = AthenaConnectionUtils(self.conn_)
 
     @property
-    def queries(self) -> MakeQueryAbstract:
+    def queries(self) -> MakeQuery:
         """ Returns an object capable of generating the
             desired query
         """
         return self.make_query_
+
+    @property
+    def utils(self) -> AthenaConnectionUtils:
+        """ Reeturns an object to implement some
+            utilities
+        """
+        return self.utils_
 
     @property
     def get_connection_(self) -> BaseConnectionAbstract:

@@ -186,6 +186,16 @@ class MakeQueryAbstract(ABC):
         # pylint: disable=too-many-arguments
 
 
+class ConnectionUtilsAbstract(ABC):
+    """ Utils for abstract method """
+    # pylint: disable=too-few-public-methods
+    @abstractmethod
+    def schema_tablename(self, table_name: str) -> str:
+        """ Generate the table_name with schema to be used
+            in the connection
+        """
+
+
 class ConnectionAbstract(BaseConnectionAbstract):
     """ Add the MakeQuery property to the class """
     @property
@@ -194,6 +204,11 @@ class ConnectionAbstract(BaseConnectionAbstract):
         """ Returns an object capable of generating the
             desired query
         """
+
+    @property
+    @abstractmethod
+    def utils(self) -> ConnectionUtilsAbstract:
+        """ Connection utils """
 
     @property
     @abstractmethod
