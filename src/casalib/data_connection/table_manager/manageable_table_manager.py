@@ -8,14 +8,21 @@ from typing import (
 
 import pandas as pd
 
-from . base import TableHelper, TableManagerAbstract
 from ..base import ConnectionAbstract, Metadata
+
+from .base import TableManagerAbstract
+from .helpers import TableHelper
 
 
 @dataclass
-class AnyTableManager(TableManagerAbstract):
+class ManageableTableManager(TableManagerAbstract):
     """ TableManager to deal with table and partition
-        operations as drop, drop_partitions, list_partitions
+        operations as list_partitions, sample, metadata,
+        last_partition_query.
+
+        It allows to drop, drop_partitions and
+        drop_partitions_filter, but has no requirements
+        about how to run the table.
     """
     table_name: str
 
@@ -25,30 +32,21 @@ class AnyTableManager(TableManagerAbstract):
             table_name=self.table_name
         )
 
-    def get_table_name(self) -> str:
-        """ Returns the table manager """
-        return self.table_name
-
     def set_conn_maker(
         self,
         conn_maker: Callable[[], ConnectionAbstract]
-    ) -> "AnyTableManager":
+    ) -> "ManageableTableManager":
         """ Set the connection maker """
         self.helper.set_conn_maker(conn_maker)
         return self
 
-    def drop(self) -> "AnyTableManager":
-        """ Drop the table """
-        self.helper.drop()
-        return self
+    def get_conn(self) -> ConnectionAbstract:
+        """ Return the connection """
+        return self.helper.get_conn()
 
-    def drop_partitions(
-        self,
-        partitions_to_drop: List[Tuple[str, ...]]
-    ) -> "AnyTableManager":
-        """ Drop partitions """
-        self.helper.drop_partitions(partitions_to_drop)
-        return self
+    def get_table_name(self) -> str:
+        """ Returns the table manager """
+        return self.helper.get_table_name()
 
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
@@ -79,16 +77,6 @@ class AnyTableManager(TableManagerAbstract):
         )
         return filtered_partitions
 
-    def drop_partitions_filter(
-        self,
-        *filters: str
-    ) -> "AnyTableManager":
-        """
-        Drop partitions using the fnmatch filter passed.
-        """
-        self.helper.drop_partitions_filter(*filters)
-        return self
-
     def sample(self, samples: int = 100) -> pd.DataFrame:
         """
         Select some sample from the table.
@@ -112,8 +100,31 @@ class AnyTableManager(TableManagerAbstract):
             **filters
         )
 
-    def run(self, **kwargs) -> "AnyTableManager":
-        """ Run the TableManager """
+    def drop(self) -> "ManageableTableManager":
+        """ Drop the table """
+        self.helper.drop()
+        return self
+
+    def drop_partitions(
+            self,
+            partitions_to_drop: List[Tuple[str, ...]]
+        ) -> "ManageableTableManager":
+        """ Drop partitions """
+        self.helper.drop_partitions(partitions_to_drop)
+        return self
+
+    def drop_partitions_filter(
+        self,
+        *filters: str
+    ) -> "ManageableTableManager":
+        """
+        Drop partitions using the fnmatch filter passed.
+        """
+        self.helper.drop_partitions_filter(*filters)
+        return self
+
+    def run(self, **kwargs) -> "ManageableTableManager":
+        """ Run the procedure that generate the table """
         return self
 
     def get_table_input(self) -> List[str]:
