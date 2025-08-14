@@ -46,6 +46,10 @@ class QueryTableManager(TableManagerAbstract):
         """ Return the table_name """
         return self.helper.get_table_name()
 
+    def get_partition_cols(self) -> Optional[List[str]]:
+        """ Returns the configured parittion cols """
+        return self.partition_cols
+
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
         return self.helper.list_partitions()

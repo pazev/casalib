@@ -32,6 +32,10 @@ class TableManagerAbstract(ABC):
         """ Returns the table name """
 
     @abstractmethod
+    def get_partition_cols(self) -> Optional[List[str]]:
+        """ Returns the configured parittion cols """
+
+    @abstractmethod
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
 
