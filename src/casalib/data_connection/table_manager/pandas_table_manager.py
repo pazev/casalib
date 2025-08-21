@@ -2,6 +2,7 @@
 Module defines a TableManager that applies a pandas
 pipeline to a Table
 """
+# pylint: disable=too-many-public-methods
 from dataclasses import dataclass, field
 from typing import (
     Any, Callable, Dict, List, Optional, Tuple
@@ -252,8 +253,9 @@ class PandasTableManager(TableManagerAbstract):
         self,
         load_function: Callable[[pd.DataFrame], None],
         dict_dffs_: Dict[str, pd.DataFrame],
-        **kwargs: Any,
     ) -> None:
+        """ The standard transform and then load function
+        """
         res = self.pandas_pipeline(**dict_dffs_)
         load_function(res)
 
