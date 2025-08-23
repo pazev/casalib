@@ -13,9 +13,9 @@ via design pattern template, na classe abstrata.
 # pylint: disable=too-many-instance-attributes
 from dataclasses import dataclass, field
 
-from .make_query import MakeQuery
+from .make_queries import MakeQuery
 from .utils import AthenaConnectionUtils
-from .base import Boto3SessionMaker, AthenaBaseConnection
+from .base_connection import Boto3SessionMaker, AthenaBaseConnection
 from ...base import (
     BaseConnectionAbstract,
     ConnectionAbstract,

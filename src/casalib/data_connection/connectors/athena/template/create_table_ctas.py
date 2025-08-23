@@ -3,7 +3,7 @@ Template para operação de criar uma tabela através do
 resultado de uma query.
 """
 
-TEMPLATE = """
+TEMPLATE = r"""
 CREATE TABLE {{schema_name}}.{{table_name}}
 WITH (
     external_location='{{ s3_output }}/{{ location }}'

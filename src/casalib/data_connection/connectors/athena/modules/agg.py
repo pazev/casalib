@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from ..templates import templates_dict
+from ..template import templates_dict
 
 
 

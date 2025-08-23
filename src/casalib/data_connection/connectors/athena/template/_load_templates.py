@@ -1,5 +1,5 @@
 """
-Templates de queries para o AWS Athena.
+Query templates for AWS Athena.
 """
 import jinja2
 

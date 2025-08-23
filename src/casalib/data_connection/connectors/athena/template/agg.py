@@ -2,7 +2,7 @@
 Aggregation template
 """
 
-TEMPLATE = """
+TEMPLATE = r"""
 WITH
 input_query_ AS (
     {{ query | indent(4) }}

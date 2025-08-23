@@ -1,7 +1,7 @@
 """
 Template para inserir dados em uma tabela.
 """
-TEMPLATE = """
+TEMPLATE = r"""
 insert into {{ schema_name }}.{{ table_name }}
 with
 input_ as (

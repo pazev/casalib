@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from .metadata import Metadata
+from ._metadata import Metadata
 
 
 class BaseConnectionAbstract(ABC):

@@ -5,7 +5,7 @@ last partition for a table
 # pylint: disable=too-many-arguments
 from typing import Any, List, Optional
 
-from ..templates import templates_dict
+from ..template import templates_dict
 
 
 def last_partition(

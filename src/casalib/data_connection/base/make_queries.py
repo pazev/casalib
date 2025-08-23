@@ -4,16 +4,21 @@ Module that generate queries for operations
 # pylint: disable=too-many-arguments
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .base_connection import BaseConnectionAbstract
+from .template import TemplateAbstract
 
 
-@dataclass
 class MakeQueryAbstract(ABC):
     """ Class to create queries when requested """
-    conn: BaseConnectionAbstract
+    @abstractmethod
+    def get_connection_(self) -> BaseConnectionAbstract:
+        """ Get the connection """
+
+    @abstractmethod
+    def get_template_(self) -> TemplateAbstract:
+        """ Get the query template collection """
 
     @abstractmethod
     def agg_query(

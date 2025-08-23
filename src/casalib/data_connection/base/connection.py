@@ -9,7 +9,7 @@ import pandas as pd
 
 from .base_connection import BaseConnectionAbstract
 from .make_queries import MakeQueryAbstract
-from .metadata import Metadata
+from ._metadata import Metadata
 from .utils import ConnectionUtilsAbstract
 
 

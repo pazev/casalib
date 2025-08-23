@@ -3,10 +3,12 @@ Module defines an object that generate queries to perform
 some operations
 """
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
+
+from .template import AthenaTemplates
 
 from ...base import MakeQueryAbstract, Metadata
-from .base import AthenaBaseConnection
+from .base_connection import AthenaBaseConnection
 
 from .modules.agg import make_agg_sql_
 
@@ -23,11 +25,18 @@ from .modules.last_partition import (
 from .modules.util import split_table_name
 
 
-
 @dataclass
 class MakeQuery(MakeQueryAbstract):
     """ Class to create queries when requested """
     conn: AthenaBaseConnection
+
+    def get_connection_(self) -> AthenaBaseConnection:
+        """ Get the connection """
+        return AthenaBaseConnection
+
+    def get_template_(self) -> Type[AthenaTemplates]:
+        """ Get the query template collection """
+        return AthenaTemplates
 
     def create_insert(
         self,

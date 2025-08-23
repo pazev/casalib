@@ -2,4 +2,4 @@
 Módulo faz a implementação do data_connection para o
 Amazon Athena.
 """
-from .athena import AthenaConnection, Boto3SessionMaker
+from .connection import AthenaConnection, Boto3SessionMaker

@@ -3,7 +3,7 @@ Template para criar uma tabela através da especificação de
 um schema.
 """
 
-TEMPLATE = """
+TEMPLATE = r"""
 CREATE EXTERNAL TABLE IF NOT EXISTS
 {{schema_name}}.{{table_name}}
 (

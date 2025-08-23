@@ -5,7 +5,7 @@ operations not directly related to quering.
 from dataclasses import dataclass
 
 from ...base import ConnectionUtilsAbstract
-from .base import AthenaBaseConnection
+from .base_connection import AthenaBaseConnection
 
 from .modules.util import split_table_name
 
