@@ -1,6 +1,9 @@
 """
 Module defines the base connection class, that will be used
-to perform the tasks
+to perform the tasks with the database.
+
+All advanced features will be implemented on
+ConnectionAbstract.
 """
 # pylint: disable=too-many-arguments
 from abc import ABC, abstractmethod
@@ -92,22 +95,6 @@ class BaseConnectionAbstract(ABC):
         partition_cols: Optional[List[str]] = None,
     ) -> Metadata:
         """ Envia um pandas DataFrame para o banco """
-
-    @abstractmethod
-    def agg_query(
-        self,
-        query: str,
-        groupby: Optional[List[str]] = None,
-        count_: Optional[List[str]] = None,
-        count_distinct_: Optional[List[str]] = None,
-        sum_: Optional[List[str]] = None,
-        mean_: Optional[List[str]] = None,
-        min_: Optional[List[str]] = None,
-        max_: Optional[List[str]] = None,
-        percentile_: Optional[Dict[int, List[str]]] = None,
-    ) -> pd.DataFrame:
-        """ Realiza uma agregação na query indicada """
-        # pylint: disable=too-many-arguments
 
     @abstractmethod
     def get_input_tables(

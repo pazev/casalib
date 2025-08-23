@@ -1,17 +1,16 @@
 """
-Módulo contém a implementação do data_connection para o
-AWS Athena.
+Module defines the base connetion class, that will be used
+to perform the tasks with the AWS Athena.
 
-A class Boto3SessionMaker gerencia a criação da conexão com
-o AWS Athena sempre que necessário.
+All advanced features will be implemented on
+ConnectionAbstract.
 
-Já a classe AthenaBaseConnection faz a gestão dos dados da
-conexão e implementa os métodos requeridos pela classe
-data_connection.ConnectionAbstract
+In this module, two classes are defined: Boto3SessionMaker,
+that provides a function to connect with Boto3; and
+AthenaBaseConnection, that implements the tasks.
 
-Vale ressaltar que para melhor manutenção do código,
-a classe AthenaBaseConnection faz chamadas a diversas
-funções Python implantadas em outros códigos.
+By design, the functionalities are implemented on modules
+folder, as functions; the class only makes the calls.
 """
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
@@ -24,10 +23,6 @@ from ...base import (
     Metadata,
 )
 
-
-from .modules.agg import (
-    agg_query,
-)
 from .modules.create_insert import (
     create_insert,
     create_ctas,
@@ -268,35 +263,6 @@ class AthenaBaseConnection(BaseConnectionAbstract):
             dff=dff,
             partition_cols=partition_cols,
         )
-
-    def agg_query(
-        self,
-        query: str,
-        groupby: Optional[List[str]] = None,
-        count_: Optional[List[str]] = None,
-        count_distinct_: Optional[List[str]] = None,
-        sum_: Optional[List[str]] = None,
-        mean_: Optional[List[str]] = None,
-        min_: Optional[List[str]] = None,
-        max_: Optional[List[str]] = None,
-        percentile_: Optional[Dict[int, List[str]]] = None,
-    ) -> pd.DataFrame:
-        """ Realiza uma agregação na query indicada """
-        # pylint: disable=too-many-arguments
-        dff = agg_query(
-            query_function=self.query,
-            query=query,
-            groupby=groupby,
-            count_=count_,
-            count_distinct_=count_distinct_,
-            sum_=sum_,
-            mean_=mean_,
-            min_=min_,
-            max_=max_,
-            percentile_=percentile_,
-        )
-
-        return dff
 
     def get_input_tables(
         self,

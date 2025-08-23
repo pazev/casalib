@@ -1,25 +1,40 @@
 """
-Module defines the Connection, that will be used.
+This module contains the final ConnectionAbstract class.
+
+The Connection class combines the functionalities of
+BaseConnectionAbstract, MakeQueries, Utils and Templates to
+provide some advanced features, like advanced partition
+filtering and automatically query generation and more.
 """
 from abc import abstractmethod
 from fnmatch import fnmatch
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
+from ._metadata import Metadata
 from .base_connection import BaseConnectionAbstract
 from .make_queries import MakeQueryAbstract
-from ._metadata import Metadata
+from .template import TemplateAbstract
 from .utils import ConnectionUtilsAbstract
 
 
 class ConnectionAbstract(BaseConnectionAbstract):
     """ Add the MakeQuery property to the class """
+    # Properties
+    # ==========
     @property
     @abstractmethod
     def queries(self) -> MakeQueryAbstract:
         """ Returns an object capable of generating the
             desired query
+        """
+
+    @property
+    @abstractmethod
+    def template(self) -> Type[TemplateAbstract]:
+        """ Return the class with methods to generate
+            queries without base connection
         """
 
     @property
@@ -34,6 +49,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
             perform the tasks
         """
 
+    # Base connection methods (Template)
     def query(self, query: str) -> pd.DataFrame:
         """ Retorna o resultado da query como um
             DataFrame
@@ -136,27 +152,6 @@ class ConnectionAbstract(BaseConnectionAbstract):
             partition_cols=partition_cols,
         )
 
-    def agg_query(
-        self,
-        query: str,
-        groupby: Optional[List[str]] = None,
-        count_: Optional[List[str]] = None,
-        count_distinct_: Optional[List[str]] = None,
-        sum_: Optional[List[str]] = None,
-        mean_: Optional[List[str]] = None,
-        min_: Optional[List[str]] = None,
-        max_: Optional[List[str]] = None,
-        percentile_: Optional[Dict[int, List[str]]] = None,
-    ) -> pd.DataFrame:
-        """ Realiza uma agregação na query indicada """
-        # pylint: disable=too-many-arguments
-        return self.get_connection_.agg_query(
-            query=query, groupby=groupby,
-            count_=count_, count_distinct_=count_distinct_,
-            sum_=sum_, mean_=mean_, min_=min_,
-            max_=max_, percentile_=percentile_,
-        )
-
     def get_input_tables(
         self,
         query: str
@@ -168,6 +163,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
             .get_input_tables(query)
         )
 
+    # Upgraded version of partition list
     def list_partition_filter(
         self, table_name: str, *filters: str,
     ) -> List[Tuple[str, ...]]:
@@ -222,3 +218,27 @@ class ConnectionAbstract(BaseConnectionAbstract):
             table_name, filtered_partitions
         )
         return self
+
+    # Queries
+    def agg_query(
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_distinct_: Optional[List[str]] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[Dict[int, List[str]]] = None,
+    ) -> pd.DataFrame:
+        """ Realiza uma agregação na query indicada """
+        # pylint: disable=too-many-arguments
+        query = self.queries.agg_query(
+            query=query, groupby=groupby,
+            count_=count_, count_distinct_=count_distinct_,
+            sum_=sum_, mean_=mean_, min_=min_,
+            max_=max_, percentile_=percentile_,
+        )
+
+        return self.get_connection_.query(query=query)

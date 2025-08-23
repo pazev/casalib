@@ -1,19 +1,22 @@
 """
-Módulo contém a classe final, que encapsula a implementação
-do data_connection para o AWS Athena junto com a
-funcionalidade de make_queries.
+This module contains the final Connection class, which
+encapsulates the implementation of data_connection for AWS
+Athena.
 
-A class Boto3SessionMaker gerencia a criação da conexão com
-o AWS Athena sempre que necessário.
+The Boto3SessionMaker class manages the creation of
+connections to AWS Athena whenever needed.
 
-Já a classe AthenaConnection junta as funcionalidades de
-AthenaBaseConnection com MakeQueries. A amarração se dá
-via design pattern template, na classe abstrata.
+The AthenaConnection class combines the functionalities of
+AthenaBaseConnection, MakeQueries, Utils and Templates to
+provide some advanced features, like advanced partition
+filtering and automatically query generation and more.
 """
 # pylint: disable=too-many-instance-attributes
 from dataclasses import dataclass, field
+from typing import Type
 
 from .make_queries import MakeQuery
+from .template import AthenaTemplates
 from .utils import AthenaConnectionUtils
 from .base_connection import Boto3SessionMaker, AthenaBaseConnection
 from ...base import (
@@ -54,6 +57,13 @@ class AthenaConnection(ConnectionAbstract):
         self.make_query_ = MakeQuery(self.conn_)
 
         self.utils_ = AthenaConnectionUtils(self.conn_)
+
+    @property
+    def template(self) -> Type[AthenaTemplates]:
+        """ Return the class with methods to generate
+            queries without base connection
+        """
+        return AthenaTemplates
 
     @property
     def queries(self) -> MakeQuery:
