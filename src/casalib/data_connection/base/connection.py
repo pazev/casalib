@@ -30,8 +30,8 @@ class ConnectionAbstract(BaseConnectionAbstract):
             desired query
         """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def template() -> Type[TemplateAbstract]:
         """ Return the class with methods to generate
             queries without base connection

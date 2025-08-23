@@ -11,16 +11,16 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class TemplateAbstract(ABC):
     """ Class to create queries when requested """
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def split_schema_name(
         table_name: str,
         schema_name: Optional[str] = None,
     ) -> str:
         """ Function to normalize the table name """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def agg_query(
         query: str,
         groupby: Optional[List[str]] = None,
@@ -34,8 +34,8 @@ class TemplateAbstract(ABC):
     ) -> str:
         """ Make aggregation over a query """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def create_schema(
         table_name: str,
         columns_types: Dict[str, str],
@@ -45,8 +45,8 @@ class TemplateAbstract(ABC):
     ) -> str:
         """ Generate a CREATE TABLE with schema query """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def create_ctas(
         query: str,
         table_name: str,
@@ -57,8 +57,8 @@ class TemplateAbstract(ABC):
         """ Generate a CREATE TABLE AS (CTAS) query
         """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def insert_table(
         query: str,
         table_name: str,
@@ -68,8 +68,8 @@ class TemplateAbstract(ABC):
         """ Generate a INSERT INTO query
         """
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def last_partition(
         table_name: str,
         cross_columns_: List[str],
