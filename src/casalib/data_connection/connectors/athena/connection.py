@@ -58,8 +58,8 @@ class AthenaConnection(ConnectionAbstract):
 
         self.utils_ = AthenaConnectionUtils(self.conn_)
 
-    @property
-    def template(self) -> Type[AthenaTemplates]:
+    @staticmethod
+    def template() -> Type[AthenaTemplates]:
         """ Return the class with methods to generate
             queries without base connection
         """

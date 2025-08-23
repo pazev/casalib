@@ -16,10 +16,6 @@ from .modules.create_insert import (
     make_insert_query_
 )
 
-from .modules.last_partition import (
-    last_partition,
-)
-
 from .modules.util import split_table_name
 
 
@@ -228,7 +224,7 @@ class MakeQuery(MakeQueryAbstract):
     ) -> List[str]:
         """ Create a query to retrieve last partition """
         queries = [
-            last_partition(
+            self.get_template_.last_partition(
                 table_name=table_name,
                 cross_columns_=cross_columns_,
                 max_column_=max_column_,

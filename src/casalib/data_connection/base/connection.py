@@ -30,9 +30,9 @@ class ConnectionAbstract(BaseConnectionAbstract):
             desired query
         """
 
-    @property
     @abstractmethod
-    def template(self) -> Type[TemplateAbstract]:
+    @staticmethod
+    def template() -> Type[TemplateAbstract]:
         """ Return the class with methods to generate
             queries without base connection
         """
@@ -234,11 +234,13 @@ class ConnectionAbstract(BaseConnectionAbstract):
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
-        query = self.queries.agg_query(
+        query_to_exec = self.queries.agg_query(
             query=query, groupby=groupby,
             count_=count_, count_distinct_=count_distinct_,
             sum_=sum_, mean_=mean_, min_=min_,
             max_=max_, percentile_=percentile_,
-        )
+        )[0]
 
-        return self.get_connection_.query(query=query)
+        return self.get_connection_.query(
+            query=query_to_exec
+        )

@@ -43,7 +43,7 @@ GROUP BY
 """
 
 
-def make_agg_sql_(
+def make_sql_agg_query_(
     query: str,
     groupby: Optional[List[str]] = None,
     count_: Optional[List[str]] = None,

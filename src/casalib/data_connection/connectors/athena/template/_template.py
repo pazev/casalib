@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from ....base.template import TemplateAbstract
 
-from .agg import make_agg_sql_
+from .agg import make_sql_agg_query_
+from .last_partition import make_sql_last_partition_
 
 
 class AthenaTemplates(TemplateAbstract):
@@ -36,7 +37,7 @@ class AthenaTemplates(TemplateAbstract):
     ) -> str:
         """ Make aggregation over a query """
         # pylint: disable=too-many-arguments
-        return make_agg_sql_(
+        return make_sql_agg_query_(
             query=query,
             groupby=groupby,
             count_=count_,
@@ -48,6 +49,22 @@ class AthenaTemplates(TemplateAbstract):
             percentile_=percentile_,
         )
 
+    @staticmethod
+    def last_partition(
+        table_name: str,
+        cross_columns_: List[str],
+        max_column_: str,
+        **filters: List[Any]
+    ) -> str:
+        """ Generate a query to retrieve the last partition
+            of a table.
+        """
+        return make_sql_last_partition_(
+            table_name=table_name,
+            cross_columns_=cross_columns_,
+            max_column_=max_column_,
+            **filters
+        )
 
     @staticmethod
     def create_schema(
@@ -79,15 +96,4 @@ class AthenaTemplates(TemplateAbstract):
         location: Optional[str] = None,
     ) -> str:
         """ Generate a INSERT INTO query
-        """
-
-    @staticmethod
-    def last_partition(
-        table_name: str,
-        cross_columns_: List[str],
-        max_column_: str,
-        **filters: List[Any]
-    ) -> List[str]:
-        """ Generate a query to retrieve the last partition
-            of a table.
         """
