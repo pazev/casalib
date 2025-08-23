@@ -4,7 +4,8 @@ Query templating module
 from typing import Any, Dict, List, Optional
 
 from ....base.template import TemplateAbstract
-from ._load_templates import templates_dict
+
+from .agg import make_agg_sql_
 
 
 class AthenaTemplates(TemplateAbstract):
@@ -35,13 +36,16 @@ class AthenaTemplates(TemplateAbstract):
     ) -> str:
         """ Make aggregation over a query """
         # pylint: disable=too-many-arguments
-        return templates_dict['agg'].render(
+        return make_agg_sql_(
             query=query,
             groupby=groupby,
             count_=count_,
             count_distinct_=count_distinct_,
             sum_=sum_,
-
+            mean_=mean_,
+            min_=min_,
+            max_=max_,
+            percentile_=percentile_,
         )
 
 

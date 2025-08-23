@@ -10,8 +10,6 @@ from .template import AthenaTemplates
 from ...base import MakeQueryAbstract, Metadata
 from .base_connection import AthenaBaseConnection
 
-from .modules.agg import make_agg_sql_
-
 from .modules.create_insert import (
     make_create_schema_query_,
     make_create_ctas_query_,
@@ -30,10 +28,12 @@ class MakeQuery(MakeQueryAbstract):
     """ Class to create queries when requested """
     conn: AthenaBaseConnection
 
+    @property
     def get_connection_(self) -> AthenaBaseConnection:
         """ Get the connection """
-        return AthenaBaseConnection
+        return self.conn
 
+    @property
     def get_template_(self) -> Type[AthenaTemplates]:
         """ Get the query template collection """
         return AthenaTemplates
@@ -206,7 +206,7 @@ class MakeQuery(MakeQueryAbstract):
         # pylint: disable=too-many-arguments
 
         return [
-            make_agg_sql_(
+            self.get_template_.agg_query(
                 query=query,
                 groupby=groupby,
                 count_=count_,

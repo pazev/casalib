@@ -4,7 +4,7 @@ Module that generate queries for operations
 # pylint: disable=too-many-arguments
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from .base_connection import BaseConnectionAbstract
 from .template import TemplateAbstract
@@ -12,12 +12,14 @@ from .template import TemplateAbstract
 
 class MakeQueryAbstract(ABC):
     """ Class to create queries when requested """
+    @property
     @abstractmethod
     def get_connection_(self) -> BaseConnectionAbstract:
         """ Get the connection """
 
+    @property
     @abstractmethod
-    def get_template_(self) -> TemplateAbstract:
+    def get_template_(self) -> Type[TemplateAbstract]:
         """ Get the query template collection """
 
     @abstractmethod
