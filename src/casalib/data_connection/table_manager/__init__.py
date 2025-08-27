@@ -6,4 +6,4 @@ from .manageable_table_manager import ManageableTableManager
 from .query_table_manager import QueryTableManager
 from .pandas_table_manager import PandasTableManager
 
-from .collection import TableManagerCollection
+from .base._collection import TableManagerCollection

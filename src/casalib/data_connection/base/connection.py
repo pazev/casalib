@@ -164,7 +164,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         )
 
     # Upgraded version of partition list
-    def list_partition_filter(
+    def list_partitions_filter(
         self, table_name: str, *filters: str,
     ) -> List[Tuple[str, ...]]:
         """
@@ -189,14 +189,14 @@ class ConnectionAbstract(BaseConnectionAbstract):
         ]
         return filtered_partitions
 
-    def list_partition_filter_pd(
+    def list_partitions_filter_pd(
         self, table_name: str, *filters: str,
     ) -> pd.DataFrame:
         """ Return the list of partitions as pd.DataFrame
         """
         metadata = self.metadata(table_name=table_name)
 
-        list_partitions = self.list_partition_filter(
+        list_partitions = self.list_partitions_filter(
             table_name, *filters
         )
 
@@ -211,13 +211,25 @@ class ConnectionAbstract(BaseConnectionAbstract):
         """
         Drop partitions using the fnmatch filter passed.
         """
-        filtered_partitions = self.list_partition_filter(
+        filtered_partitions = self.list_partitions_filter(
             table_name, *filters
         )
         self.get_connection_.drop_partitions(
             table_name, filtered_partitions
         )
         return self
+
+    def drop_partitions_filter_pd(
+        self, table_name: str, *filters: str,
+    ) -> "ConnectionAbstract":
+        """
+        Drop partitions using the fnmatch filter passed.
+        Sugar syntax to dtop_partitions_filter.
+        """
+        return self.drop_partitions_filter(
+            table_name,
+            *filters
+        )
 
     # Queries
     def agg_query(

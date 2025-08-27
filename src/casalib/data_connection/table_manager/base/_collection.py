@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, List, Tuple
 
 from casalib.algorithms.graph import Graph
 
-from ..base import ConnectionAbstract
-from .base import TableManagerAbstract
+from ...base import ConnectionAbstract
+from .table_manager import TableManagerAbstract
 
 
 @dataclass

@@ -1,45 +1,69 @@
-""" Module defines an object to manage tables """
-from abc import ABC, abstractmethod
+"""
+Table Manager Abstract: class with template, using
+TableHelper to implement several aspects of TableManager
+"""
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
     Dict,
     List,
     Optional,
+    Type,
     Tuple
 )
 
 import pandas as pd
 
-from ..base import ConnectionAbstract, Metadata
+from ...base import ConnectionAbstract, Metadata
+from .base_table_manager import BaseTableManagerAbstract
+from ._helpers import TableHelper
 
 
-class TableManagerAbstract(ABC):
+@dataclass(kw_only=True)
+class TableManagerAbstract(BaseTableManagerAbstract):
     """ Methods that must be available to manage tables """
-    @abstractmethod
+    table_name: str
+    connection_type: Type[ConnectionAbstract]
+    partition_cols: Optional[List[str]] = None
+
+    def __post_init__(self):
+        """ Inicialização """
+        self.helper = TableHelper(self.table_name)
+
+    def get_helper(self) -> TableHelper:
+        """ Return a TableHelper """
+        return self.helper
+
+    def get_conn_type(self) -> Type[ConnectionAbstract]:
+        """ Get connection type """
+        return self.connection_type
+
     def set_conn_maker(
         self,
         conn_maker: Callable[[], ConnectionAbstract]
     ) -> "TableManagerAbstract":
         """ Set the connection maker """
+        self.get_helper().set_conn_maker(conn_maker)
+        return self
 
-    @abstractmethod
     def get_conn(self) -> ConnectionAbstract:
         """ Get a connection """
+        return self.get_helper().get_conn()
 
-    @abstractmethod
     def get_table_name(self) -> str:
         """ Returns the table name """
+        return self.get_helper().get_table_name()
 
-    @abstractmethod
     def get_partition_cols(self) -> Optional[List[str]]:
         """ Returns the configured parittion cols """
+        return self.partition_cols or []
 
-    @abstractmethod
     def list_partitions(self) -> Dict[Tuple[str, ...], str]:
         """ List partitions """
+        return self.get_helper().list_partitions()
 
-    @abstractmethod
     def list_partitions_filter(
         self,
         *filters: str
@@ -47,8 +71,12 @@ class TableManagerAbstract(ABC):
         """
         Filter the partitions list using the filter passed.
         """
+        return (
+            self
+            .get_helper()
+            .list_partitions_filter(*filters)
+        )
 
-    @abstractmethod
     def list_partitions_filter_pd(
         self,
         *filters: str
@@ -57,18 +85,22 @@ class TableManagerAbstract(ABC):
         Filter the partitions list using the filter passed.
         Returns the result as pd.DataFrame.
         """
+        return (
+            self
+            .get_helper()
+            .list_partitions_filter_pd(*filters)
+        )
 
-    @abstractmethod
     def sample(self, samples: int = 100) -> pd.DataFrame:
         """
         Select some sample from the table.
         """
+        return self.get_helper().sample(samples)
 
-    @abstractmethod
     def metadata(self) -> Metadata:
         """ Returns the table metadata """
+        return self.get_helper().metadata()
 
-    @abstractmethod
     def last_partition_query(
         self,
         cross_columns_: Optional[List[str]] = None,
@@ -76,19 +108,24 @@ class TableManagerAbstract(ABC):
         **filters: List[Any],
     ) -> List[str]:
         """ Return last partition """
+        return self.get_helper().last_partition_query(
+            self.get_conn_type(), cross_columns_,
+            max_column_, **filters
+        )
 
-    @abstractmethod
     def drop(self) -> "TableManagerAbstract":
         """ Drop the table """
+        self.get_helper().drop()
+        return self
 
-    @abstractmethod
     def drop_partitions(
         self,
         partitions_to_drop: List[Tuple[str, ...]]
     ) -> "TableManagerAbstract":
         """ Drop partitions """
+        self.helper.drop_partitions(partitions_to_drop)
+        return self
 
-    @abstractmethod
     def drop_partitions_filter(
         self,
         *filters: str
@@ -96,6 +133,18 @@ class TableManagerAbstract(ABC):
         """
         Drop partitions using the fnmatch filter passed.
         """
+        self.helper.drop_partitions_filter(*filters)
+        return self
+
+    def drop_partitions_filter_pd(
+        self,
+        *filters: str
+    ) -> "TableManagerAbstract":
+        """
+        Drop partitions using the fnmatch filter passed.
+        """
+        self.helper.drop_partitions_filter(*filters)
+        return self
 
     @abstractmethod
     def get_table_input(self) -> List[str]:

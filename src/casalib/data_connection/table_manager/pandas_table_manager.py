@@ -5,20 +5,17 @@ pipeline to a Table
 # pylint: disable=too-many-public-methods
 from dataclasses import dataclass, field
 from typing import (
-    Any, Callable, Dict, List, Optional, Tuple
+    Any, Callable, Dict, List, Optional
 )
 
 import jinja2
 import pandas as pd
 
-from .base import (
-    TableManagerAbstract,
-)
-from .helpers import TableHelper
-from ..base import ConnectionAbstract, Metadata
+from .base import TableManagerAbstract
+from .base._helpers import TableHelper
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PandasTableManager(TableManagerAbstract):
     """
     Pandas Table Manager
@@ -34,7 +31,6 @@ class PandasTableManager(TableManagerAbstract):
     the load function and the dictionary of dataframes; it
     allows to increment transform and load.
     """
-    table_name: str
     required_params: List[str]
 
     pandas_pipeline: Optional[
@@ -45,7 +41,6 @@ class PandasTableManager(TableManagerAbstract):
         repr=False,
         default_factory=dict,
     )
-    partition_cols: Optional[List[str]] = None
 
     transform_and_load_: Optional[Callable[
         [
@@ -75,102 +70,6 @@ class PandasTableManager(TableManagerAbstract):
             self.transform_and_load_ = (
                 self.standard_transform_and_load_
             )
-
-    def set_conn_maker(
-        self,
-        conn_maker: Callable[[], ConnectionAbstract]
-    ) -> "PandasTableManager":
-        """ Set the connection maker """
-        self.helper.set_conn_maker(conn_maker)
-        return self
-
-    def get_conn(self) -> ConnectionAbstract:
-        """ Get a connection """
-        return self.helper.get_conn()
-
-    def get_table_name(self) -> str:
-        """ Return the table_name """
-        return self.helper.get_table_name()
-
-    def get_partition_cols(self) -> Optional[List[str]]:
-        """ Returns the configured parittion cols """
-        return self.partition_cols
-
-    def list_partitions(self) -> Dict[Tuple[str, ...], str]:
-        """ List partitions """
-        return self.helper.list_partitions()
-
-    def list_partitions_filter(
-        self,
-        *filters: str
-    ) -> List[Tuple[str, ...]]:
-        """
-        Filter the partitions list using the filter passed.
-        """
-        filtered_partitions = (
-            self.helper.list_partitions_filter(*filters)
-        )
-        return filtered_partitions
-
-    def list_partitions_filter_pd(
-        self,
-        *filters: str
-    ) -> pd.DataFrame:
-        """
-        Filter the partitions list using the filter passed.
-        Return the result as pandas DataFrame
-        """
-        filtered_partitions = (
-            self.helper.list_partitions_filter_pd(*filters)
-        )
-        return filtered_partitions
-
-    def sample(self, samples: int = 100) -> pd.DataFrame:
-        """
-        Select some sample from the table.
-        """
-        return self.helper.sample(samples)
-
-    def metadata(self) -> Metadata:
-        """ Returns the table metadata """
-        return self.helper.metadata()
-
-    def last_partition_query(
-        self,
-        cross_columns_: Optional[List[str]] = None,
-        max_column_: Optional[str] = None,
-        **filters: List[Any]
-    ) -> List[str]:
-        """ Return last partition query for the table """
-        return self.helper.last_partition_query(
-            cross_columns_=cross_columns_,
-            max_column_=max_column_,
-            **filters
-        )
-
-    def drop(self) -> "PandasTableManager":
-        """ Drop the table """
-        self.helper.drop()
-        return self
-
-    def drop_partitions(
-        self,
-        partitions_to_drop: List[Tuple[str, ...]]
-    ) -> "PandasTableManager":
-        """ Drop partitions """
-        self.helper.drop_partitions(partitions_to_drop)
-        return self
-
-    def drop_partitions_filter(
-        self,
-        *filters: str
-    ) -> "PandasTableManager":
-        """
-        Drop partitions using the fnmatch filter passed.
-        """
-        self.helper.drop_partitions_filter(*filters)
-        return self
-
 
     # Methods required for the run
     def input_vars(self) -> List[str]:

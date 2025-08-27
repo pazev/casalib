@@ -75,7 +75,7 @@ class TemplateAbstract(ABC):
         cross_columns_: List[str],
         max_column_: str,
         **filters: List[Any]
-    ) -> List[str]:
+    ) -> str:
         """ Generate a query to retrieve the last partition
             of a table.
         """

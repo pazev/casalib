@@ -72,7 +72,7 @@ class AthenaTemplates(TemplateAbstract):
         columns_types: Dict[str, str],
         partition_cols_types: Dict[str, str],
         schema_name: Optional[str] = None,
-        location: str = None,
+        location: Optional[str] = None,
     ) -> str:
         """ Generate a CREATE TABLE with schema query """
 

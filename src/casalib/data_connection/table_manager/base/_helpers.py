@@ -4,12 +4,18 @@ classes
 """
 from dataclasses import dataclass, field
 from typing import (
-    Any, Callable, Dict, List, Optional, Tuple
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Tuple,
 )
 
 import pandas as pd
 
-from ..base import ConnectionAbstract, Metadata
+from ...base import ConnectionAbstract, Metadata
 
 
 @dataclass
@@ -56,7 +62,7 @@ class TableHelper():
         """
         Filter the partitions list using the filter passed.
         """
-        return self.get_conn().list_partition_filter(
+        return self.get_conn().list_partitions_filter(
             self.table_name, *filters
         )
 
@@ -70,7 +76,7 @@ class TableHelper():
         """
         conn = self.get_conn()
 
-        return conn.list_partition_filter_pd(
+        return conn.list_partitions_filter_pd(
             self.table_name, *filters
         )
 
@@ -91,6 +97,7 @@ class TableHelper():
 
     def last_partition_query(
         self,
+        connection_type: Type[ConnectionAbstract],
         cross_columns_: Optional[List[str]] = None,
         max_column_: Optional[str] = None,
         **filters: List[Any],
@@ -105,12 +112,14 @@ class TableHelper():
         )
         max_column_f = max_column_ or cross_columns_f[-1]
 
-        return self.get_conn().queries.last_partition(
+        query = connection_type.template().last_partition(
             table_name=self.table_name,
             cross_columns_=cross_columns_f,
             max_column_=max_column_f,
             **filters
         )
+
+        return [query]
 
     def drop(self) -> "TableHelper":
         """ Drop the table """
@@ -129,6 +138,18 @@ class TableHelper():
         return self
 
     def drop_partitions_filter(
+        self,
+        *filters: str
+    ) -> "TableHelper":
+        """
+        Drop partitions using the fnmatch filter passed.
+        """
+        self.get_conn().drop_partitions_filter(
+            self.table_name, *filters
+        )
+        return self
+
+    def drop_partitions_filter_pd(
         self,
         *filters: str
     ) -> "TableHelper":
