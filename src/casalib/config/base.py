@@ -35,9 +35,9 @@ def default_cfg_() -> Path:
 
 def load_cfg_(config_file: Optional[str] = None) -> Dict:
     """ Carrega as configurações """
-    config_file = config_file or default_cfg_()
+    config_file_ = config_file or default_cfg_()
 
-    with open(config_file, 'r', encoding='utf-8') as f:
+    with open(config_file_, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     return config

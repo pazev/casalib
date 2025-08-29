@@ -1,11 +1,14 @@
 """
 Query templating module
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ....base.template import TemplateAbstract
 
 from .agg import make_sql_agg_query_
+from .create_ctas import make_sql_create_ctas_
+from .create_schema import make_sql_create_schema_
+from .insert_table import make_sql_insert_
 from .last_partition import make_sql_last_partition_
 
 
@@ -15,13 +18,36 @@ class AthenaTemplates(TemplateAbstract):
     def split_schema_name(
         table_name: str,
         schema_name: Optional[str] = None,
-    ) -> str:
+        raise_error_: bool = True,
+    ) -> Tuple[str, str]:
         """ Function to normalize the table name """
         schema, table = [
             schema_name,
             *table_name.split('.')
         ][-2:]
+
+        if schema is None:
+            if raise_error_:
+                raise ValueError(
+                    "Please, add schema_name to "
+                    "`table_name` or set `schema_name`."
+                )
+
+        return (str(schema), str(table))
+
+    @staticmethod
+    def process_table_name(
+        table_name: str,
+        schema_name: Optional[str] = None,
+    ) -> str:
+        """ Process table_name, adding the default schema if
+            needed.
+        """
+        schema, table = AthenaTemplates.split_schema_name(
+            table_name, schema_name
+        )
         return '.'.join(filter(None, [schema, table]))
+
 
     @staticmethod
     def agg_query(
@@ -75,6 +101,18 @@ class AthenaTemplates(TemplateAbstract):
         location: Optional[str] = None,
     ) -> str:
         """ Generate a CREATE TABLE with schema query """
+        schema_name_, table_name = (
+            AthenaTemplates
+            .split_schema_name(table_name, schema_name)
+        )
+
+        return make_sql_create_schema_(
+            table_name=table_name,
+            columns_types=columns_types,
+            partition_cols_types=partition_cols_types,
+            schema_name=schema_name_,
+            location=location,
+        )
 
 
     @staticmethod
@@ -87,13 +125,34 @@ class AthenaTemplates(TemplateAbstract):
     ) -> str:
         """ Generate a CREATE TABLE AS (CTAS) query
         """
+        schema_name_, table_name = (
+            AthenaTemplates
+            .split_schema_name(table_name, schema_name)
+        )
+
+        return make_sql_create_ctas_(
+            query=query,
+            table_name=table_name,
+            partition_cols=partition_cols,
+            schema_name=schema_name,
+            location=location,
+        )
 
     @staticmethod
     def insert_table(
         query: str,
         table_name: str,
         schema_name: Optional[str] = None,
-        location: Optional[str] = None,
     ) -> str:
         """ Generate a INSERT INTO query
         """
+        schema_name, table_name = (
+            AthenaTemplates
+            .split_schema_name(table_name, schema_name)
+        )
+
+        return make_sql_insert_(
+            query=query,
+            table_name=table_name,
+            schema_name=schema_name,
+        )

@@ -5,7 +5,7 @@ Module that generate queries for operations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -16,8 +16,18 @@ class TemplateAbstract(ABC):
     def split_schema_name(
         table_name: str,
         schema_name: Optional[str] = None,
-    ) -> str:
+    ) -> Tuple[str, str]:
         """ Function to normalize the table name """
+
+    @staticmethod
+    @abstractmethod
+    def process_table_name(
+        table_name: str,
+        schema_name: Optional[str] = None,
+    ) -> str:
+        """ Process table_name, adding the default schema if
+            needed.
+        """
 
     @staticmethod
     @abstractmethod
@@ -63,7 +73,6 @@ class TemplateAbstract(ABC):
         query: str,
         table_name: str,
         schema_name: Optional[str] = None,
-        location: Optional[str] = None,
     ) -> str:
         """ Generate a INSERT INTO query
         """

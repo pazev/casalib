@@ -4,8 +4,8 @@ Query templates for AWS Athena.
 import jinja2
 
 from . import agg
-from . import create_table_ctas
-from . import create_table
+from . import create_ctas
+from . import create_schema
 from . import insert_table
 from . import last_partition
 
@@ -15,8 +15,8 @@ env = jinja2.Environment()
 
 templates_dict = {
     'agg': env.from_string(agg.TEMPLATE),
-    'create_table_ctas': env.from_string(create_table_ctas.TEMPLATE),
-    'create_table': env.from_string(create_table.TEMPLATE),
+    'create_table_ctas': env.from_string(create_ctas.TEMPLATE),
+    'create_table': env.from_string(create_schema.TEMPLATE),
     'insert_table': env.from_string(insert_table.TEMPLATE),
     'last_partition': env.from_string(last_partition.TEMPLATE),
 }
