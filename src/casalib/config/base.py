@@ -4,7 +4,7 @@ configuração.
 """
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import yaml
 
@@ -33,9 +33,11 @@ def default_cfg_() -> Path:
     return dft_file
 
 
-def load_cfg_() -> Dict:
+def load_cfg_(config_file: Optional[str] = None) -> Dict:
     """ Carrega as configurações """
-    with open(default_cfg_(), 'r', encoding='utf-8') as f:
+    config_file = config_file or default_cfg_()
+
+    with open(config_file, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     return config
@@ -49,9 +51,12 @@ def make_obj_params_(
     return obj
 
 
-def load_obj(name: str) -> Any:
+def load_obj(
+    name: str, config_file: Optional[str] = None
+) -> Any:
     """ Cria um objeto a partir das configurações """
-    config = load_cfg_()
+    config = load_cfg_(config_file)
+
     try:
         config_params = config[name]
     except KeyError as exc:
