@@ -96,7 +96,7 @@ class AthenaTemplates(TemplateAbstract):
     def create_schema(
         table_name: str,
         columns_types: Dict[str, str],
-        partition_cols_types: Dict[str, str],
+        partition_cols_types: Optional[Dict[str, str]] = None,
         schema_name: Optional[str] = None,
         location: Optional[str] = None,
     ) -> str:
@@ -106,14 +106,15 @@ class AthenaTemplates(TemplateAbstract):
             .split_schema_name(table_name, schema_name)
         )
 
+        partition_cols_types_ = partition_cols_types or {}
+
         return make_sql_create_schema_(
             table_name=table_name,
             columns_types=columns_types,
-            partition_cols_types=partition_cols_types,
+            partition_cols_types=partition_cols_types_,
             schema_name=schema_name_,
             location=location,
         )
-
 
     @staticmethod
     def create_ctas(
@@ -122,6 +123,7 @@ class AthenaTemplates(TemplateAbstract):
         partition_cols: Optional[List[str]] = None,
         schema_name: Optional[str] = None,
         location: Optional[str] = None,
+        cols_ordering: Optional[List[str]] = None,
     ) -> str:
         """ Generate a CREATE TABLE AS (CTAS) query
         """
@@ -130,12 +132,16 @@ class AthenaTemplates(TemplateAbstract):
             .split_schema_name(table_name, schema_name)
         )
 
+        partition_cols_ = partition_cols or {}
+        cols_ordering_ = cols_ordering or []
+
         return make_sql_create_ctas_(
             query=query,
             table_name=table_name,
-            partition_cols=partition_cols,
-            schema_name=schema_name,
+            partition_cols=partition_cols_,
+            schema_name=schema_name_,
             location=location,
+            cols_ordering=cols_ordering_,
         )
 
     @staticmethod
@@ -143,6 +149,7 @@ class AthenaTemplates(TemplateAbstract):
         query: str,
         table_name: str,
         schema_name: Optional[str] = None,
+        cols_ordering: Optional[List[str]] = None,
     ) -> str:
         """ Generate a INSERT INTO query
         """
@@ -155,4 +162,5 @@ class AthenaTemplates(TemplateAbstract):
             query=query,
             table_name=table_name,
             schema_name=schema_name,
+            cols_ordering=cols_ordering,
         )

@@ -13,9 +13,13 @@ input_ as (
 ),
 reordering as (
     select
-        {%- for col in columns_types %}
+        {%- if not cols_ordering %}
+        *
+        {%- else %}
+        {%- for col in cols_ordering %}
         {{ col }}{% if not loop.last %},{% endif %}
         {%- endfor %}
+        {%- endif %}
     from
         input_
 )
@@ -27,6 +31,7 @@ def make_sql_insert_(
     query: str,
     table_name: str,
     schema_name: Optional[str] = None,
+    cols_ordering: Optional[List[str]] = None,
 ) -> str:
     """ Create a insert INTO query """
     env = jinja2.Environment(undefined=jinja2.StrictUndefined)
@@ -36,4 +41,5 @@ def make_sql_insert_(
         query=query,
         table_name=table_name,
         schema_name=schema_name,
+        cols_ordering=cols_ordering,
     )

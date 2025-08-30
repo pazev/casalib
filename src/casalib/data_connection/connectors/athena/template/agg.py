@@ -24,7 +24,7 @@ SELECT
     {%- if op_tuple[0] == 'percentile' %}
     approx_percentile({{col}}, {{ op_tuple[1] / 100.0 }})
         as {{ col }}__percentile_{{op_tuple[1]}},
-    {% elif op_tuple[0] == 'count_distinct' %}
+    {%- elif op_tuple[0] == 'count_distinct' %}
     count(distinct {{col}}) as {{ col }}__count_distinct,
     {%- else %}
     {{ op_tuple[0] }}({{col}}) as {{ col }}__{{ op_tuple[0] }},
