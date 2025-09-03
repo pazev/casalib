@@ -2,7 +2,7 @@
 Module define enrich functions for an AthenaCompiler
 """
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import jinja2
 
@@ -178,10 +178,19 @@ class AthenaCompiler:
     prefix: str
     study: str
 
-    def make_table_name_(self, idx: Union[int, str]) -> str:
+    def make_table_name_(
+        self,
+        idx: Union[int, str],
+        optional_name: Optional[str] = None,
+    ) -> str:
         """ Make the query name """
         idx = f'{idx:03}' if isinstance(idx, int) else idx
-        return f'{self.prefix}{self.study}_table_{idx}'
+        name = f'{self.prefix}{self.study}_table_{idx}'
+
+        if optional_name:
+            name += f'_{optional_name}'
+
+        return name
 
     def __call__(
         self, enricher: Enricher
@@ -203,15 +212,6 @@ class AthenaCompiler:
 
             table_queries[table_name] = query
             table_columns[table_name] = out_cols
-
-        final_query = compile_last_query(
-            public=enricher.public,
-            columns=table_columns
-        )
-
-        table_name = self.make_table_name_('final')
-
-        table_queries[table_name] = final_query
 
         return [
             {'table_name': tab_name, 'query': query}

@@ -10,14 +10,6 @@ from .template import AthenaTemplates
 from ...base import MakeQueryAbstract, Metadata
 from .base_connection import AthenaBaseConnection
 
-from .modules.create_insert import (
-    make_create_schema_query_,
-    make_create_ctas_query_,
-    make_insert_query_
-)
-
-from .modules.util import split_table_name
-
 
 @dataclass
 class MakeQuery(MakeQueryAbstract):
@@ -43,13 +35,16 @@ class MakeQuery(MakeQueryAbstract):
         """ Cria uma tabela se não existir e insere dados.
             Realiza reordenação de colunas se necessário.
         """
+        # pylint: disable=too-many-locals
         output_queries = []
 
         partition_cols = partition_cols or []
 
-        schema_name, table_name = split_table_name(
-            table_name=table_name,
-            default_schema_name=self.conn.schema_name
+        schema_name, table_name = (
+            AthenaTemplates.split_schema_name(
+                table_name=table_name,
+                schema_name=self.conn.schema_name
+            )
         )
 
         query_meta = self.conn.metadata(query=query)
@@ -75,6 +70,8 @@ class MakeQuery(MakeQueryAbstract):
             if 'EntityNotFound' not in exc.args[0]:
                 raise exc
 
+            location = f'{self.conn.s3_staging_dir}/{schema_name}.{table_name}'
+
             columns_types = {
                 col: type_
                 for col, type_ in query_meta.columns.items()
@@ -97,14 +94,13 @@ class MakeQuery(MakeQueryAbstract):
                 orig_info=None
             )
 
-            create_query = make_create_schema_query_(
-                schema_name=schema_name,
+            # create_query = make_create_schema_query_(
+            create_query = AthenaTemplates.create_schema(
                 table_name=table_name,
                 columns_types=metadata.columns,
-                partition_columns_types=(
-                    metadata.partition_cols
-                ),
-                s3_output=self.conn.s3_staging_dir,
+                partition_cols_types=metadata.partition_cols,
+                schema_name=schema_name,
+                location=location,
             )
 
             output_queries.append(create_query)
@@ -132,13 +128,13 @@ class MakeQuery(MakeQueryAbstract):
             )
 
         # Generate the insert query
-        insert_query = make_insert_query_(
-            schema_name=schema_name,
+        insert_query = AthenaTemplates.insert_table(
+            query=query,
             table_name=table_name,
-            columns_types=(
+            schema_name=schema_name,
+            cols_ordering=list(
                 metadata.columns | metadata.partition_cols
             ),
-            query=query,
         )
 
         output_queries.append(insert_query)
@@ -161,25 +157,26 @@ class MakeQuery(MakeQueryAbstract):
 
         query_meta = self.conn.metadata(query=query)
 
-        schema_name, table_name = split_table_name(
-            table_name=table_name,
-            default_schema_name=self.conn.schema_name
+        schema_name, table_name = (
+            AthenaTemplates.split_schema_name(
+                table_name=table_name,
+                schema_name=self.conn.schema_name
+            )
         )
 
-        query_ctas = make_create_ctas_query_(
-            schema_name=schema_name,
-            table_name=table_name,
+        location = (
+            f'{self.conn.s3_staging_dir}/{schema_name}.{table_name}'
+        )
+
+        query_ctas = AthenaTemplates.create_ctas(
             query=query,
-            columns_types={
-                col: type_
-                for col, type_ in query_meta.columns.items()
-                if col not in partition_cols
-            },
-            partition_columns_types={
-                col: query_meta.columns[col]
-                for col in partition_cols
-            },
-            s3_output=self.conn.s3_staging_dir,
+            table_name=table_name,
+            partition_cols=list(partition_cols),
+            schema_name=schema_name,
+            location=location,
+            cols_ordering=list(
+                query_meta.columns | query_meta.partition_cols
+            ),
         )
 
         output_queries.append(query_ctas)

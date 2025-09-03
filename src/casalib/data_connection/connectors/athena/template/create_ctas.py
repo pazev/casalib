@@ -48,6 +48,7 @@ def make_sql_create_ctas_(
     cols_ordering: Optional[List[str]] = None,
 ) -> str:
     """ Generate the CTAS query """
+    # pylint: disable=too-many-arguments
     env = jinja2.Environment(undefined=jinja2.StrictUndefined)
     template = env.from_string(TEMPLATE)
 

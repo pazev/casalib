@@ -127,12 +127,13 @@ class AthenaTemplates(TemplateAbstract):
     ) -> str:
         """ Generate a CREATE TABLE AS (CTAS) query
         """
+        # pylint: disable=too-many-arguments
         schema_name_, table_name = (
             AthenaTemplates
             .split_schema_name(table_name, schema_name)
         )
 
-        partition_cols_ = partition_cols or {}
+        partition_cols_ = partition_cols or []
         cols_ordering_ = cols_ordering or []
 
         return make_sql_create_ctas_(

@@ -107,7 +107,7 @@ class EnrichmentPlan:
 
         # Remove keys
         selected_columns_set = (
-            selected_columns_set - set(*self.source.keys)
+            selected_columns_set - set(self.source.keys)
         )
 
         if not self.keep_source_date_cols:

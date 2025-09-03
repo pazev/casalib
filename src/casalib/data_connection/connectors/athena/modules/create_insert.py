@@ -8,42 +8,9 @@ from typing import Dict, List, Union
 import boto3
 
 from ....base import Metadata
+from ..template import (AthenaTemplates, templates_dict)
 from .boto3_querying import run_query
 from .metadata import get_table_metadata, get_query_metadata
-from ..template import templates_dict
-from .util import split_table_name, treat_column_type
-
-
-def make_create_schema_query_(
-    schema_name: str,
-    table_name: str,
-    columns_types: Dict[str, str],
-    partition_columns_types: Dict[str, str],
-    s3_output: str,
-):
-    """ Make the query to create a table passing the
-        schema
-    """
-    columns_types = {
-        col: treat_column_type(type_)
-        for col, type_ in columns_types.items()
-    }
-    partition_columns_types = {
-        col: treat_column_type(type_)
-        for col, type_ in partition_columns_types.items()
-    }
-
-    template = templates_dict['create_table']
-
-    query = template.render(
-        schema_name=schema_name,
-        table_name=table_name,
-        columns_types=columns_types,
-        partition_columns_types=partition_columns_types,
-        s3_output=f'{s3_output}/{schema_name}.{table_name}'
-    )
-
-    return query
 
 
 def create_schema(
@@ -57,17 +24,21 @@ def create_schema(
     s3_output: str,
 ) -> Metadata:
     """ Cria tabela com o schema passado """
-    schema_name, table_name = split_table_name(
-        table_name=table_name,
-        default_schema_name=default_schema_name,
+    schema_name, table_name = (
+        AthenaTemplates.split_schema_name(
+            table_name=table_name,
+            schema_name=default_schema_name,
+        )
     )
 
-    query_create = make_create_schema_query_(
-        schema_name=schema_name,
+    location = f'{s3_output}/{schema_name}.{table_name}'
+
+    query_create = AthenaTemplates.create_schema(
         table_name=table_name,
         columns_types=columns_types,
-        partition_columns_types=partition_columns_types,
-        s3_output=s3_output,
+        partition_cols_types=partition_columns_types,
+        schema_name=schema_name,
+        location=location,
     )
 
     query_exec = run_query(
@@ -90,12 +61,12 @@ def create_schema(
 
 
 def make_create_ctas_query_(
-    schema_name: str,
-    table_name: str,
     query: str,
-    columns_types: Dict[str, str],
+    table_name: str,
     partition_columns_types: Union[Dict[str, str], None],
-    s3_output: str
+    schema_name: str,
+    s3_output: str,
+    columns_types: Dict[str, str],
 ):
     """ Make the query to create a table passing the
         schema
@@ -103,12 +74,12 @@ def make_create_ctas_query_(
     template = templates_dict['create_table_ctas']
 
     query = template.render(
-        schema_name=schema_name,
-        table_name=table_name,
         query=query,
-        columns_types=columns_types,
+        table_name=table_name,
         partition_columns_types=partition_columns_types,
-        s3_output=f'{s3_output}/{schema_name}.{table_name}'
+        schema_name=schema_name,
+        location=s3_output,
+        columns_types=columns_types,
     )
 
     return query
@@ -127,10 +98,14 @@ def create_ctas(
     """ Cria tabela com o método CREATE TABLE AS """
     partition_cols = partition_cols or []
 
-    schema_name, table_name = split_table_name(
-        table_name=table_name,
-        default_schema_name=default_schema_name
+    schema_name, table_name = (
+        AthenaTemplates.split_schema_name(
+            table_name=table_name,
+            schema_name=default_schema_name
+        )
     )
+
+    s3_output = f'{s3_output}/{schema_name}.{table_name}'
 
     # Captura metadata da query
     query_meta = get_query_metadata(
@@ -152,13 +127,15 @@ def create_ctas(
         for col in partition_cols
     }
 
-    query_create = make_create_ctas_query_(
-        schema_name=schema_name,
-        table_name=table_name,
+    query_create = AthenaTemplates.create_ctas(
         query=query,
-        columns_types=columns_types,
-        partition_columns_types=partition_columns_types,
-        s3_output=s3_output,
+        table_name=table_name,
+        partition_cols=list(partition_columns_types),
+        schema_name=schema_name,
+        location=s3_output,
+        cols_ordering=list(
+            columns_types | partition_columns_types
+        ),
     )
 
     query_exec = run_query(
@@ -180,25 +157,6 @@ def create_ctas(
     )
 
 
-def make_insert_query_(
-    schema_name: str,
-    table_name: str,
-    columns_types: Dict[str, str],
-    query: str,
-):
-    """ Make the INSERT INTO query """
-    template = templates_dict['insert_table']
-
-    query_insert = template.render(
-        schema_name=schema_name,
-        table_name=table_name,
-        columns_types=columns_types,
-        query=query,
-    )
-
-    return query_insert
-
-
 def insert(
     boto3_session: boto3.Session,
     workgroup: str,
@@ -212,23 +170,18 @@ def insert(
 ) -> Metadata:
     """ Run the create insert into query """
     # pylint: disable=unused-argument
-    schema_name, table_name = split_table_name(
+    query_insert = AthenaTemplates.insert_table(
+        query=query,
         table_name=table_name,
-        default_schema_name=default_schema_name
-    )
-
-    query_insert = make_insert_query_(
-        schema_name=schema_name,
-        table_name=table_name,
-        columns_types=(
+        schema_name=default_schema_name,
+        cols_ordering=list(
             columns_types | partition_columns_types
         ),
-        query=query
     )
 
     query_exec = run_query(
         query=query_insert,
-        schema_name=schema_name,
+        schema_name=default_schema_name,
         data_catalog=data_catalog,
         workgroup=workgroup,
         boto3_session=boto3_session
@@ -239,7 +192,7 @@ def insert(
     return get_table_metadata(
         boto3_session=boto3_session,
         data_catalog=data_catalog,
-        default_schema_name=schema_name,
+        default_schema_name=default_schema_name,
         workgroup=workgroup,
         table_name=table_name,
     )
