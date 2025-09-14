@@ -207,7 +207,7 @@ class AthenaCompiler:
         table_columns = {}
 
         for idx, enr_plan in enumerate(iter(enricher)):
-            table_name = self.make_table_name_(idx)
+            table_name = self.make_table_name_(idx, enr_plan.source.prefix)
             query, out_cols = compile_step(enr_plan)
 
             table_queries[table_name] = query
