@@ -1,6 +1,21 @@
 TODO
 ====
 
+[ ] No processo de criação de um novo modelo, temos que
+    [ ] 1.  Criar as tabelas intermediárias, que são
+            basicamente o público enriquecido com o target;
+            [ ] Criar a tabela de público com os diversos
+                targets;
+    [ ] 2.  Fazer a seleção das variáveis;
+    [ ] 3.  Criar a tabela final, com as variáveis
+                necessárias para o modelo.
+
+    O Enricher então precisa quebrar este processo, gerando
+        as informações conforme a necessidade.
+        [ ] Targets: cruza tudo e deixa pronto
+        [ ] Sources: cruza a tabela de saída dos targets com a fonte
+
+
 [-] TableManager
     [x] Refactoring
         [x] Move abstract classes and collection
