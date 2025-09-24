@@ -87,6 +87,10 @@ def naming_generator_factory(
 
         return cls(*parts)
 
+    def process_name_as_tuple(cls, name: str) -> Tuple[str, ...]:
+        obj = cls.process_name(name)
+        return obj.as_tuple()
+
     def __reduce__(self):
         return (
             _reconstruct_instance,
@@ -141,6 +145,7 @@ def naming_generator_factory(
             '__reduce__': __reduce__,
             '__post_init__': __post_init__,
             'as_tuple': as_tuple,
+            'process_name_as_tuple': classmethod(process_name_as_tuple),
         },
         frozen=True,
         eq=True,

@@ -184,8 +184,7 @@ class AthenaCompiler:
         optional_name: Optional[str] = None,
     ) -> str:
         """ Make the query name """
-        idx = f'{idx:03}' if isinstance(idx, int) else idx
-        name = f'{self.prefix}{self.study}_table_{idx}'
+        name = f'{self.prefix}{self.study}_table_'
 
         if optional_name:
             name += f'_{optional_name}'

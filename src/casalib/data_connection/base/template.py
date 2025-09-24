@@ -5,7 +5,7 @@ Module that generate queries for operations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 @dataclass
@@ -41,6 +41,8 @@ class TemplateAbstract(ABC):
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> str:
         """ Make aggregation over a query """
 
