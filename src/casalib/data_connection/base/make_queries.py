@@ -4,7 +4,9 @@ Module that generate queries for operations
 # pylint: disable=too-many-arguments
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import (
+    Any, Dict, List, Optional, Tuple, Type, Union
+)
 
 from .base_connection import BaseConnectionAbstract
 from .template import TemplateAbstract
@@ -34,6 +36,8 @@ class MakeQueryAbstract(ABC):
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> List[str]:
         """ Realiza uma agregação na query indicada """
 

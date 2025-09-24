@@ -199,11 +199,14 @@ class Enricher:
     """ Class to create the queries that enrich the public
     """
     public: Public
-    steps: List[EnrichmentPlan] = (
-        field(default_factory=list)
+    targets: List[EnrichmentPlan] = (
+        field(default_factory=list, repr=False)
+    )
+    sources: List[EnrichmentPlan] = (
+        field(default_factory=list, repr=False)
     )
 
-    def add(
+    def add_source(
         self,
         source: Source,
         included_columns: Optional[List[str]] = None,
@@ -226,15 +229,37 @@ class Enricher:
             renaming_columns=renaming_columns or {},
             keep_source_date_cols=keep_source_date_cols,
         )
-        self.steps.append(plan)
+        self.sources.append(plan)
 
         return self
 
-    def __getitem__(self, idx: int) -> EnrichmentPlan:
-        return self.steps[idx]
 
-    def __len__(self) -> int:
-        return len(self.steps)
+    def add_target(
+        self,
+        source: Source,
+        included_columns: Optional[List[str]] = None,
+        excluded_columns: Optional[List[str]] = None,
+        renaming_keys: Optional[Dict[str, str]] = None,
+        renaming_columns: Optional[Dict[str, str]] = None,
+        keep_source_date_cols: bool = True,
+    ) -> "Enricher":
+        """
+        Add a new enrichment request to the handler
+        """
+        # pylint: disable=too-many-arguments
+
+        plan = EnrichmentPlan(
+            public=self.public,
+            source=source,
+            included_columns=included_columns or [],
+            excluded_columns=excluded_columns or [],
+            renaming_keys=renaming_keys or {},
+            renaming_columns=renaming_columns or {},
+            keep_source_date_cols=keep_source_date_cols,
+        )
+        self.targets.append(plan)
+
+        return self
 
     def compile(
         self, compiler: Callable[["Enricher"], Any]
