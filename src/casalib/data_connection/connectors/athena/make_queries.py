@@ -3,7 +3,9 @@ Module defines an object that generate queries to perform
 some operations
 """
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Type
+from typing import (
+    Any, Dict, List, Optional, Tuple, Type, Union
+)
 
 from .template import AthenaTemplates
 
@@ -194,6 +196,8 @@ class MakeQuery(MakeQueryAbstract):
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> List[str]:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
@@ -209,6 +213,8 @@ class MakeQuery(MakeQueryAbstract):
                 min_=min_,
                 max_=max_,
                 percentile_=percentile_,
+                cols_before=cols_before,
+                cols_after=cols_after
             )
         ]
 

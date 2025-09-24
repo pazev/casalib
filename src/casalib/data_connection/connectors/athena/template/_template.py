@@ -1,7 +1,7 @@
 """
 Query templating module
 """
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ....base.template import TemplateAbstract
 
@@ -60,6 +60,8 @@ class AthenaTemplates(TemplateAbstract):
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> str:
         """ Make aggregation over a query """
         # pylint: disable=too-many-arguments
@@ -73,6 +75,8 @@ class AthenaTemplates(TemplateAbstract):
             min_=min_,
             max_=max_,
             percentile_=percentile_,
+            cols_before=cols_before,
+            cols_after=cols_after,
         )
 
     @staticmethod

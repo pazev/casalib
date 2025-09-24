@@ -243,16 +243,31 @@ class ConnectionAbstract(BaseConnectionAbstract):
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        sort: bool = False
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
         query_to_exec = self.queries.agg_query(
-            query=query, groupby=groupby,
-            count_=count_, count_distinct_=count_distinct_,
-            sum_=sum_, mean_=mean_, min_=min_,
-            max_=max_, percentile_=percentile_,
+            query=query,
+            groupby=groupby,
+            count_=count_,
+            count_distinct_=count_distinct_,
+            sum_=sum_,
+            mean_=mean_,
+            min_=min_,
+            max_=max_,
+            percentile_=percentile_,
+            cols_before=cols_before,
+            cols_after=cols_after,
         )[0]
 
-        return self.get_connection_.query(
+        result = self.get_connection_.query(
             query=query_to_exec
         )
+
+        if bool(groupby) and sort:
+            return result.sort_values(groupby)
+
+        return result

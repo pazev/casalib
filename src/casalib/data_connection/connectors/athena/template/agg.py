@@ -2,7 +2,7 @@
 Aggregation template
 """
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import jinja2
 
@@ -12,7 +12,18 @@ WITH
 input_query_ AS (
     {{ query | indent(4) }}
 )
-
+,
+cols_before_ AS (
+    SELECT
+        *
+        {%- for sql_code, col in cols_before %}
+        , {{ sql_code }} as {{ col }}
+        {%- endfor %}
+    FROM
+        input_query_
+)
+,
+agg_ AS (
 SELECT
     {%- if groupby %}
     {%- for col in groupby %}
@@ -33,13 +44,25 @@ SELECT
     {%- endfor %}
     count(*) as __count__
 FROM
-    input_query_
+    cols_before_
 {%- if groupby %}
 GROUP BY
     {%- for col in groupby %}
     {{ col }}{%if not loop.last%},{% endif %}
     {%- endfor %}
 {%- endif %}
+)
+,
+cols_after_ AS (
+    SELECT
+        *
+        {%- for sql_code, col in cols_after %}
+        , {{ sql_code }} as {{ col }}
+        {%- endfor %}
+    FROM
+        agg_
+)
+select * from cols_after_
 """
 
 
@@ -53,6 +76,8 @@ def make_sql_agg_query_(
     min_: Optional[List[str]] = None,
     max_: Optional[List[str]] = None,
     percentile_: Optional[Dict[int, List[str]]] = None,
+    cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+    cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
 ) -> str:
     """
     Create the SQL to calculate the aggregation.
@@ -65,6 +90,20 @@ def make_sql_agg_query_(
     percentile to be calculated and the value is a list of
     columns to be used.
     """
+    cols_before_ = cols_before or []
+    cols_before_ = [
+        elem_adj
+        for elem in cols_before_
+        for elem_adj in [elem if isinstance(elem, tuple) else (elem, elem)]
+    ]
+
+    cols_after_ = cols_after or []
+    cols_after_ = [
+        elem_adj
+        for elem in cols_after_
+        for elem_adj in [elem if isinstance(elem, tuple) else (elem, elem)]
+    ]
+
     # pylint: disable=too-many-locals,too-many-arguments
     col_ops_dict: Dict[
         str,
@@ -98,7 +137,9 @@ def make_sql_agg_query_(
     query_final = template.render(
         query=query,
         col_ops_dict=col_ops_dict,
-        groupby=groupby
+        groupby=groupby,
+        cols_before=cols_before_,
+        cols_after=cols_after_,
     )
 
     return query_final
