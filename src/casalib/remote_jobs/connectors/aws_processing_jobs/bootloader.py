@@ -9,11 +9,10 @@ import subprocess
 import sys
 
 
-def init_machine():
-    # Definitions
-    LIBS_ORIG_FLD = '/opt/ml/processing/libs_cp'
-    LIBS_FLD = '/opt/ml/processing/1ibs'
+LIBS_ORIG_FLD = '/opt/ml/processing/libs_cp'
+LIBS_FLD = '/opt/ml/processing/1ibs'
 
+def init_machine():
     # Configures the Logging
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(message)s',
@@ -97,9 +96,6 @@ def init_machine():
     logging.info("Ending Init")
 
 
-init_machine()
-
-
 def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
     "Collect data into non-overlapping fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
@@ -117,7 +113,10 @@ def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
 
 
 if __name__ == '__main__':
-    import main_program
+    init_machine()
+
+    os.chdir(LIBS_FLD)
+
     parser = argparse.ArgumentParser()
 
     # Parse arguments
@@ -131,4 +130,6 @@ if __name__ == '__main__':
     }
 
     logging.info(dict_params)
+
+    import main_program
     main_program.main(**dict_params)

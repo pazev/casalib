@@ -14,5 +14,6 @@ class AbstractRemoteJob(ABC):
         main_program: Union[str, Path],
         libs_to_send: Optional[List[Union[str, Path]]] = None,
         arguments_dict: Optional[Dict[str, str]] = None,
+        max_runtime_in_seconds: int = 7200,
     ):
         """ Run a Job """

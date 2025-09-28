@@ -53,6 +53,15 @@ class QueryTableManager(TableManagerAbstract):
         )
         return self
 
+    def discover_params_(self, **params) -> List[Dict[str, Any]]:
+        """ Discover parameters for execution """
+        return [params]
+
     def run(self, **params) -> "QueryTableManager":
         """ Run the TableManager """
-        return self.create_insert_(**params)
+        params_list = self.discover_params_(**params)
+
+        for params in params_list:
+            last = self.create_insert_(**params)
+
+        return last

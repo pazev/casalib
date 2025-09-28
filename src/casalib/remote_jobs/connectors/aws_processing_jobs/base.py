@@ -29,10 +29,11 @@ class ProcessingJob(AbstractRemoteJob):
     instance_type: str = 'ml.g5.4xlarge'
     processor_maker: Optional[
         Callable[
-            [str, str, sagemaker.Session, Optional[str]],
+            [str, str, sagemaker.Session, Optional[str], Optional[int]],
             Processor
         ]
     ] = None
+    boto3_session: Optional[str] = None
     sagemaker_role: Optional[str] = None
     sagemaker_session: Optional[sagemaker.Session] = None
     default_bucket: Optional[str] = None
@@ -59,9 +60,11 @@ class ProcessingJob(AbstractRemoteJob):
 
     def get_sagemaker_session_(self) -> sagemaker.Session:
         """ Get the sagemaker.Session """
+        boto3_session = self.boto3_session or boto3.Session()
         session = (
             self.sagemaker_session or
             sagemaker.Session(
+                boto_session=boto3_session,
                 default_bucket=self.default_bucket,
                 default_bucket_prefix=self.default_bucket_prefix,
             )
@@ -72,7 +75,10 @@ class ProcessingJob(AbstractRemoteJob):
         """ Get the SageMaker role """
         return self.sagemaker_role or sagemaker.get_execution_role()
 
-    def make_processor_(self) -> Processor:
+    def make_processor_(
+        self,
+        max_runtime_in_seconds: int
+    ) -> Processor:
         """ Create o Processor """
         proc_maker = self.processor_maker or standard_processor_
 
@@ -81,6 +87,7 @@ class ProcessingJob(AbstractRemoteJob):
             sagemaker_role=self.get_sagemaker_role_(),
             sagemaker_session=self.get_sagemaker_session_(),
             instance_type=self.instance_type,
+            max_runtime_in_seconds=max_runtime_in_seconds,
         )
 
     def run(
@@ -88,10 +95,15 @@ class ProcessingJob(AbstractRemoteJob):
         main_program: Union[str, Path],
         libs_to_send: Optional[List[Union[str, Path]]] = None,
         arguments_dict: Optional[Dict[str, str]] = None,
+        max_runtime_in_seconds: int = 7200,
     ):
         """ Run a Job """
+        script_processor = self.make_processor_(
+            max_runtime_in_seconds=max_runtime_in_seconds
+        )
+
         run_processor(
-            script_processor=self.make_processor_(),
+            script_processor=script_processor,
             main_program=main_program,
             libs_to_send=libs_to_send,
             arguments_dict=arguments_dict,
@@ -103,6 +115,7 @@ def standard_processor_(
     sagemaker_role: str,
     sagemaker_session: sagemaker.Session,
     instance_type: str = 'ml.g5.4xlarge',
+    max_runtime_in_seconds: int = 7200,
 ) -> Processor:
     """
     Create a standard Processor if one is not provided at
@@ -118,6 +131,10 @@ def standard_processor_(
         'instance_type': instance_type,
         'sagemaker_session': sagemaker_session,
     }
+
+    if max_runtime_in_seconds:
+        params['max_runtime_in_seconds'] = max_runtime_in_seconds
+
     return PyTorchProcessor(**params)
 
 

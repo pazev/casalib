@@ -12,6 +12,7 @@ from .s3_ops import (
     delete_objects,
     get_bucket_prefix
 )
+from .util import split_table_name
 
 
 def list_partitions(
@@ -20,10 +21,9 @@ def list_partitions(
     table_name: str,
 ) -> Dict[Tuple[str, ...], str]:
     """ Lista partições da tabela """
-    schema_name, table_name = [
-        default_schema_name,
-        *table_name.split('.')
-    ]
+    schema_name, table_name = split_table_name(
+        table_name, default_schema_name
+    )
 
     partitions = wr.catalog.get_partitions(
         database=schema_name,
@@ -47,10 +47,9 @@ def drop_partitions(
 ):
     """ Dropa as partições indicadas na tabela """
     # Quebra nome da tabela
-    schema_name, table_name = [
-        default_schema_name,
-        *table_name.split('.')
-    ]
+    schema_name, table_name = split_table_name(
+        table_name, default_schema_name
+    )
 
     # Lista as partições
     partitions = list_partitions(
