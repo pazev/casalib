@@ -3,7 +3,7 @@ Base classes for enrich module.
 """
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 
 @dataclass
@@ -206,6 +206,35 @@ class Enricher:
         field(default_factory=list, repr=False)
     )
 
+    @classmethod
+    def init(
+        cls,
+        public: Public,
+        sources: Union[Dict[Any, Source], List[Source]],
+        targets: Optional[Union[Dict[Any, Source], List[Source]]] = None
+    ) -> "Enricher":
+        """
+        Create the Enricher, passing several Souces and Targets
+        at once.
+        """
+        targets = targets or []
+
+        if isinstance(sources, dict):
+            sources = list(sources.values())
+
+        if isinstance(targets, dict):
+            targets = list(targets.values())
+
+        enricher = cls(public=public)
+
+        for src in sources:
+            enricher.add_source(src)
+
+        for tgt in targets:
+            enricher.add_target(tgt)
+
+        return enricher
+
     def add_source(
         self,
         source: Source,
@@ -270,7 +299,7 @@ class Enricher:
         # Validate all the enrichers
         messages = [
             (enr, chain.from_iterable(messages))
-            for enr in self.steps
+            for enr in (self.sources + self.targets)
             for messages in [enr.validate()]
             if messages
         ]
