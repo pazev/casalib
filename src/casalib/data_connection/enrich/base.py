@@ -298,7 +298,7 @@ class Enricher:
         """
         # Validate all the enrichers
         messages = [
-            (enr, chain.from_iterable(messages))
+            (enr, list(chain.from_iterable(messages)))
             for enr in (self.sources + self.targets)
             for messages in [enr.validate()]
             if messages

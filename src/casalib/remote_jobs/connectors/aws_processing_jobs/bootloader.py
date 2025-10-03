@@ -10,7 +10,8 @@ import sys
 
 
 LIBS_ORIG_FLD = '/opt/ml/processing/libs_cp'
-LIBS_FLD = '/opt/ml/processing/1ibs'
+LIBS_FLD = '/opt/ml/processing/libs'
+
 
 def init_machine():
     # Configures the Logging
