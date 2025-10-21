@@ -22,7 +22,8 @@ class ProcessingJob(AbstractRemoteJob):
             base_job_name: str,
             sagemaker_role: str,
             sagemaker_session: sagemaker.Session,
-            instance_type: str
+            instance_type: str,
+            max_runtime_in_seconds: int
         )
     """
     basename: str

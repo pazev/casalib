@@ -1,7 +1,8 @@
 """
 Module define enrich functions for an AthenaCompiler
 """
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import (
     Any, Callable, Dict, List, Optional, Tuple, Union
 )
@@ -13,16 +14,16 @@ import jinja2
 import pandas as pd
 from tqdm import tqdm
 
-from ..base import EnrichmentPlan, Enricher, Public
+from ..base import EnrichmentPlan, Enricher, Public, Source
 
 
-STEP_BASE_TEMPLATE = """
+COMPILE_STEP_TEMPLATE = """
 -- ------ --
 -- Inputs --
 -- ------ --
 with
 public_ as (
-    select * from {{ public_table }}
+    select * from {{ public_table_name }}
 )
 ,
 public_selected_ as (
@@ -46,18 +47,18 @@ source_selected_ as (
 ,
 public_enriched_ as (
     select
-        public_selected_.*,
+        public_.*,
         {%- for col, col_ren in renamed_columns.items() %}
         source_selected_.{{col}} as {{col_ren}}
         {%- if not loop.last%},{%endif%}
         {%- endfor %}
     from
-            public_selected_
+            public_selected_ as public_
         join
             source_selected_
                 on  1=1
                 {%- for key in source.keys %}
-                and public_selected_.{{ renamed_keys.get(key, key) }}
+                and public_.{{ renamed_keys.get(key, key) }}
                     = source_selected_.{{ key }}
                 {%- endfor %}
 )
@@ -66,59 +67,45 @@ select * from public_enriched_
 """
 
 
-FINAL_BASE_TEMPLATE = """
+COMPILE_FINAL_QUERY_TEMPLATE = """
 with
 public_ as (
-    {{ public.metadata['query'] | indent(4) }}
+    select * from {{ public_table_name }}
 )
+{%- for tab, cols in columns_dict.items() %}
 ,
-{%- for table_name, output_cols in columns.items() %}
-t{{ loop.index }}_ as (
-    select * from {{ table_name }}
+tab{{loop.index}}_ as (
+    select * from {{tab}}
 )
-,
 {%- endfor %}
-cross_ as (
+,
+join_ as (
     select
-        public_.*,
-        {%- for table_name, out_cols in columns.items() %}
-        {%- set tnumber = loop.index %}
-        {%- for col, col_ren in out_cols.items() %}
-        t{{ tnumber }}_.{{ col_ren }},
-        {%- endfor %}
-        {%- endfor %}
-        1 as flag__
+
     from
-            public_
-        left join
-            {%- for table_name in columns %}
-            {%- set tnumber = loop.index %}
-            t{{ tnumber }}_
-                on
-                    {%- for col in public.columns %}
-                    public_.{{col}} =
-                        t{{ tnumber }}_.{{col}}
-                    {% if not loop.last %}and{% endif %}
-                    {%- endfor %}
-        {%- if not loop.last%}left join{% endif %}
-        {%- endfor %}
 )
-select * from cross_
+select * from
 """
 
 
 def compile_step(
     plan: EnrichmentPlan,
     partition_list: List[Dict[str, str]],
-    public_table: str,
+    public_table_name: str,
 ) -> Tuple[str, Dict[str, str]]:
-    """ Compile a step in a query to be executed """
-    env = jinja2.Environment()
-    template = env.from_string(STEP_BASE_TEMPLATE)
+    """
+    Compile a step in a query to be executed.
+
+    The step can be a Target or a Source.
+
+    For each partition indicated at
+    """
+    env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+    template = env.from_string(COMPILE_STEP_TEMPLATE)
 
     queries = [
         template.render(
-            public_table=public_table,
+            public_table_name=public_table_name,
             public_event_ymd_column=plan.public.event_ymd_column,
             source=plan.source,
             renamed_columns=plan.output_columns,
@@ -136,20 +123,189 @@ def compile_step(
     }
 
 
-def compile_last_query(
-    public: Public, columns: Dict[str, Dict[str, str]]
-) -> str:
-    """ Compile the last query to be executed """
-    env = jinja2.Environment()
-    template = env.from_string(FINAL_BASE_TEMPLATE)
-    query = template.render(
-        public=public,
-        columns=columns
+def compile_enrichment_plans(
+    conn: AthenaConnection,
+    make_name_function: Callable[[Any, ...], str],
+    enrichment_plan_list: List[EnrichmentPlan],
+    public_table_name: str,
+    public_event_ymd_column: str,
+    public_event_ymd_columns_pd: pd.DataFrame,
+    partition_cols: Optional[List[str]] = None,
+    ignore_numbering: bool = True
+) -> Tuple[List[Dict[str, str]], Dict[str, Dict[str, str]]]:
+    """
+    Compile the queries for a list of Enrichment Plans
+    """
+    table_queries = {}
+    table_columns = {}
+    partition_cols = partition_cols or []
+
+    for idx, enr_plan in enumerate(enrichment_plan_list):
+        # Cria o nome da tabela
+        optional_number = None if ignore_numbering else idx
+
+        table_name = make_name_function(
+            optional_number=optional_number,
+            optional_name=enr_plan.source.prefix
+        )
+
+        # Discover the valid partitions
+        partitions_list = source_discover_partitions_cross_(
+            event_date_df=public_event_ymd_columns_pd,
+            source_table_name=enr_plan.source.metadata['table_name'],
+            source_info_ymd_column=enr_plan.source.info_ymd_column,
+            source_ingestion_column=enr_plan.source.ingestion_column,
+            conn=conn,
+        )
+
+        # Generate the query
+        queries = compile_step(
+            plan=enr_plan,
+            partition_list=partitions_list,
+            public_table_name=public_table_name
+        )
+
+        table_queries[table_name] = queries['queries']
+        table_columns[table_name] = queries['output_columns']
+
+    # Flatten the queries list
+    final_queries = [
+        {
+            'table_name': table_name,
+            'query': query,
+            'partition_cols': partition_cols
+        }
+        for table_name, list_query in table_queries.items()
+        for query in list_query
+    ]
+
+    return final_queries, table_columns
+
+
+def compile_final_query(
+    conn: AthenaConnection,
+    final_table_name: str,
+    public_table_name: str,
+    columns_dict: Dict[str, Dict[str, str]],
+    selected_cols: Optional[List[str]] = None,
+    partition_cols: Optional[List[str]] = None,
+) -> Tuple[str, str]:
+    """
+    Compile the final query, that unify all variables of the
+    enrichment plans in the same query.
+    """
+    selected_cols = selected_cols or []
+    partition_cols = partition_cols or []
+
+    import pdb; pdb.set_trace()
+
+
+def compile_enrichment_plans_targets(
+    conn: AthenaConnection,
+    make_name_function: Callable[[Any, ...], str],
+    enrichment_plan_list: Union[None, List[EnrichmentPlan]],
+
+    public_table_name: str,
+    public_event_ymd_column: str,
+    public_event_ymd_columns_pd: pd.DataFrame,
+
+    partition_cols: Optional[List[str]] = None,
+) -> Tuple[List[Dict[str, str]], str]:
+    """
+    Compile the Enrichment Plan for sources.
+
+    It will use compile_enrichment_plans as base, but will
+    run some additional codes for targets (as the code to
+    join everything).
+    """
+    enrichment_plan_list = enrichment_plan_list or []
+
+    # If no target is given, return an empty query list and the
+    #    public table name given.
+    if not enrichment_plan_list:
+        return [], public_table_name
+
+    queries_list, columns_dict = compile_enrichment_plans(
+        conn=conn,
+        make_name_function=make_name_function,
+        enrichment_plan_list=enrichment_plan_list,
+        public_table_name=public_table_name,
+        public_event_ymd_column=public_event_ymd_column,
+        public_event_ymd_columns_pd=public_event_ymd_columns_pd,
+        partition_cols=partition_cols,
+        ignore_numbering=False
     )
-    return query
+
+    # Create a table with all targets columns
+    # final_table_name = make_name_function(
+    #     None, 'targets_final_unificado'
+    # )
+
+    # compile_final_query(
+    #     conn=conn,
+    #     final_table_name=final_table_name,
+    #     public_table_name=public_table_name,
+    #     columns_dict=columns_dict,
+    #     partition_cols=partition_cols,
+    # )
+
+    return queries_list, public_table_name
 
 
-def source_discover_partitions_cross(
+def compile_enrichment_plans_sources(
+    conn: AthenaConnection,
+    make_name_function: Callable[[Any, ...], str],
+    enrichment_plan_list: List[EnrichmentPlan],
+
+    public_table_name: str,
+    public_event_ymd_column: str,
+    public_event_ymd_columns_pd: pd.DataFrame,
+
+    partition_cols: Optional[List[str]] = None,
+) -> List[Dict[str, str]]:
+    """
+    Compile the Enrichment Plan for sources.
+
+    It will use compile_enrichment_plans as base, but will
+    run some additional codes for sources.
+    """
+    queries_list, _ = compile_enrichment_plans(
+        conn=conn,
+        make_name_function=make_name_function,
+        enrichment_plan_list=enrichment_plan_list,
+        public_table_name=public_table_name,
+        public_event_ymd_column=public_event_ymd_column,
+        public_event_ymd_columns_pd=public_event_ymd_columns_pd,
+        partition_cols=partition_cols,
+        ignore_numbering=True
+    )
+
+    return queries_list
+
+
+def get_partition_rows_count_(
+    query: str,
+    cols: Dict[str, str],
+    conn: AthenaConnection,
+) -> pd.DataFrame:
+    """ Return the partition_count """
+    env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+    template = env.from_string(r'''
+    with tab_ as ({{query}})
+    select
+    {%- for col, alias in cols.items() %}
+    {{col}} as {{alias}}{%if not loop.last%},{%endif%}
+    {%- endfor %}
+    from tab_
+    group by
+    {%- for col, alias in cols.items() %}
+    {{ loop.index }}{%if not loop.last%},{%endif%}
+    {%- endfor %}
+    ''')
+    return conn.query(template.render(query=query, cols=cols))
+
+
+def source_discover_partitions_cross_(
     event_date_df: pd.DataFrame,
 
     source_table_name: str,
@@ -157,17 +313,17 @@ def source_discover_partitions_cross(
     source_ingestion_column: str,
 
     conn: AthenaConnection,
-) -> List[Dict[str, str]]:
+):
     """
     Discover the correct Source partition to use to merge
     with public.
     """
     # Capture the info dates
-    info_date = get_partition_rows_count(
+    info_date = get_partition_rows_count_(
         query=f'''select * from {source_table_name} ''',
         cols={
             source_info_ymd_column: 'info_dt',
-            source_ingestion_column: 'ingestion_dt'
+            source_ingestion_column: 'ingestion_dt',
         },
         conn=conn
     )
@@ -188,17 +344,16 @@ def source_discover_partitions_cross(
         # (cross_['event_dt'].str[:6] == cross_['info_dt'].str[:6])
     ]
 
-
     # Select the correct partition
     max_date = cross_.merge(
         cross_.merge(
             cross_.groupby(
                 ['event_dt'],
-                as_index=False,
+                as_index=False
             )['info_dt'].max()
         ).groupby(
             ['event_dt', 'info_dt'],
-            as_index=False,
+            as_index=False
         )['ingestion_dt'].max()
     )
 
@@ -208,85 +363,174 @@ def source_discover_partitions_cross(
     ]
 
 
-def get_partition_rows_count(
-    query: str,
-    cols: Dict[str, str],
-    conn: AthenaConnection,
-) -> pd.DataFrame:
-    """ Return the partition count """
-    env = jinja2.Environment(undefined=jinja2.StrictUndefined)
-    template = env.from_string(r'''
-    with tab_ as ({{query}})
-    select
-    {%- for col, alias in cols.items() %}
-    {{col}} as {{alias}}{%if not loop.last%},{%endif%}
-    {%- endfor%}
-    from tab_
-    group by
-    {%- for col, alias in cols.items() %}
-    {{ loop.index }}{%if not loop.last%},{%endif%}
-    {%- endfor%}
-    ''')
-    return conn.query(template.render(query=query, cols=cols))
-
-
-def compile_sources(
+def compile_public(
     conn: AthenaConnection,
     make_name_function: Callable[[Any, ...], str],
-    enricher: Enricher,
-
-    public_table: str,
-    public_event_ymd_columns: str,
-    public_event_ymd_columns_pd: pd.DataFrame,
-
-    partition_cols: Optional[List[str]] = None,
+    public: Public,
+    partition_cols: Optional[List[str]] = None
 ) -> List[Dict[str, str]]:
-    """ Compile the queries """
-    table_queries = {}
+    """
+    Create the public table
+    """
     partition_cols = partition_cols or []
 
-    for enr_plan in enricher.sources:
-        # Cria o nome da tabela
-        table_name = make_name_function(
-            optional_number=None,
-            optional_name=enr_plan.source.prefix,
+    public_table_name = make_name_function(None, 'public_enricher')
+
+    public_query_dict = {
+        'query': public.metadata['query'],
+        'table_name': public_table_name,
+        'partition_cols': partition_cols
+    }
+
+    public_event_ymd_columns_pd = get_partition_rows_count_(
+        query=public.metadata['query'],
+        cols={public.event_ymd_column: 'event_dt'},
+        conn=conn,
+    )
+
+    return (
+        public_query_dict,
+        public_table_name,
+        public.event_ymd_column,
+        public_event_ymd_columns_pd,
+    )
+
+
+@dataclass
+class AthenaQueries:
+    queries_list: List[Dict[str, str]] = field(repr=False)
+    partition_cols: List[str] = field(default_factory=list)
+
+    def __getitem__(self, key: int):
+        """ Return the item """
+        return self.queries_list[key]
+
+    def __len__(self) -> int:
+        """ Length of the object """
+        return len(self.queries_list)
+
+    def table_names(self):
+        """ Return the table names """
+        return list(
+            {
+                qdict['table_name']: 1
+                for qdict in self.queries_list
+            }
         )
 
-        # Discover the valid partitions
-        partitions_list = source_discover_partitions_cross(
-            event_date_df=public_event_ymd_columns_pd,
-            source_table_name=enr_plan.source.metadata['table_name'],
-            source_info_ymd_column=enr_plan.source.info_ymd_column,
-            source_ingestion_column=enr_plan.source.ingestion_column,
-            conn=conn
+    def public_queries(self):
+        """ Return the public query """
+        return [self.queries_list[0]]
+
+    def sources_queries(self):
+        """ Return the queries """
+        return self.queries_list[1:]
+
+    def count_rows(
+        self, conn: AthenaConnection
+    ) -> Tuple[pd.DataFrame, List[Tuple[str, str]]]:
+        """ Count the number of lines in each table """
+        res = []
+        errors = []
+
+        for tab in tqdm(self.table_names()):
+            try:
+                temp = conn.agg_query(
+                    f'select * from {tab}',
+                    ['mesref'],
+                    cols_after=[
+                        (f"'{tab}'", 'table_name')
+                    ]
+                )
+                res.append(temp)
+            except Exception as e:
+                errors.append((tab, e))
+
+        return (
+            pd.concat(res).sort_values(['mesref', 'table_name']),
+            errors
         )
 
-        # Generate the query
-        queries = compile_step(
-            plan=enr_plan,
-            partition_list=partitions_list,
-            public_table=public_table
+    def filter_table(self, table_name: str) -> List[Dict[str, str]]:
+        """ Filter queries for a table """
+        return [
+            qdict
+            for qdict in self.queries_list
+            if qdict['table_name'] == table_name
+        ]
+
+    def count_duplicates(
+        self, conn: AthenaConnection, cols_to_check: List[str]
+    ) -> pd.DataFrame:
+        """ Count the duplicates in tables """
+        res = []
+        errors = []
+
+        for tab in tqdm(self.table_names()):
+            try:
+                temp = (
+                    conn.query(
+                        conn.template().agg_query(
+                            query=f'''select * from {tab}''',
+                            groupby=cols_to_check,
+                            cols_after=[
+                                (f"'{tab}'", 'table_name')
+                            ]
+                        ) + ' where __count__ > 1'
+                    )
+                )
+                res.append(temp)
+            except Exception as e:
+                errors.append((tab, e))
+
+        return (
+            pd.concat(res).sort_values(['mesref', 'table_name']),
+            errors
         )
 
-        table_queries[table_name] = queries['queries']
-
-    # Flatten
-    return [
-        {
-            'table_name': table_name,
-            'query': query,
-            'partition_cols': partition_cols
+    def load_metadatas(
+        self, conn: AthenaConnection
+    ) -> Dict[str, List[str]]:
+        """ Load the metadata of all these tables """
+        # All queries are the same, except for some parameters;
+        #   so, we will get the last occurence for each
+        #   table
+        table_queries = {
+            tab: query
+            for qdict in self.queries_list
+            for tab in [qdict['table_name']]
+            for query in [qdict['query']]
         }
-        for table_name, list_query in table_queries.items()
-        for query in list_query
-    ]
+
+        table_cols = {
+            tab: cols
+            for tab, query in tqdm(table_queries.items())
+            for metadata in [conn.metadata(query=query)]
+            for cols in [metadata.columns | metadata.partition_cols]
+        }
+
+        return table_cols
+
+    def get_columns(
+        self,
+        conn: AthenaConnection
+    ) -> Dict[str, List[str]]:
+        """ Show all columns and where they belong in the tables """
+        metadatas = self.load_metadatas(conn)
+        cols_dict = defaultdict(list)
+
+        for tab, cols_list in metadatas.items():
+            for col in cols_list:
+                cols_dict[col].append(tab)
+
+        return dict(cols_dict)
 
 
 @dataclass
 class AthenaCompiler:
     """
-    Compiler for an Athena connection. Generate the SQL
-    queries to enrich the public.
+    Compiler for an Athena connection. Generate the SQL queries
+    to enrich the public.
     """
     prefix: str
     study: str
@@ -299,7 +543,7 @@ class AthenaCompiler:
         ] = None
 
     def get_conn_(self) -> AthenaConnection:
-        """ Return the connection object """
+        """ Captura a conexão """
         if self.conn_maker is None:
             raise ValueError(
                 "Set the connection maker with set_conn_maker"
@@ -330,67 +574,61 @@ class AthenaCompiler:
 
         return name
 
-    def make_public_table_(
-        self,
-        enricher: Enricher,
-        partition_cols: Optional[List[str]] = None
+    def __call__(
+        self, enricher: Enricher
     ) -> List[Dict[str, str]]:
-        """ Create the public table """
-        partition_cols = partition_cols or []
-
-        query_dict = {
-            'query': enricher.public.metadata['query'],
-            'table_name': self.make_table_name_(None, 'public_enricher'),
-            'partition_cols': partition_cols
-        }
-
-        return query_dict
+        """ Run the compiler """
+        return self.compile(enricher=enricher)
 
     def compile(
         self,
-        enricher: Enricher,
-    ) -> List[Dict[str, str]]:
+        enricher: Enricher
+    ) -> AthenaQueries:
         """ Compile the queries """
         queries: List[Dict[str, str]] = []
 
         conn = self.get_conn_()
 
         # Create public table with the indicated partitions
-        public_query = self.make_public_table_(
-            enricher=enricher,
-            partition_cols=self.partition_cols
-        )
-        public_event_ymd_column = enricher.public.event_ymd_column
-
-        public_event_ymd_columns_pd = get_partition_rows_count(
-            query=enricher.public.metadata['query'],
-            cols={public_event_ymd_column: 'event_dt'},
-            conn=conn,
-        )
-
-        queries.append(public_query)
-
-        # Enrich with targets
-        # TODO
-
-        # Source queries
-        source_queries = compile_sources(
+        (
+            public_query_dict,
+            public_table_name,
+            public_event_ymd_column,
+            public_event_ymd_columns_pd,
+        ) = compile_public(
             conn=conn,
             make_name_function=self.make_table_name_,
-            enricher=enricher,
+            public=enricher.public,
+            partition_cols=self.partition_cols
+        )
 
-            public_table=public_query['table_name'],
+        queries.append(public_query_dict)
+
+        # Enrich with targets
+        (
+            target_queries,
+            public_table_name
+        ) = compile_enrichment_plans_targets(
+            conn=conn,
+            make_name_function=self.make_table_name_,
+            enrichment_plan_list=enricher.targets,
+            public_table_name=public_table_name,
             public_event_ymd_column=public_event_ymd_column,
             public_event_ymd_columns_pd=public_event_ymd_columns_pd,
+            partition_cols=self.partition_cols,
+        )
+        queries.extend(target_queries)
 
+        # Source queries
+        source_queries = compile_enrichment_plans_sources(
+            conn=conn,
+            make_name_function=self.make_table_name_,
+            enrichment_plan_list=enricher.sources,
+            public_table_name=public_table_name,
+            public_event_ymd_column=public_event_ymd_column,
+            public_event_ymd_columns_pd=public_event_ymd_columns_pd,
             partition_cols=self.partition_cols,
         )
         queries.extend(source_queries)
 
-        return queries
-
-    def __call__(
-        self, enricher: Enricher
-    ) -> List[Dict[str, str]]:
-        """ Run the compiler """
-        return self.compile(enricher=enricher)
+        return AthenaQueries(queries)

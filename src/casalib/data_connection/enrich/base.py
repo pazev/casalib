@@ -199,10 +199,10 @@ class Enricher:
     """ Class to create the queries that enrich the public
     """
     public: Public
-    targets: List[EnrichmentPlan] = (
+    sources: List[EnrichmentPlan] = (
         field(default_factory=list, repr=False)
     )
-    sources: List[EnrichmentPlan] = (
+    targets: List[EnrichmentPlan] = (
         field(default_factory=list, repr=False)
     )
 
