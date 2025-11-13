@@ -53,11 +53,11 @@ class Boto3SessionMaker:
     """ Classe responsável por guardar e gerenciar a criação
         de conexões ao boto3, sempre que necessário.
     """
-    aws_access_key_id: Optional[str] = field(default=None, repr=None)
-    aws_secret_access_key: Optional[str] = field(default=None, repr=None)
-    aws_session_token: Optional[str] = field(default=None, repr=None)
-    profile_name: Optional[str] = field(default=None, repr=None)
-    region_name: Optional[str] = field(default=None, repr=None)
+    aws_access_key_id: Optional[str] = field(default=None, repr=False)
+    aws_secret_access_key: Optional[str] = field(default=None, repr=False)
+    aws_session_token: Optional[str] = field(default=None, repr=False)
+    profile_name: Optional[str] = field(default=None, repr=False)
+    region_name: Optional[str] = None
 
     def make(self) -> boto3.Session:
         """ Cria a sessão boto3 """

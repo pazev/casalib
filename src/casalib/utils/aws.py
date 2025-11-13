@@ -26,3 +26,37 @@ def s3_list_files(
         for _ in [content.__setitem__('Bucket', bucket)]
     ]
     return contents
+
+
+# def list_files_prefix(
+#     boto3_session: boto3.Session,
+#     bucket: str,
+#     prefix: str,
+# ) -> List[Tuple[str, str]]:
+#     """ List the objects in a bucket/prefix """
+#     s3 = boto3_session.client('s3')
+#     params = {
+#         'Bucket': bucket,
+#         'Prefix': prefix,
+#     }
+#     results = []
+#     tkn = 'ContinationToken'
+#     next_tkn = 'NextContinuationToken'
+
+#     while True:
+#         res = s3.list_objects_v2(**params)
+
+#         if 'Contents' in res:
+#             results.append(res['Contents'])
+
+#         if tkn not in res:
+#             break
+
+#         params = params | {tkn: res[next_tkn]}
+
+#     files = [
+#         {'Bucket': bucket, 'Key': file['Key']}
+#         for file in chain.from_iterable(results)
+#     ]
+
+#     return files
