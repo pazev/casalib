@@ -17,6 +17,25 @@ from .s3_ops import (
 )
 
 
+def list_and_remove_files_(
+    boto3_session: boto3.Session,
+    location: str,
+):
+    bucket, prefix = get_bucket_prefix(location)
+
+    # List files in bucket / prefix
+    files_list = list_files_prefix(
+        boto3_session=boto3_session,
+        bucket=bucket,
+        prefix=prefix,
+    )
+
+    delete_objects(
+        boto3_session=boto3_session,
+        files_list=files_list
+    )
+
+
 def drop_table(
     boto3_session: boto3.Session,
     data_catalog: str,
@@ -44,21 +63,12 @@ def drop_table(
 
         raise exc
 
-    bucket, prefix = get_bucket_prefix(
-        str(metadata.location)
-    )
-
-    # List files in bucket / prefix
-    files_list = list_files_prefix(
-        boto3_session=boto3_session,
-        bucket=bucket,
-        prefix=prefix,
-    )
-
-    delete_objects(
-        boto3_session=boto3_session,
-        files_list=files_list
-    )
+    # Run several times the drop function
+    for _ in range(10):
+        list_and_remove_files_(
+            boto3_session=boto3_session,
+            location=str(metadata.location)
+        )
 
     # Drop athena table from catalog
     *_, schema_name, table_name = (
