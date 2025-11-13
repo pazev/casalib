@@ -12,7 +12,7 @@ AthenaBaseConnection, that implements the tasks.
 By design, the functionalities are implemented on modules
 folder, as functions; the class only makes the calls.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Union
 
 import boto3
@@ -53,10 +53,11 @@ class Boto3SessionMaker:
     """ Classe responsável por guardar e gerenciar a criação
         de conexões ao boto3, sempre que necessário.
     """
-    aws_access_key_id: Optional[str] = None
-    aws_secret_access_key: Optional[str] = None
-    aws_session_token: Optional[str] = None
-    region_name: Optional[str] = None
+    aws_access_key_id: Optional[str] = field(default=None, repr=None)
+    aws_secret_access_key: Optional[str] = field(default=None, repr=None)
+    aws_session_token: Optional[str] = field(default=None, repr=None)
+    profile_name: Optional[str] = field(default=None, repr=None)
+    region_name: Optional[str] = field(default=None, repr=None)
 
     def make(self) -> boto3.Session:
         """ Cria a sessão boto3 """
@@ -75,6 +76,11 @@ class Boto3SessionMaker:
         if self.aws_session_token is not None:
             par['aws_session_token'] = (
                 self.aws_session_token
+            )
+
+        if self.profile_name is not None:
+            par['profile_name'] = (
+                self.profile_name
             )
 
         if self.region_name is not None:

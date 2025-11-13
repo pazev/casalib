@@ -3,6 +3,7 @@ Module define enrich functions for an AthenaCompiler
 """
 from collections import defaultdict
 from dataclasses import dataclass, field
+from itertools import chain, zip_longest
 from typing import (
     Any, Callable, Dict, List, Optional, Tuple, Union
 )
@@ -63,7 +64,7 @@ public_enriched_ as (
                 {%- endfor %}
 )
 
-select * from public_enriched_
+select distinct * from public_enriched_
 """
 
 
@@ -425,6 +426,23 @@ class AthenaQueries:
     def sources_queries(self):
         """ Return the queries """
         return self.queries_list[1:]
+
+    def sources_queries_interleaved(self):
+        """ Return the queries, but in a interleaved way """
+        queries_index = defaultdict(list)
+        for qdict in self.sources_queries():
+            queries_index[qdict['table_name']].append(qdict)
+
+        queries_reordered = list(
+            filter(
+                None,
+                chain.from_iterable(
+                    zip_longest(*queries_index.values())
+                )
+            )
+        )
+
+        return queries_reordered
 
     def count_rows(
         self, conn: AthenaConnection

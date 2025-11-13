@@ -41,9 +41,16 @@ def create_table_pandas_dataframe(
 
         location = metadata.location
         partition_cols_tab = list(metadata.partition_cols)
-    except Exception as exc:
-        if 'EntityNotFound' not in exc.args[0]:
-            raise exc
+    except Exception as exception:
+        error_flag = True
+        if 'EntityNotFound' in exception.args[0]:
+            error_flag = False
+
+        if 'MetadataException' in exception.args[0]:
+            error_flag = False
+
+        if error_flag:
+            raise exception
 
     partition_cols = (
         partition_cols or partition_cols_tab or []

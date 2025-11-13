@@ -247,7 +247,14 @@ def create_insert(
             table_name=table_name
         )
     except Exception as exception:
-        if 'EntityNotFound' not in exception.args[0]:
+        error_flag = True
+        if 'EntityNotFound' in exception.args[0]:
+            error_flag = False
+
+        if 'MetadataException' in exception.args[0]:
+            error_flag = False
+
+        if error_flag:
             raise exception
 
         metadata = create_schema(
