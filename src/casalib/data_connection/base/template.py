@@ -48,6 +48,13 @@ class TemplateAbstract(ABC):
 
     @staticmethod
     @abstractmethod
+    def list_duplicates(
+        query: str, keys: List[str], samples: Optional[int] = None
+    ) -> str:
+        """ Return query to list all duplicates in a query """
+
+    @staticmethod
+    @abstractmethod
     def create_schema(
         table_name: str,
         columns_types: Dict[str, str],

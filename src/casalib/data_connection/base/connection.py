@@ -15,6 +15,7 @@ import pandas as pd
 from ._metadata import Metadata
 from .base_connection import BaseConnectionAbstract
 from .make_queries import MakeQueryAbstract
+from .querier import Querier
 from .template import TemplateAbstract
 from .utils import ConnectionUtilsAbstract
 
@@ -23,18 +24,29 @@ class ConnectionAbstract(BaseConnectionAbstract):
     """ Add the MakeQuery property to the class """
     # Properties
     # ==========
-    @property
-    @abstractmethod
-    def queries(self) -> MakeQueryAbstract:
-        """ Returns an object capable of generating the
-            desired query
-        """
-
     @staticmethod
     @abstractmethod
     def template() -> Type[TemplateAbstract]:
-        """ Return the class with methods to generate
-            queries without base connection
+        """
+        Return the class with methods to generate queries.
+        Given it is a staticmethod, we don't have connection
+        info while generating the query.
+        """
+
+    @property
+    @abstractmethod
+    def queries(self) -> MakeQueryAbstract:
+        """
+        Returns an object capable of generating the desired
+        query. Use connection data into the generation
+        procedure.
+        """
+
+    @property
+    @abstractmethod
+    def query(self) -> Querier:
+        """
+        Returns an object to run the query
         """
 
     @property
@@ -48,13 +60,6 @@ class ConnectionAbstract(BaseConnectionAbstract):
         """ Return the connection abstract necessary to
             perform the tasks
         """
-
-    # Base connection methods (Template)
-    def query(self, query: str) -> pd.DataFrame:
-        """ Retorna o resultado da query como um
-            DataFrame
-        """
-        return self.get_connection_.query(query=query,)
 
     def table(
         self,
@@ -249,7 +254,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
         # pylint: disable=too-many-arguments
-        query_to_exec = self.queries.agg_query(
+        return self.query.agg_query(
             query=query,
             groupby=groupby,
             count_=count_,
@@ -261,13 +266,4 @@ class ConnectionAbstract(BaseConnectionAbstract):
             percentile_=percentile_,
             cols_before=cols_before,
             cols_after=cols_after,
-        )[0]
-
-        result = self.get_connection_.query(
-            query=query_to_exec
         )
-
-        if bool(groupby) and sort:
-            return result.sort_values(groupby)
-
-        return result

@@ -218,6 +218,19 @@ class MakeQuery(MakeQueryAbstract):
             )
         ]
 
+    def get_duplicates(
+        self,
+        query: str,
+        keys: List[str],
+        samples: Optional[int] = None
+    ) -> List[str]:
+        """ Query to find duplicates in the given query """
+        return [
+            self.get_template_.get_duplicates(
+                query=query, keys=keys, samples=samples
+            )
+        ]
+
     def last_partition(
         self,
         table_name: str,

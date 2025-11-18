@@ -143,3 +143,21 @@ def make_sql_agg_query_(
     )
 
     return query_final
+
+
+def make_get_duplicates_(
+    query: str,
+    keys: List[str],
+    samples: Optional[int] = None
+) -> str:
+    """ Make query to find duplicates """
+    query_ = make_sql_agg_query_(
+        query=query,
+        groupby=keys,
+    )
+
+    query_ += ' where __count__ > 1'
+    if samples is not None and samples >= 0:
+        query_ += f' limit {samples}'
+
+    return query_

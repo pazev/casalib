@@ -42,6 +42,15 @@ class MakeQueryAbstract(ABC):
         """ Realiza uma agregação na query indicada """
 
     @abstractmethod
+    def get_duplicates(
+        self,
+        query: str,
+        keys: List[str],
+        samples: Optional[int] = None
+    ) -> List[str]:
+        """ Query to find duplicates in the given query """
+
+    @abstractmethod
     def create_insert(
         self,
         query: str,

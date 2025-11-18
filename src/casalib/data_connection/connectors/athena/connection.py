@@ -12,7 +12,7 @@ provide some advanced features, like advanced partition
 filtering and automatically query generation and more.
 """
 # pylint: disable=too-many-instance-attributes
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Type
 
 from .make_queries import MakeQuery
@@ -22,6 +22,7 @@ from .base_connection import Boto3SessionMaker, AthenaBaseConnection
 from ...base import (
     BaseConnectionAbstract,
     ConnectionAbstract,
+    Querier
 )
 
 
@@ -34,14 +35,6 @@ class AthenaConnection(ConnectionAbstract):
     data_catalog: str
     boto3_session_maker: Boto3SessionMaker
     table_prefix: str = ''
-    conn_: AthenaBaseConnection = field(
-        init=False,
-        repr=False
-    )
-    make_query_: MakeQuery = field(
-        init=False,
-        repr=False
-    )
 
     def __post_init__(self):
         """ Create basic modules to use """
@@ -55,8 +48,8 @@ class AthenaConnection(ConnectionAbstract):
         )
 
         self.make_query_ = MakeQuery(self.conn_)
-
         self.utils_ = AthenaConnectionUtils(self.conn_)
+        self.query_ = Querier(self.conn_, self.make_query_)
 
     @staticmethod
     def template() -> Type[AthenaTemplates]:
@@ -71,6 +64,13 @@ class AthenaConnection(ConnectionAbstract):
             desired query
         """
         return self.make_query_
+
+    @property
+    def query(self) -> Querier:
+        """
+        Returns an object to run the query
+        """
+        return self.query_
 
     @property
     def utils(self) -> AthenaConnectionUtils:

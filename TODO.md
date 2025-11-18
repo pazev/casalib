@@ -1,6 +1,62 @@
 TODO
 ====
 
+2025-11-13
+----------
+[ ] Cloud utils
+    [ ] List Processing Jobs
+    [ ] CloudWatch
+        [ ] get_metrics
+        [ ] get_log
+    [ ] Athena
+        [ ] list_queries
+
+[ ] Mapping
+    [ ] Abstract
+        [ ] Get
+            [ ] rows_count
+            [ ] nulls_count
+            [ ] not_nulls_count
+            [ ] zeros_count
+            [ ] sample
+            [ ] common_values (threeshold)
+            [ ] percentiles
+        [ ] Count
+
+[ ] Enricher
+    [ ] Tabela de target final
+    [ ] Enriquecer: tabela de público com todos os targets
+    [ ] Adicionar parâmetro para input de partições
+    [ ] Alert: duplicates
+
+    [ ] AthenaQueryObjects
+        - Steps
+            - Public
+            - Targets
+            - Query final
+            - Vars
+
+[ ] TableManager
+    [ ] Adicionar discover_params_ na interface base
+    [ ] last_partition sem conn
+
+[ ] Salvar dataframe em Excel
+    [ ] Usando openpyxl, abrir ou criar um arquivo excel e salvar o dataframe dentro
+
+[ ] ConnectionAAbstract
+    [x] Objeto Querier (templates aqui)
+    [x] List duplicates (no template)
+    [ ] Left Join function
+
+[ ] Remote execution
+    [ ] Passar um diretório como tar.gz
+    [ ] Criar bootloader especial
+            - Unpack
+            - Exec
+
+[ ] Objeto KnownNames / KnownTables
+
+
 [ ] No processo de criação de um novo modelo, temos que
     [ ] 1.  Criar as tabelas intermediárias, que são
             basicamente o público enriquecido com o target;

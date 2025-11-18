@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ....base.template import TemplateAbstract
 
-from .agg import make_sql_agg_query_
+from .agg import make_sql_agg_query_, make_get_duplicates_
 from .create_ctas import make_sql_create_ctas_
 from .create_schema import make_sql_create_schema_
 from .insert_table import make_sql_insert_
@@ -77,6 +77,19 @@ class AthenaTemplates(TemplateAbstract):
             percentile_=percentile_,
             cols_before=cols_before,
             cols_after=cols_after,
+        )
+
+    @staticmethod
+    def get_duplicates(
+        query: str,
+        keys: List[str],
+        samples: Optional[int] = None
+    ) -> str:
+        """ Find duplicates in a query """
+        return make_get_duplicates_(
+            query=query,
+            keys=keys,
+            samples=samples,
         )
 
     @staticmethod
