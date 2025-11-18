@@ -99,7 +99,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
     boto3_session_maker: Boto3SessionMaker
     table_prefix: str = ''
 
-    def query(self, query: str) -> pd.DataFrame:
+    def query_method_(self, query: str) -> pd.DataFrame:
         """
         Retorna o resultado da query como um DataFrame
         """

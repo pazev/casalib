@@ -90,6 +90,8 @@ def make_sql_agg_query_(
     percentile to be calculated and the value is a list of
     columns to be used.
     """
+    # pylint: disable=too-many-locals,too-many-arguments
+
     cols_before_ = cols_before or []
     cols_before_ = [
         elem_adj
@@ -104,7 +106,6 @@ def make_sql_agg_query_(
         for elem_adj in [elem if isinstance(elem, tuple) else (elem, elem)]
     ]
 
-    # pylint: disable=too-many-locals,too-many-arguments
     col_ops_dict: Dict[
         str,
         List[Tuple[str, Optional[int]]]

@@ -1,3 +1,8 @@
+"""
+Module that defines the Querier object; several special
+methods to run.
+"""
+
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -9,6 +14,7 @@ from .make_queries import MakeQueryAbstract
 
 @dataclass
 class Querier:
+    """ Querier class, with special queries """
     conn_: BaseConnectionAbstract
     make_queries_: MakeQueryAbstract
 
@@ -16,7 +22,7 @@ class Querier:
         """
         Run a query into the database connection.
         """
-        return self.conn_.query(query=query)
+        return self.conn_.query_method_(query=query)
 
     # Queries
     def agg_query(
@@ -35,7 +41,7 @@ class Querier:
         sort: bool = False
     ) -> pd.DataFrame:
         """ Realiza uma agregação na query indicada """
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments,too-many-locals
         groupby_: List[str] = groupby or []
 
         query_to_exec = self.make_queries_.agg_query(
@@ -52,7 +58,7 @@ class Querier:
             cols_after=cols_after,
         )[0]
 
-        result = self.conn_.query(
+        result = self.conn_.query_method_(
             query=query_to_exec
         )
 
@@ -76,4 +82,4 @@ class Querier:
         if sample is not None and sample > 0:
             query_ += f' limit {sample}'
 
-        return self.conn_.query(query_)
+        return self.conn_.query_method_(query_)

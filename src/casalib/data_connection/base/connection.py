@@ -61,6 +61,10 @@ class ConnectionAbstract(BaseConnectionAbstract):
             perform the tasks
         """
 
+    def query_method_(self, query) -> pd.DataFrame:
+        """ Return the results of a query as a dataframe """
+        return self.get_connection_.query_method_(query)
+
     def table(
         self,
         table_name: str,
@@ -266,4 +270,5 @@ class ConnectionAbstract(BaseConnectionAbstract):
             percentile_=percentile_,
             cols_before=cols_before,
             cols_after=cols_after,
+            sort=sort,
         )

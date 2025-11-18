@@ -2,12 +2,9 @@
 Receipt to quick create a remote job to execute at
 SageMaker Training Jobs.
 """
+# pylint: disable=import-outside-toplevel
 from pathlib import Path
 from typing import Dict, List, Optional, Union
-
-from casalib.remote_jobs.connectors.aws_processing_jobs import (
-    ProcessingJob
-)
 
 
 def make(
@@ -15,6 +12,11 @@ def make(
     default_bucket: str,
     default_bucket_prefix: str,
 ):
+    """ Receipt to quick load a remote job; not ready """
+    from casalib.remote_jobs.connectors.aws_processing_jobs import (
+        ProcessingJob
+    )
+
     def create_function(
         basename: str,
         main_program: Union[str, Path],
@@ -25,6 +27,8 @@ def make(
         s3_bucket: Optional[str] = None,
         s3_prefix: Optional[str] = None,
     ):
+        """ Function to run the processing job """
+        # pylint: disable=too-many-arguments
         proc = ProcessingJob(
             basename,
             instance_type=instance_type or default_instance_type,

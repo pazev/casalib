@@ -19,7 +19,7 @@ class BaseConnectionAbstract(ABC):
         mínimos para funcionar.
     """
     @abstractmethod
-    def query(self, query: str) -> pd.DataFrame:
+    def query_method_(self, query: str) -> pd.DataFrame:
         """ Retorna o resultado da query como um
             DataFrame
         """
