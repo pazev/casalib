@@ -8,12 +8,13 @@ from typing import (
     Any, Callable, Dict, List, Optional, Tuple, Union
 )
 
+import jinja2
+import pandas as pd
+from tqdm import tqdm  # type: ignore
+
 from casalib.data_connection.connectors.athena import (
     AthenaConnection
 )
-import jinja2
-import pandas as pd
-from tqdm import tqdm
 
 from ..base import EnrichmentPlan, Enricher, Public, Source
 

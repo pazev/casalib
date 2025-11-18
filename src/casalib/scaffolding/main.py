@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from cookiecutter.main import cookiecutter
+from cookiecutter.main import cookiecutter  # type: ignore
 
 
 BASE_DIR = Path(__file__).parent

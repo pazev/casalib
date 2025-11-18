@@ -21,6 +21,10 @@ def list_and_remove_files_(
     boto3_session: boto3.Session,
     location: str,
 ):
+    """
+    Function to list all files in a S3 bucket/prefix and
+    delete them
+    """
     bucket, prefix = get_bucket_prefix(location)
 
     # List files in bucket / prefix

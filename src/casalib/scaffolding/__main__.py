@@ -1,7 +1,7 @@
 """
 Módulo com os comandos de CLI para o casalib.scaffolding
 """
-from fire import Fire
+from fire import Fire  # type: ignore
 
 from .main import list_templates, run_template
 

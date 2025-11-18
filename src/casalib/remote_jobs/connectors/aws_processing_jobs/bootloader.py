@@ -132,5 +132,5 @@ if __name__ == '__main__':
 
     logging.info(dict_params)
 
-    import main_program
+    import main_program   # type: ignore
     main_program.main(**dict_params)
