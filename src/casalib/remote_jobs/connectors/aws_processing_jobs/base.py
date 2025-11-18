@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import boto3
 import sagemaker

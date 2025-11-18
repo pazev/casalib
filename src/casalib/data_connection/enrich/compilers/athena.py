@@ -16,7 +16,7 @@ from casalib.data_connection.connectors.athena import (
     AthenaConnection
 )
 
-from ..base import EnrichmentPlan, Enricher, Public, Source
+from ..base import EnrichmentPlan, Enricher, Public
 
 
 COMPILE_STEP_TEMPLATE = """
