@@ -1,3 +1,7 @@
+"""
+Program that will be used as bootloader at the remote
+machine
+"""
 import argparse
 from itertools import zip_longest
 import logging
@@ -14,6 +18,9 @@ LIBS_FLD = '/opt/ml/processing/libs'
 
 
 def init_machine():
+    """
+    Initialize the Processing Job to run the code.
+    """
     # Configures the Logging
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(message)s',
@@ -81,15 +88,15 @@ def init_machine():
         for f in output_folder_files
         if f.suffixes[-1] == '.whl'
     ]
-    logging.info(f"Libs to install: {libs_to_install}")
+    logging.info("Libs to install: %s", libs_to_install)
     for lib in libs_to_install:
-        logging.info(f"Installing {lib}")
-        subprocess.run(["pip", "install", lib])
+        logging.info("Installing %s", lib)
+        subprocess.run(["pip", "install", lib], check=False)
 
     logging.info("Installing graphic libs")
-    subprocess.run([sys.executable, "-m", "pip", "install", "matplotlib"])
-    subprocess.run([sys.executable, "-m", "pip", "install", "seaborn"])
-    subprocess.run([sys.executable, "-m", "pip", "install", "ipython"])
+    subprocess.run([sys.executable, "-m", "pip", "install", "matplotlib"], check=False)
+    subprocess.run([sys.executable, "-m", "pip", "install", "seaborn"], check=False)
+    subprocess.run([sys.executable, "-m", "pip", "install", "ipython"], check=False)
 
     # Adding libs folder to path
     sys.path.insert(1, LIBS_FLD)
@@ -102,15 +109,14 @@ def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
     # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
     # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
     # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-    args = [iter(iterable)] * n
+    args_iter = [iter(iterable)] * n
     if incomplete == 'fill':
-        return zip_longest(*args, fillvalue=fillvalue)
+        return zip_longest(*args_iter, fillvalue=fillvalue)
     if incomplete == 'strict':
-        return zip(*args, strict=True)
+        return zip(*args_iter, strict=True)
     if incomplete == 'ignore':
-        return zip(*args)
-    else:
-        raise ValueError('Expected fill, strict, or ignore')
+        return zip(*args_iter)
+    raise ValueError('Expected fill, strict, or ignore')
 
 
 if __name__ == '__main__':
@@ -132,5 +138,5 @@ if __name__ == '__main__':
 
     logging.info(dict_params)
 
-    import main_program   # type: ignore
+    import main_program   # type: ignore  # pylint: disable=import-error
     main_program.main(**dict_params)

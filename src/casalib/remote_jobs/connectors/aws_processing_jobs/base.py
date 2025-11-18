@@ -1,3 +1,8 @@
+"""
+Modules with classes and functions to trigger a remote
+job
+"""
+
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -26,6 +31,7 @@ class ProcessingJob(AbstractRemoteJob):
             max_runtime_in_seconds: int
         )
     """
+    # pylint: disable=too-many-instance-attributes
     basename: str
     instance_type: str = 'ml.g5.4xlarge'
     processor_maker: Optional[
@@ -182,14 +188,13 @@ def run_processor(
     main_program: str,
     libs_to_send: Optional[List[str]] = None,
     arguments_dict: Optional[Dict[str, str]] = None,
-    max_seconds: int = 7200,
 ):
     """
     The main program will be send as main_program.py to the
     ProcessingJob. The bootloader will load it and run the
     function main(**kwargs).
     """
-    CUR_DIR = Path(__file__).parent
+    cur_dir = Path(__file__).parent
     arguments_dict = arguments_dict or {}
 
     libs_to_send = libs_to_send or []
@@ -209,7 +214,7 @@ def run_processor(
 
     # Run params
     run_params = {
-        'code': str(CUR_DIR / 'bootloader.py'),
+        'code': str(cur_dir / 'bootloader.py'),
         'inputs': files_inputs,
     }
 

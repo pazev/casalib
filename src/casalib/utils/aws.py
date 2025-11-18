@@ -1,3 +1,4 @@
+""" Useful codes to process things at AWS """
 from typing import Dict, List
 
 import boto3
@@ -19,12 +20,12 @@ def s3_list_files(
         .get_paginator('list_objects_v2')
         .paginate(Bucket=bucket, Prefix=prefix)
     )
-    contents = [
-        content
-        for page in pages
-        for content in page['Contents']
-        for _ in [content.__setitem__('Bucket', bucket)]
-    ]
+    contents = []
+    for page in pages:
+        for content in page['Contents']:
+            content['Bucket'] = bucket
+            contents.append(content)
+
     return contents
 
 

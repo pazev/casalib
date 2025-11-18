@@ -1,9 +1,11 @@
+""" Module with base definitions, to run a remote program """
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 
 class AbstractRemoteJob(ABC):
+    """ Abstraction for remote job """
     @abstractmethod
     def get_basename(self) -> str:
         """ Return basename """
