@@ -94,9 +94,16 @@ class ProcessingJob(AbstractRemoteJob):
         max_runtime_in_seconds: int
     ) -> Processor:
         """ Create o Processor """
-        proc_maker = self.processor_maker or standard_processor_
+        if self.processor_maker is not None:
+            return self.processor_maker(
+                base_job_name=self.get_basename(),
+                sagemaker_role=self.get_sagemaker_role_(),
+                sagemaker_session=self.get_sagemaker_session_(),
+                instance_type=self.instance_type,
+                max_runtime_in_seconds=max_runtime_in_seconds,
+            )  # type: ignore
 
-        return proc_maker(
+        return standard_processor_(
             base_job_name=self.get_basename(),
             sagemaker_role=self.get_sagemaker_role_(),
             sagemaker_session=self.get_sagemaker_session_(),
@@ -149,7 +156,7 @@ def standard_processor_(
     if max_runtime_in_seconds:
         params['max_runtime_in_seconds'] = max_runtime_in_seconds
 
-    return PyTorchProcessor(**params)
+    return PyTorchProcessor(**params)  # type: ignore
 
 
 def gen_processing_input(
@@ -192,8 +199,8 @@ def gen_processing_input(
 
 def run_processor(
     script_processor: Processor,
-    main_program: str,
-    libs_to_send: Optional[List[str]] = None,
+    main_program: Union[str, Path],
+    libs_to_send: Optional[List[Union[str, Path]]] = None,
     arguments_dict: Optional[Dict[str, str]] = None,
 ):
     """
@@ -214,7 +221,7 @@ def run_processor(
 
     files_inputs.extend(
         gen_processing_input(
-            main_program,
+            str(main_program),
             '/opt/ml/processing/libs_cp/main_program.py'
         )
     )
