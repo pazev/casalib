@@ -80,3 +80,17 @@ class MakeQueryAbstract(ABC):
         **filters: List[Any]
     ) -> List[str]:
         """ Create a query to retrieve last partition """
+
+    @abstractmethod
+    def left_join(
+        self,
+        root_query: str,
+        other_queries: List[str],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+    ) -> List[str]:
+        """
+        Generate a query to create LEFT JOINs to a root
+        query
+        """

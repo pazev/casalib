@@ -83,3 +83,15 @@ class Querier:
             query_ += f' limit {sample}'
 
         return self.conn_.query_method_(query_)
+
+    def left_join(
+        self,
+        root_query: str,
+        other_queries: List[str],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+    ) -> pd.DataFrame:
+        """
+        Return a DataFrame, result of a left join query
+        """

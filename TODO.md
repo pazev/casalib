@@ -3,6 +3,15 @@ TODO
 
 2025-11-13
 ----------
+[ ] ConnectionAAbstract
+    [x] Objeto Querier (templates aqui)
+    [x] List duplicates (no template)
+    [ ] Left Join function
+    [-] Promover last_partition para o querier - não faz sentido; dropado
+    [x] Adicionar Deprecated warnings na casalib
+        [x] Remove method
+        [x] Remove from any place inside casalib
+
 [ ] Cloud utils
     [ ] List Processing Jobs
     [ ] CloudWatch
@@ -46,15 +55,6 @@ TODO
 [ ] Salvar dataframe em Excel
     [ ] Usando openpyxl, abrir ou criar um arquivo excel e salvar o dataframe dentro
 
-[ ] ConnectionAAbstract
-    [x] Objeto Querier (templates aqui)
-    [x] List duplicates (no template)
-    [ ] Left Join function
-    [X] Promover last_partition para o querier - não faz sentido; dropado
-    [x] Adicionar Deprecated warnings na casalib
-        [x] Remove method
-        [x] Remove from any place inside casalib
-
 [ ] Remote execution
     [ ] Passar um diretório como tar.gz
     [ ] Criar bootloader especial
@@ -78,27 +78,6 @@ TODO
         [ ] Targets: cruza tudo e deixa pronto
         [ ] Sources: cruza a tabela de saída dos targets com a fonte
 
-
-[-] TableManager
-    [x] Refactoring
-        [x] Move abstract classes and collection
-            code to base folder
-        [x] Rename TableManagerAbstract to
-                BaseTableManager
-        [x] Create a new TableManagerAbstract
-                template, that
-            implements all methoods
-        [x] Refactor other TableManagers to use this
-            new TableManagerAbstract (only implement
-            what must be overloaded)
-            [x] OtherOwnerTableManager
-            [x] ManageableTableManager
-            [x] QueryTableManager
-            [x] PandasTableManager
-    [x] Add ConnectionType to TableManager
-    [ ] Add known_names to all TableManagers
-        [ ] get_known_names
-        [ ] add_known_names
 
 [ ] Método de contagem (counter_map)
     - Contar os nulos, valores indicados
@@ -242,3 +221,24 @@ FEITO
             mesmos atrás de variáveis TableManager
         [x] Passando um diretório
     [x] Ordenar os tm: quem depende de quem?
+
+[x] TableManager
+    [x] Refactoring
+        [x] Move abstract classes and collection
+            code to base folder
+        [x] Rename TableManagerAbstract to
+                BaseTableManager
+        [x] Create a new TableManagerAbstract
+                template, that
+            implements all methoods
+        [x] Refactor other TableManagers to use this
+            new TableManagerAbstract (only implement
+            what must be overloaded)
+            [x] OtherOwnerTableManager
+            [x] ManageableTableManager
+            [x] QueryTableManager
+            [x] PandasTableManager
+    [x] Add ConnectionType to TableManager
+    [x] Add known_names to all TableManagers
+        [-] get_known_names
+        [x] add_known_names
