@@ -94,7 +94,7 @@ def compile_step(
     plan: EnrichmentPlan,
     partition_list: List[Dict[str, str]],
     public_table_name: str,
-) -> Tuple[str, Dict[str, str]]:
+) -> Dict[str, Union[List[str], Dict[str, str]]]:
     """
     Compile a step in a query to be executed.
 
@@ -127,7 +127,7 @@ def compile_step(
 
 def compile_enrichment_plans(
     conn: AthenaConnection,
-    make_name_function: Callable[[Any, ...], str],
+    make_name_function: Callable[[Union[int, None], str], str],
     enrichment_plan_list: List[EnrichmentPlan],
     public_table_name: str,
     public_event_ymd_column: str,
@@ -154,7 +154,7 @@ def compile_enrichment_plans(
         table_name = make_name_function(
             optional_number=optional_number,
             optional_name=enr_plan.source.prefix
-        )
+        )  # type: ignore
 
         # Discover the valid partitions
         partitions_list = source_discover_partitions_cross_(
@@ -196,7 +196,7 @@ def compile_final_query(
     columns_dict: Dict[str, Dict[str, str]],
     selected_cols: Optional[List[str]] = None,
     partition_cols: Optional[List[str]] = None,
-) -> Tuple[str, str]:
+):  # -> Tuple[str, str]:
     """
     Compile the final query, that unify all variables of the
     enrichment plans in the same query.
@@ -216,7 +216,7 @@ def compile_final_query(
 
 def compile_enrichment_plans_targets(
     conn: AthenaConnection,
-    make_name_function: Callable[[Any, ...], str],
+    make_name_function: Callable[[Union[int, None], str], str],
     enrichment_plan_list: Union[None, List[EnrichmentPlan]],
 
     public_table_name: str,
@@ -272,7 +272,7 @@ def compile_enrichment_plans_targets(
 
 def compile_enrichment_plans_sources(
     conn: AthenaConnection,
-    make_name_function: Callable[[Any, ...], str],
+    make_name_function: Callable[[Union[int, None], str], str],
     enrichment_plan_list: List[EnrichmentPlan],
 
     public_table_name: str,
@@ -384,10 +384,10 @@ def source_discover_partitions_cross_(
 
 def compile_public(
     conn: AthenaConnection,
-    make_name_function: Callable[[Any, ...], str],
+    make_name_function: Callable[[Union[int, None], str], str],
     public: Public,
     partition_cols: Optional[List[str]] = None
-) -> List[Dict[str, str]]:
+) -> Tuple[Dict[str, str], str, str, pd.DataFrame]:
     """
     Create the public table
     """
@@ -454,7 +454,7 @@ class AthenaQueries:
         for qdict in self.sources_queries():
             queries_index[qdict['table_name']].append(qdict)
 
-        queries_reordered = list(
+        queries_reordered: List[Dict[str, str]] = list(
             filter(
                 None,
                 chain.from_iterable(
@@ -467,7 +467,7 @@ class AthenaQueries:
 
     def count_rows(
         self, conn: AthenaConnection
-    ) -> Tuple[pd.DataFrame, List[Tuple[str, str]]]:
+    ) -> Tuple[pd.DataFrame, List[Tuple[str, Exception]]]:
         """ Count the number of lines in each table """
         res = []
         errors = []
@@ -500,7 +500,7 @@ class AthenaQueries:
 
     def count_duplicates(
         self, conn: AthenaConnection, cols_to_check: List[str]
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, List[Tuple[str, Exception]]]:
         """ Count the duplicates in tables """
         res = []
         errors = []
@@ -545,7 +545,7 @@ class AthenaQueries:
             tab: cols
             for tab, query in tqdm(table_queries.items())
             for metadata in [conn.metadata(query=query)]
-            for cols in [metadata.columns | metadata.partition_cols]
+            for cols in [list(metadata.columns | metadata.partition_cols)]
         }
 
         return table_cols
@@ -615,7 +615,7 @@ class AthenaCompiler:
 
     def __call__(
         self, enricher: Enricher
-    ) -> List[Dict[str, str]]:
+    ) -> AthenaQueries:
         """ Run the compiler """
         return self.compile(enricher=enricher)
 

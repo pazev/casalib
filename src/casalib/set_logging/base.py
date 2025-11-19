@@ -21,6 +21,9 @@ class FilterPackages(logging.Filter):
 
     def filter(self, record):
         """ Filtering method """
+        if self.pkg_ignlevel_message is None:
+            return True
+
         for pkg, ignlevel, msg in self.pkg_ignlevel_message:
             if pkg not in record.name:
                 continue
