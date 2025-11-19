@@ -67,16 +67,23 @@ class ProcessingJob(AbstractRemoteJob):
 
     def get_sagemaker_session_(self) -> sagemaker.Session:
         """ Get the sagemaker.Session """
-        boto3_session = self.boto3_session or boto3.Session()
-        session = (
-            self.sagemaker_session or
-            sagemaker.Session(
+        if self.sagemaker_session is not None:
+            return self.sagemaker_session
+
+        if self.default_bucket is not None and self.default_bucket_prefix is not None:
+            boto3_session = self.boto3_session or boto3.Session()
+
+            return sagemaker.Session(
                 boto_session=boto3_session,
                 default_bucket=self.default_bucket,
                 default_bucket_prefix=self.default_bucket_prefix,
             )
+
+        raise ValueError(
+            'sagemaker_session or '
+            'default_bucket/default_bucket_prefix must be '
+            'set.'
         )
-        return session
 
     def get_sagemaker_role_(self) -> str:
         """ Get the SageMaker role """

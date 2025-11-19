@@ -138,6 +138,11 @@ def compile_enrichment_plans(
     """
     Compile the queries for a list of Enrichment Plans
     """
+    # TODO: why is public_event_ymd_column unused
+    # pylint: disable=unused-argument
+
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-arguments
     table_queries = {}
     table_columns = {}
     partition_cols = partition_cols or []
@@ -196,6 +201,13 @@ def compile_final_query(
     Compile the final query, that unify all variables of the
     enrichment plans in the same query.
     """
+    # pylint: disable=too-many-arguments
+
+    # TODO: end this function
+    # pylint: disable=unused-argument
+    # pylint: disable=forgotten-debug-statement
+    # pylint: disable=multiple-statements
+    # pylint: disable=import-outside-toplevel
     selected_cols = selected_cols or []
     partition_cols = partition_cols or []
 
@@ -220,6 +232,7 @@ def compile_enrichment_plans_targets(
     run some additional codes for targets (as the code to
     join everything).
     """
+    # pylint: disable=too-many-arguments
     enrichment_plan_list = enrichment_plan_list or []
 
     # If no target is given, return an empty query list and the
@@ -227,7 +240,8 @@ def compile_enrichment_plans_targets(
     if not enrichment_plan_list:
         return [], public_table_name
 
-    queries_list, columns_dict = compile_enrichment_plans(
+    # queries_list, columns_dict =
+    queries_list, _ = compile_enrichment_plans(
         conn=conn,
         make_name_function=make_name_function,
         enrichment_plan_list=enrichment_plan_list,
@@ -237,6 +251,8 @@ def compile_enrichment_plans_targets(
         partition_cols=partition_cols,
         ignore_numbering=False
     )
+
+    # TODO: end this function
 
     # Create a table with all targets columns
     # final_table_name = make_name_function(
@@ -271,6 +287,7 @@ def compile_enrichment_plans_sources(
     It will use compile_enrichment_plans as base, but will
     run some additional codes for sources.
     """
+    # pylint: disable=too-many-arguments
     queries_list, _ = compile_enrichment_plans(
         conn=conn,
         make_name_function=make_name_function,
@@ -400,6 +417,9 @@ def compile_public(
 
 @dataclass
 class AthenaQueries:
+    """
+    Class to control all the queries generated in the Enricher
+    """
     queries_list: List[Dict[str, str]] = field(repr=False)
     partition_cols: List[str] = field(default_factory=list)
 
@@ -462,7 +482,7 @@ class AthenaQueries:
                     ]
                 )
                 res.append(temp)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 errors.append((tab, e))
 
         return (
@@ -499,7 +519,7 @@ class AthenaQueries:
                     )
                 )
                 res.append(temp)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 errors.append((tab, e))
 
         return (

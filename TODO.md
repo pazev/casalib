@@ -24,6 +24,7 @@ TODO
         [ ] Count
 
 [ ] Enricher
+    [ ] Ajustar pylint e mypy (MUITO ERRO)
     [ ] Tabela de target final
     [ ] Enriquecer: tabela de público com todos os targets
     [ ] Adicionar parâmetro para input de partições
@@ -39,6 +40,7 @@ TODO
 [ ] TableManager
     [ ] Adicionar discover_params_ na interface base
     [ ] last_partition sem conn
+    [ ] Iterar params no PandasTableManager
 
 [ ] Salvar dataframe em Excel
     [ ] Usando openpyxl, abrir ou criar um arquivo excel e salvar o dataframe dentro
@@ -47,6 +49,8 @@ TODO
     [x] Objeto Querier (templates aqui)
     [x] List duplicates (no template)
     [ ] Left Join function
+    [ ] Promover last_partition para o querier
+    [ ] Adicionar Deprecated warnings na casalib
 
 [ ] Remote execution
     [ ] Passar um diretório como tar.gz
