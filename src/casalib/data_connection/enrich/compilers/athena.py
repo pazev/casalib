@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import chain, zip_longest
 from typing import (
-    Any, Callable, Dict, List, Optional, Tuple, Union
+    Callable, Dict, List, Optional, Tuple, Union
 )
 
 import jinja2

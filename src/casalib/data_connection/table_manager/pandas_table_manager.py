@@ -33,9 +33,7 @@ class PandasTableManager(TableManagerAbstract):
     """
     required_params: List[str]
 
-    pandas_pipeline: Optional[
-        Callable[..., pd.DataFrame]
-    ] = field(default=None, repr=False)
+    pandas_pipeline: Callable[..., pd.DataFrame] = field(repr=False)
 
     query_template_dict: Dict[str, str] = field(
         repr=False,
@@ -46,7 +44,6 @@ class PandasTableManager(TableManagerAbstract):
         [
             Callable[[pd.DataFrame], None],
             Dict[str, pd.DataFrame],
-            Any
         ],
         None
     ]] = field(default=None, repr=False)
@@ -163,8 +160,12 @@ class PandasTableManager(TableManagerAbstract):
         # Validate if all required params are being passed
         self.missing_params_(**params)
 
-        dict_dffs_ = self.extract_dataframes_(**params)
+        if self.transform_and_load_ is None:
+            raise ValueError(
+                'self.transform_and_load_ must be set'
+            )
 
+        dict_dffs_ = self.extract_dataframes_(**params)
         self.transform_and_load_(
             self.load_function_,
             dict_dffs_
