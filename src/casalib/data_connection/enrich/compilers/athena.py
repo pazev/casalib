@@ -474,7 +474,7 @@ class AthenaQueries:
 
         for tab in tqdm(self.table_names()):
             try:
-                temp = conn.agg_query(
+                temp = conn.query.agg_query(
                     f'select * from {tab}',
                     ['mesref'],
                     cols_after=[

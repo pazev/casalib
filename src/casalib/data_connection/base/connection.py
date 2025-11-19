@@ -239,36 +239,3 @@ class ConnectionAbstract(BaseConnectionAbstract):
             table_name,
             *filters
         )
-
-    # Queries
-    def agg_query(
-        self,
-        query: str,
-        groupby: Optional[List[str]] = None,
-        count_: Optional[List[str]] = None,
-        count_distinct_: Optional[List[str]] = None,
-        sum_: Optional[List[str]] = None,
-        mean_: Optional[List[str]] = None,
-        min_: Optional[List[str]] = None,
-        max_: Optional[List[str]] = None,
-        percentile_: Optional[Dict[int, List[str]]] = None,
-        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
-        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
-        sort: bool = False
-    ) -> pd.DataFrame:
-        """ Realiza uma agregação na query indicada """
-        # pylint: disable=too-many-arguments
-        return self.query.agg_query(
-            query=query,
-            groupby=groupby,
-            count_=count_,
-            count_distinct_=count_distinct_,
-            sum_=sum_,
-            mean_=mean_,
-            min_=min_,
-            max_=max_,
-            percentile_=percentile_,
-            cols_before=cols_before,
-            cols_after=cols_after,
-            sort=sort,
-        )

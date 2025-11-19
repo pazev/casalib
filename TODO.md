@@ -10,6 +10,7 @@ TODO
         [ ] get_log
     [ ] Athena
         [ ] list_queries
+        [ ] List tables in schema
 
 [ ] Mapping
     [ ] Abstract
@@ -24,7 +25,7 @@ TODO
         [ ] Count
 
 [ ] Enricher
-    [ ] Ajustar pylint e mypy (MUITO ERRO)
+    [x] Ajustar pylint e mypy (MUITO ERRO)
     [ ] Tabela de target final
     [ ] Enriquecer: tabela de público com todos os targets
     [ ] Adicionar parâmetro para input de partições
@@ -49,8 +50,10 @@ TODO
     [x] Objeto Querier (templates aqui)
     [x] List duplicates (no template)
     [ ] Left Join function
-    [ ] Promover last_partition para o querier
-    [ ] Adicionar Deprecated warnings na casalib
+    [X] Promover last_partition para o querier - não faz sentido; dropado
+    [x] Adicionar Deprecated warnings na casalib
+        [x] Remove method
+        [x] Remove from any place inside casalib
 
 [ ] Remote execution
     [ ] Passar um diretório como tar.gz
@@ -102,8 +105,6 @@ TODO
         nos eqs, e posições entre pontos
     [ ] Separado do data_connection
     [ ] Rodar sobre Pandas e conexão
-
-[ ] List tables in schema
 
 [ ] Utils: relocate a table
     - Create table schema

@@ -5,7 +5,7 @@ pipeline to a Table
 # pylint: disable=too-many-public-methods
 from dataclasses import dataclass, field
 from typing import (
-    Any, Callable, Dict, List, Optional
+    Callable, Dict, List, Optional
 )
 
 import jinja2
