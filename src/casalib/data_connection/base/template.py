@@ -113,3 +113,18 @@ class TemplateAbstract(ABC):
         Generate a query to LEFT JOIN several queries to a
         root one
         """
+
+    @staticmethod
+    @abstractmethod
+    def op(
+        query: str,
+        query_cols: List[str],
+        rename: Optional[List[Tuple[str, str]]] = None,
+        add_cols: Optional[List[Tuple[str, str]]] = None,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> str:
+        """
+        Generate a new query, that rename, select, exclude
+        and add new columns.
+        """

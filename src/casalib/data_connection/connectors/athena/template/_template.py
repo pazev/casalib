@@ -11,6 +11,7 @@ from .create_schema import make_sql_create_schema_
 from .insert_table import make_sql_insert_
 from .last_partition import make_sql_last_partition_
 from .left_join import make_sql_left_join_
+from .op import make_op_query_
 
 
 class AthenaTemplates(TemplateAbstract):
@@ -207,4 +208,24 @@ class AthenaTemplates(TemplateAbstract):
             cols_after=cols_after,
             select_cols=select_cols,
             samples=samples,
+        )
+
+    @staticmethod
+    def op(
+        query: str,
+        query_cols: List[str],
+        rename: Optional[List[Tuple[str, str]]] = None,
+        add_cols: Optional[List[Tuple[str, str]]] = None,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> str:
+        """ Create an operation """
+        # pylint: disable=too-many-arguments
+        return make_op_query_(
+            query=query,
+            query_cols=query_cols,
+            rename=rename,
+            add_cols=add_cols,
+            select=select,
+            exclude=exclude,
         )
