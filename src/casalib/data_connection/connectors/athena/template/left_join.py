@@ -62,7 +62,7 @@ select * from cols_
 '''
 
 
-def make_sql_left_join(
+def make_sql_left_join_(
     root_query_cols: Tuple[str, List[Union[str, Tuple[str, str]]]],
     other_queries_cols: List[Tuple[str, List[Union[str, Tuple[str, str]]]]],
     join_cols: List[str],

@@ -10,6 +10,7 @@ from .create_ctas import make_sql_create_ctas_
 from .create_schema import make_sql_create_schema_
 from .insert_table import make_sql_insert_
 from .last_partition import make_sql_last_partition_
+from .left_join import make_sql_left_join_
 
 
 class AthenaTemplates(TemplateAbstract):
@@ -181,4 +182,24 @@ class AthenaTemplates(TemplateAbstract):
             table_name=table_name,
             schema_name=schema_name,
             cols_ordering=cols_ordering,
+        )
+
+    @staticmethod
+    def left_join(
+        root_query_cols: Tuple[str, List[Union[str, Tuple[str, str]]]],
+        other_queries_cols: List[Tuple[str, List[Union[str, Tuple[str, str]]]]],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+    ):
+        """
+        Generate a query to LEFT JOIN several queries to a
+        root one
+        """
+        return make_sql_left_join_(
+            root_query_cols=root_query_cols,
+            other_queries_cols=other_queries_cols,
+            join_cols=join_cols,
+            cols_to_add_suffix=cols_to_add_suffix,
+            cols_after=cols_after,
         )

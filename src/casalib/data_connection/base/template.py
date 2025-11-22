@@ -101,23 +101,13 @@ class TemplateAbstract(ABC):
     @staticmethod
     @abstractmethod
     def left_join(
-        root_query: str,
-        root_columns: List[str],
-        other_queries_columns: List[
-            Tuple[
-                str,
-                List[
-                    Union[
-                        str,
-                        Tuple[str, str]
-                    ]
-                ]
-            ]
-        ],
+        root_query_cols: Tuple[str, List[Union[str, Tuple[str, str]]]],
+        other_queries_cols: List[Tuple[str, List[Union[str, Tuple[str, str]]]]],
         join_cols: List[str],
         cols_to_add_suffix: Optional[List[str]] = None,
         cols_after: Optional[List[Tuple[str, str]]] = None,
     ) -> str:
         """
-        Generate a query to create LEFT JOINs to a root query
+        Generate a query to LEFT JOIN several queries to a
+        root one
         """
