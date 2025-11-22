@@ -46,23 +46,14 @@ TODO
 [ ] Salvar dataframe em Excel
     [ ] Usando openpyxl, abrir ou criar um arquivo excel e salvar o dataframe dentro
 
-[ ] ConnectionAAbstract
-    [x] Objeto Querier (templates aqui)
-    [x] List duplicates (no template)
-    [ ] Left Join function
-    [X] Promover last_partition para o querier - não faz sentido; dropado
-    [x] Adicionar Deprecated warnings na casalib
-        [x] Remove method
-        [x] Remove from any place inside casalib
-
 [ ] Remote execution
-    [ ] Passar um diretório como tar.gz
-    [ ] Criar bootloader especial
+    [ ] Ao invés de passar todos os arquivos um a um, passar
+            com um único arquivo tar.gz com tudo dentro
+    [ ] Ajustar o bootloader
             - Unpack
             - Exec
 
 [ ] Objeto KnownNames / KnownTables
-
 
 [ ] No processo de criação de um novo modelo, temos que
     [ ] 1.  Criar as tabelas intermediárias, que são
@@ -78,28 +69,6 @@ TODO
         [ ] Targets: cruza tudo e deixa pronto
         [ ] Sources: cruza a tabela de saída dos targets com a fonte
 
-
-[-] TableManager
-    [x] Refactoring
-        [x] Move abstract classes and collection
-            code to base folder
-        [x] Rename TableManagerAbstract to
-                BaseTableManager
-        [x] Create a new TableManagerAbstract
-                template, that
-            implements all methoods
-        [x] Refactor other TableManagers to use this
-            new TableManagerAbstract (only implement
-            what must be overloaded)
-            [x] OtherOwnerTableManager
-            [x] ManageableTableManager
-            [x] QueryTableManager
-            [x] PandasTableManager
-    [x] Add ConnectionType to TableManager
-    [ ] Add known_names to all TableManagers
-        [ ] get_known_names
-        [ ] add_known_names
-
 [ ] Método de contagem (counter_map)
     - Contar os nulos, valores indicados
         nos eqs, e posições entre pontos
@@ -110,8 +79,6 @@ TODO
     - Create table schema
     - Prepare location
     - Repair table
-
-
 
 [ ] Módulo data_ops
     [ ] Mapeamento
@@ -130,43 +97,13 @@ TODO
         [ ] KS
         [ ] PSI
 
-
 [ ] API para obter conhecimento
-
 
 [ ] Mecanismo de plugin para importar os módulos da pasta queries
     [ ] Dicionários
         [ ] table_manager
         [ ] runner
         [ ] source
-
-[ ] Alteraçõea TableManager
-    [x] Query last partition
-    [x] Gerar código para capturar última partição
-                - Novo tipo de tabela
-
-    [ ] Adicionar skip
-
-    [x] Ajustar código para expandir tipos de TableManager
-        que podem ser criados
-        [x] Módulo movido para um diretório
-        [x] Classe base com operações gerais (TableHelper)
-            [x] Mapear operações básicas que sempre devem
-                estar disponíveis
-                    .set_conn_maker()
-                    .get_conn()
-                    .drop()
-                    .drop_partitions()
-                    .list_partitions()
-                    .list_partitions_filter()
-                    .drop_partitions_filter()
-                    .sample()
-                    .metadata()
-        [x] Classe para tabela geral, AnyTableManager
-        [x] Ajustar TableManager, para usar o TableHelper
-        [x] Classe abstrata, com método run, que roda um
-            método Python qualquer com a missão de Adicionar
-            dados na tabela >>> ExecutableTableManagerAbstract
 
     [x] Classe para código Python
         [x] PythonTableManager
@@ -179,7 +116,6 @@ TODO
 
 [ ] Adicionar registro de diretórios no scaffolding
     [ ] PanTemplates
-
 
 [ ] DataPath
     [ ] Return DataPath creation
@@ -203,7 +139,6 @@ FEITO
     - Todos os métodos de partição
         terminando com partitions
     - Adicionar drop_partitions_filter_pd
-
 
 3. [X] Query class (namedtuple)
     - A ideia é ter um método apéos o comando, .query, que
@@ -242,3 +177,62 @@ FEITO
             mesmos atrás de variáveis TableManager
         [x] Passando um diretório
     [x] Ordenar os tm: quem depende de quem?
+
+[x] TableManager
+    [x] Refactoring
+        [x] Move abstract classes and collection
+            code to base folder
+        [x] Rename TableManagerAbstract to
+                BaseTableManager
+        [x] Create a new TableManagerAbstract
+                template, that
+            implements all methoods
+        [x] Refactor other TableManagers to use this
+            new TableManagerAbstract (only implement
+            what must be overloaded)
+            [x] OtherOwnerTableManager
+            [x] ManageableTableManager
+            [x] QueryTableManager
+            [x] PandasTableManager
+    [x] Add ConnectionType to TableManager
+    [x] Add known_names to all TableManagers
+        [-] get_known_names
+        [x] add_known_names
+
+[x] ConnectionAAbstract
+    [x] Objeto Querier (templates aqui)
+    [x] List duplicates (no template)
+    [x] Left Join function
+    [-] Promover last_partition para o querier - não faz sentido; dropado
+    [x] Adicionar Deprecated warnings na casalib
+        [x] Remove method
+        [x] Remove from any place inside casalib
+
+
+[x] Alteraçõea TableManager
+    [x] Query last partition
+    [x] Gerar código para capturar última partição
+                - Novo tipo de tabela
+
+    [-] Adicionar skip
+
+    [x] Ajustar código para expandir tipos de TableManager
+        que podem ser criados
+        [x] Módulo movido para um diretório
+        [x] Classe base com operações gerais (TableHelper)
+            [x] Mapear operações básicas que sempre devem
+                estar disponíveis
+                    .set_conn_maker()
+                    .get_conn()
+                    .drop()
+                    .drop_partitions()
+                    .list_partitions()
+                    .list_partitions_filter()
+                    .drop_partitions_filter()
+                    .sample()
+                    .metadata()
+        [x] Classe para tabela geral, AnyTableManager
+        [x] Ajustar TableManager, para usar o TableHelper
+        [x] Classe abstrata, com método run, que roda um
+            método Python qualquer com a missão de Adicionar
+            dados na tabela >>> ExecutableTableManagerAbstract

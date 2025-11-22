@@ -83,3 +83,51 @@ class Querier:
             query_ += f' limit {sample}'
 
         return self.conn_.query_method_(query_)
+
+    def left_join(
+        self,
+        root_query: str,
+        other_queries: List[str],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
+    ) -> pd.DataFrame:
+        """
+        Return a DataFrame, result of a left join query
+        """
+        # pylint: disable=too-many-arguments
+        query_ = self.make_queries_.left_join(
+            root_query=root_query,
+            other_queries=other_queries,
+            join_cols=join_cols,
+            cols_to_add_suffix=cols_to_add_suffix,
+            cols_after=cols_after,
+            select_cols=select_cols,
+            samples=samples,
+        )[0]
+
+        return self.conn_.query_method_(query_)
+
+    def op(
+        self,
+        query: str,
+        rename: Optional[List[Tuple[str, str]]] = None,
+        add_cols: Optional[List[Tuple[str, str]]] = None,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """
+        Return a DataFrame with the results of query,
+        that rename, select, exclude and add new columns.
+        """
+        # pylint: disable=too-many-arguments
+        query = self.make_queries_.op(
+            query=query,
+            rename=rename,
+            add_cols=add_cols,
+            select=select,
+            exclude=exclude
+        )[0]
+        return self.conn_.query_method_(query=query)
