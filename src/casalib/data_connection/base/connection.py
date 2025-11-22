@@ -239,3 +239,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
             table_name,
             *filters
         )
+
+    def tsel(table_name: str) -> str:
+        """ Query to create a simple SELECT * FROM table """
+        return f'select * from {table_name}'

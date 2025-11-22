@@ -97,3 +97,34 @@ class TemplateAbstract(ABC):
         """ Generate a query to retrieve the last partition
             of a table.
         """
+
+    @staticmethod
+    @abstractmethod
+    def left_join(
+        root_query_cols: Tuple[str, List[Union[str, Tuple[str, str]]]],
+        other_queries_cols: List[Tuple[str, List[Union[str, Tuple[str, str]]]]],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
+    ) -> str:
+        """
+        Generate a query to LEFT JOIN several queries to a
+        root one
+        """
+
+    @staticmethod
+    @abstractmethod
+    def op(
+        query: str,
+        query_cols: List[str],
+        rename: Optional[List[Tuple[str, str]]] = None,
+        add_cols: Optional[List[Tuple[str, str]]] = None,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> str:
+        """
+        Generate a new query, that rename, select, exclude
+        and add new columns.
+        """
