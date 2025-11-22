@@ -96,3 +96,17 @@ class MakeQueryAbstract(ABC):
         Generate a query to create LEFT JOINs to a root
         query
         """
+
+    @abstractmethod
+    def op(
+        self,
+        query: str,
+        rename: Optional[List[Tuple[str, str]]] = None,
+        add_cols: Optional[List[Tuple[str, str]]] = None,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> List[str]:
+        """
+        Generate a new query, that rename, select, exclude
+        and add new columns.
+        """
