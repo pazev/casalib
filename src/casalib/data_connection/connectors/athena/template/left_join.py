@@ -1,41 +1,35 @@
 """
 Template to run a LEFT JOIN
 """
+from collections import defaultdict
 import textwrap
-from typing import Any, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import jinja2
 
 
 TEMPLATE = r'''
+{%- set root_alias = query_alias.keys()|first %}
 with
-{%- for alias, query in queries_alias.items() %}
-input_{{alias}} as (
-    {{query | indent(4)}}
-)
-,
-{%- endfor %}
-{%- for alias, cols_renaming_dict in tabs_cols.items() %}
+{%- for alias, query in query_alias.items() %}
 {{alias}} as (
-    select
-        {%- for col, col_ren in cols_renaming_dict.items() %}
-        {%- if col != col_ren %}
-        {{col}} as {{col_ren}}{%if not loop.last%},{%endif%}
-        {%- else %}
-        {{col}}{%if not loop.last%},{%endif%}
-        {%- endif %}
-        {%- endfor %}
-    from input_{{alias}}
+    {{query | indent(4)}}
 )
 ,
 {%- endfor %}
 join_ as (
     select
-        {%- for tab, col in cols_list_final %}
-        {{tab}}.{{col}}{%if not loop.last%},{%endif%}
+        {%- for col_ren, list_orig in cols_table_dict.items() %}
+        {%- set alias = list_orig[0][0] %}
+        {%- set col = list_orig[0][1] %}
+        {%- if col != col_ren %}
+        {{alias}}.{{col}} as {{col_ren}}{%if not loop.last%},{%endif%}
+        {%- else %}
+        {{alias}}.{{col}}{%if not loop.last%},{%endif%}
+        {%- endif %}
         {%- endfor %}
     from
-        {%- for alias, query in queries_alias.items() %}
+        {%- for alias, query in query_alias.items() %}
         {%- if loop.first %}
             {{alias}}
         {%- else %}
@@ -43,7 +37,7 @@ join_ as (
             {{alias}}
                 on
                     {%- for col in join_cols %}
-                        query_root_.{{col}} = {{alias}}.{{col}}
+                        {{root_alias}}.{{col}} = {{alias}}.{{col}}
                     {%- if not loop.last %}
                     and
                     {%- endif%}
@@ -69,21 +63,70 @@ select * from cols_
 
 
 def make_sql_left_join(
-    root_query: str,
-    root_columns: List[str, Tuple[str, str]],
-    other_queries_columns: List[
-        Tuple[
-            str,
-            List[
-                Union[
-                    str,
-                    Tuple[str, str]
-                ]
-            ]
-        ]
-    ],
+    root_query_cols: Tuple[str, List[Union[str, Tuple[str, str]]]],
+    other_queries_cols: List[Tuple[str, List[Union[str, Tuple[str, str]]]]],
     join_cols: List[str],
     cols_to_add_suffix: Optional[List[str]] = None,
     cols_after: Optional[List[Tuple[str, str]]] = None,
 ) -> str:
     """ Generate a LEFT JOIN query """
+    # 1. Generate the dictionaries
+    #   a. aliases
+    #   b. columns renamed
+    #       - all columns must be tuples (replicate the
+    #           first element if necessary)
+    #       - add suffix (alias) to the column indicated
+    cols_to_add_suffix = cols_to_add_suffix or []
+
+    queries_cols_alias_dict = {
+        key: query_col_tuple
+        for idx, query_col_tuple in enumerate([
+            root_query_cols,
+            *other_queries_cols
+        ])
+        for key in ['query_root' if idx == 0 else f'query{idx}']
+    }
+
+    query_alias = {
+        key: query_col_tuple[0]
+        for key, query_col_tuple in queries_cols_alias_dict.items()
+    }
+
+    table_cols_dict = {
+        key: [
+            # This list comprehension:
+            #   1. Make all elements of passed columns tuples
+            #   2. Adjust the name of the columns, adding
+            #       the alias as suffix;
+            (col, col_ren_final)
+            for c in list_cols
+            for col_tuple in [
+                c if isinstance(c, tuple) else (c, c)
+            ]
+            for col, col_ren in [col_tuple]
+            for col_ren_final in [
+                col_ren
+                if col_ren not in cols_to_add_suffix or idx == 0
+                else f'{col_ren}_{key}'
+            ]
+        ]
+        for idx, (key, query_col_tuple) in enumerate(
+            queries_cols_alias_dict.items()
+        )
+        for list_cols in [query_col_tuple[1]]
+    }
+
+    cols_table_dict = defaultdict(list)
+    for table, list_cols_ren in table_cols_dict.items():
+        for col, col_ren in list_cols_ren:
+            cols_table_dict[col_ren].append((table, col))
+
+    env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+    template = env.from_string(TEMPLATE)
+
+    return template.render(
+        query_alias=query_alias,
+        cols_table_dict=cols_table_dict,
+        join_cols=join_cols,
+        cols_after=cols_after,
+    )
