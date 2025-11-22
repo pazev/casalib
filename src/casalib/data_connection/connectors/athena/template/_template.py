@@ -191,15 +191,20 @@ class AthenaTemplates(TemplateAbstract):
         join_cols: List[str],
         cols_to_add_suffix: Optional[List[str]] = None,
         cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
     ):
         """
         Generate a query to LEFT JOIN several queries to a
         root one
         """
+        # pylint: disable=too-many-arguments
         return make_sql_left_join_(
             root_query_cols=root_query_cols,
             other_queries_cols=other_queries_cols,
             join_cols=join_cols,
             cols_to_add_suffix=cols_to_add_suffix,
             cols_after=cols_after,
+            select_cols=select_cols,
+            samples=samples,
         )

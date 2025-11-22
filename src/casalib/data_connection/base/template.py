@@ -106,6 +106,8 @@ class TemplateAbstract(ABC):
         join_cols: List[str],
         cols_to_add_suffix: Optional[List[str]] = None,
         cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
     ) -> str:
         """
         Generate a query to LEFT JOIN several queries to a

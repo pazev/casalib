@@ -248,3 +248,49 @@ class MakeQuery(MakeQueryAbstract):
             )
         ]
         return queries
+
+    def left_join(
+        self,
+        root_query: str,
+        other_queries: List[str],
+        join_cols: List[str],
+        cols_to_add_suffix: Optional[List[str]] = None,
+        cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
+    ) -> List[str]:
+        """
+        Generate a LEFT JOIN query, to join several queries
+        to a root one.
+        """
+        # pylint: disable=too-many-arguments
+        cols_to_add_suffix = cols_to_add_suffix or []
+        cols_after = cols_after or []
+
+        conn = self.get_connection_
+
+        # Capture the columns
+        queries_list = [root_query, *other_queries]
+        cols_list = [
+            [
+                (col, col)
+                for col in conn.metadata(query).columns
+            ]
+            for query in queries_list
+        ]
+
+        root_query_cols, *other_queries_cols = (
+            list(zip(queries_list, cols_list))
+        )
+
+        query = self.get_template_.left_join(
+            root_query_cols=root_query_cols,
+            other_queries_cols=other_queries_cols,
+            join_cols=join_cols,
+            cols_to_add_suffix=cols_to_add_suffix,
+            cols_after=cols_after,
+            select_cols=select_cols,
+            samples=samples,
+        )
+
+        return [query]

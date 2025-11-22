@@ -91,7 +91,21 @@ class Querier:
         join_cols: List[str],
         cols_to_add_suffix: Optional[List[str]] = None,
         cols_after: Optional[List[Tuple[str, str]]] = None,
+        select_cols: Optional[List[str]] = None,
+        samples: Optional[int] = None,
     ) -> pd.DataFrame:
         """
         Return a DataFrame, result of a left join query
         """
+        # pylint: disable=too-many-arguments
+        query_ = self.make_queries_.left_join(
+            root_query=root_query,
+            other_queries=other_queries,
+            join_cols=join_cols,
+            cols_to_add_suffix=cols_to_add_suffix,
+            cols_after=cols_after,
+            select_cols=select_cols,
+            samples=samples,
+        )[0]
+
+        return self.conn_.query_method_(query_)
