@@ -33,8 +33,22 @@ SELECT
     {%- for col, op_list in col_ops_dict.items() %}
     {%- for op_tuple in op_list %}
     {%- if op_tuple[0] == 'percentile' %}
+    {%- if col in percentile_ignore_values_adj_ %}
+    approx_percentile(
+        case
+            when
+                {{col}} in (
+                    {{percentile_ignore_values_adj_[col] | join(', ')}}
+                )
+                    then null
+            else {{col}}
+        end,
+        {{ op_tuple[1] / 100.0 }}
+    ) as {{ col }}__percentile_{{op_tuple[1]}},
+    {%- else %}
     approx_percentile({{col}}, {{ op_tuple[1] / 100.0 }})
         as {{ col }}__percentile_{{op_tuple[1]}},
+    {%- endif %}
     {%- elif op_tuple[0] == 'count_distinct' %}
     count(distinct {{col}}) as {{ col }}__count_distinct,
     {%- else %}
@@ -76,6 +90,7 @@ def make_sql_agg_query_(
     min_: Optional[List[str]] = None,
     max_: Optional[List[str]] = None,
     percentile_: Optional[Dict[int, List[str]]] = None,
+    percentile_ignore_values_: Optional[Dict[str, List[float]]] = None,
     cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
     cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
 ) -> str:
@@ -131,6 +146,8 @@ def make_sql_agg_query_(
         for var in cols:
             col_ops_dict[var].append(('percentile', perc))
 
+    percentile_ignore_values_ = percentile_ignore_values_ or {}
+
     # Generating template
     env = jinja2.Environment(undefined=jinja2.StrictUndefined)
     template = env.from_string(TEMPLATE)
@@ -141,6 +158,7 @@ def make_sql_agg_query_(
         groupby=groupby,
         cols_before=cols_before_,
         cols_after=cols_after_,
+        percentile_ignore_values_=percentile_ignore_values_,
     )
 
     return query_final

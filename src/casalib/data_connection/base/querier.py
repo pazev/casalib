@@ -36,6 +36,7 @@ class Querier:
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
         percentile_: Optional[Dict[int, List[str]]] = None,
+        percentile_ignore_values_: Optional[Dict[str, List[float]]] = None,
         cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
         cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
         sort: bool = False
@@ -54,6 +55,7 @@ class Querier:
             min_=min_,
             max_=max_,
             percentile_=percentile_,
+            percentile_ignore_values_=percentile_ignore_values_,
             cols_before=cols_before,
             cols_after=cols_after,
         )[0]
