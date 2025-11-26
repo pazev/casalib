@@ -154,8 +154,11 @@ class PandasTableManager(TableManagerAbstract):
     ) -> None:
         """ The standard transform and then load function
         """
-        res = self.pandas_pipeline(**dict_dffs_)
-        load_function(res)
+        if self.pandas_pipeline is not None:
+            res = self.pandas_pipeline(**dict_dffs_)
+            load_function(res)
+
+        raise ValueError("pandas_pipeline must be set.")
 
     def run(self, **params) -> "PandasTableManager":
         """ Run the TableManager """
