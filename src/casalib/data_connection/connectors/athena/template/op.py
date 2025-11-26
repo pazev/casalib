@@ -27,10 +27,10 @@ renaming_add_cols_ as (
 ,
 select_exclude_ as (
     select
-        {%- if not cols_final %}
+        {%- if not final_cols %}
         *
         {%- else %}
-        {%- for col in cols_final %}
+        {%- for col in final_cols %}
         {{col}}{%if not loop.last%},{%endif%}
         {%- endfor %}
         {%- endif %}
@@ -104,6 +104,18 @@ def make_final_cols_(
 
     if exclude:
         all_cols = [c for c in all_cols if c not in set(exclude)]
+
+    # Must remove cases of when a columns was renamed, but
+    # no other was created with same name
+    renamed_cols_to_remove_ = set(
+        c for c in rename_dict.values() if c not in add_cols_dict
+    )
+
+    all_cols = [
+        c
+        for c in all_cols
+        if c not in renamed_cols_to_remove_
+    ]
 
     return renaming_add_cols, all_cols
 

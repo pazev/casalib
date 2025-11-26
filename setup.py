@@ -47,5 +47,6 @@ setuptools.setup(
         "pandas",
         "requests",
         "pygit2",
+        "sagemaker==2.251.1",
     ]
 )

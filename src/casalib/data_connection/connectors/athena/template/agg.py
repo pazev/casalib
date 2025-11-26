@@ -33,15 +33,14 @@ SELECT
     {%- for col, op_list in col_ops_dict.items() %}
     {%- for op_tuple in op_list %}
     {%- if op_tuple[0] == 'percentile' %}
-    {%- if col in percentile_ignore_values_adj_ %}
+    {%- if col in percentile_ignore_values_ %}
     approx_percentile(
         case
             when
-                {{col}} in (
-                    {{percentile_ignore_values_adj_[col] | join(', ')}}
+                {{col}} not in (
+                    {{percentile_ignore_values_[col] | join(', ')}}
                 )
-                    then null
-            else {{col}}
+                    then {{col}}
         end,
         {{ op_tuple[1] / 100.0 }}
     ) as {{ col }}__percentile_{{op_tuple[1]}},

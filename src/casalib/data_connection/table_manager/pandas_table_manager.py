@@ -33,12 +33,14 @@ class PandasTableManager(TableManagerAbstract):
     """
     required_params: List[str]
 
-    pandas_pipeline: Callable[..., pd.DataFrame] = field(repr=False)
-
     query_template_dict: Dict[str, str] = field(
         repr=False,
         default_factory=dict,
     )
+
+    pandas_pipeline: Optional[
+        Callable[..., pd.DataFrame]
+    ] = field(default=None, repr=False)
 
     transform_and_load_: Optional[Callable[
         [
