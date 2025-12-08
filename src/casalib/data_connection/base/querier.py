@@ -25,7 +25,7 @@ class Querier:
         return self.conn_.query_method_(query=query)
 
     # Queries
-    def agg_query(
+    def agg(
         self,
         query: str,
         groupby: Optional[List[str]] = None,
@@ -45,7 +45,7 @@ class Querier:
         # pylint: disable=too-many-arguments,too-many-locals
         groupby_: List[str] = groupby or []
 
-        query_to_exec = self.make_queries_.agg_query(
+        query_to_exec = self.make_queries_.agg(
             query=query,
             groupby=groupby,
             count_=count_,
@@ -76,7 +76,7 @@ class Querier:
         sample: Optional[int] = None
     ) -> pd.DataFrame:
         """ Query to find duplicates in the given query """
-        query_ = self.make_queries_.agg_query(
+        query_ = self.make_queries_.agg(
             query=query, groupby=keys
         )[0]
 

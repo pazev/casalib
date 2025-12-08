@@ -185,7 +185,7 @@ class MakeQuery(MakeQueryAbstract):
 
         return output_queries
 
-    def agg_query(
+    def agg(
         self,
         query: str,
         groupby: Optional[List[str]] = None,
@@ -204,7 +204,7 @@ class MakeQuery(MakeQueryAbstract):
         # pylint: disable=too-many-arguments
 
         return [
-            self.get_template_.agg_query(
+            self.get_template_.agg(
                 query=query,
                 groupby=groupby,
                 count_=count_,

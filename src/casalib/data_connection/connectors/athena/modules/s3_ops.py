@@ -15,12 +15,13 @@ def get_bucket_prefix(uri: str) -> Tuple[str, str]:
     Dado um URI, extrai o bucket e o prefixo do objeto
     """
     re_obj = re.match(
-        r's3:\/\/(.+?)\/(.*)\/?$',
+        r's3:\/\/(.+?)\/(.*?)\/*$',
         uri
     )
 
     if re_obj:
         bucket, prefix = re_obj.groups()
+        prefix += '/'
         return bucket, prefix
 
     raise ValueError(

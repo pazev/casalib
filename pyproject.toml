@@ -11,4 +11,5 @@ exclude = ['src/casalib/scaffolding/templates']
 [tool.pylint]
 disable = [
     'duplicate-code',
+    'import-outside-toplevel',
 ]

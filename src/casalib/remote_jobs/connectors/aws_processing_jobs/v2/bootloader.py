@@ -35,7 +35,15 @@ def init_machine():
     )
 
     # Procedure - adjust the files inside the libs folder
+    #   All files sent in ProcessingInput will go to a
+    #       prefix with the same name.
+    #
+    #   We need to adjust these paths to mount the correct
+    #       the folder structure
     logging.info("Starting Init")
+
+    orig_root = Path(LIBS_ORIG_FLD)
+    dest_root = Path(LIBS_FLD)
 
     cp_libs_fld = [
         (
@@ -44,13 +52,16 @@ def init_machine():
             dest_root / correct_parent
         )
 
-        for orig_root in [Path(LIBS_ORIG_FLD)]
-        for dest_root in [Path(LIBS_FLD)]
-
+        # We will identify all files in the given prefix
         for root, dirs, files in os.walk(orig_root)
         for file in files
+
+        # Creating Path object, and identify the file_path
+        #   relative to the original root
         for file_path in [Path(root) / file]
         for file_path_rel in [file_path.relative_to(orig_root)]
+
+        # Adjusting the path: file.py/file.py > file.py
         for correct_parent in [str(file_path_rel.parent)]
     ]
 
@@ -141,5 +152,5 @@ if __name__ == '__main__':
 
     logging.info(dict_params)
 
-    import main_program   # type: ignore  # pylint: disable=import-error
-    main_program.main(**dict_params)
+    # import main_program   # type: ignore  # pylint: disable=import-error
+    # main_program.main(**dict_params)

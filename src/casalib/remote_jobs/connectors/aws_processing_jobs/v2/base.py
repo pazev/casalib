@@ -227,40 +227,42 @@ def run_processor(
     libs_to_send = libs_to_send or []
 
     files_to_send = ChainMap(
-        list_files(path) for path in libs_to_send
+        *[list_files(path) for path in libs_to_send]
     )
 
-    # TODO: Create a tempfile tar.gz file to be sent
-    # with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
-    #     with tarfile.open(fileobj=tmp, mode="w:gz") as tar:
-    #         tar.add("path/to/folder", arcname=".")
-
-    # TODO: Send the tar.gz file as ProcessingInput
-
-    files_inputs = [
-        processing_input
-        for path_ in libs_to_send
-        for processing_input in gen_processing_input(source=path_)
-    ]
-
-    files_inputs.extend(
-        gen_processing_input(
-            str(main_program),
-            '/opt/ml/processing/libs_cp/main_program.py'
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
+        output_file_ = make_tar_gz_file(
+            tmp.name,
+            files_to_send
         )
-    )
 
-    # Run params
-    run_params = {
-        'code': str(cur_dir / 'bootloader.py'),
-        'inputs': files_inputs,
-    }
+        files_inputs = []
 
-    if arguments_dict:
-        run_params['arguments'] = [
-            elem
-            for key, val in arguments_dict.items()
-            for elem in [f'--{key}', val]
-        ]
+        files_inputs.extend(
+            gen_processing_input(
+                str(main_program),
+                '/opt/ml/processing/libs_cp/main_program.py'
+            )
+        )
 
-    script_processor.run(**run_params)
+        files_inputs.extend(
+            gen_processing_input(
+                str(output_file_),
+                '/opt/ml/processing/libs_cp/contents.tar.gz'
+            )
+        )
+
+        # Run params
+        run_params = {
+            'code': str(cur_dir / 'bootloader.py'),
+            'inputs': files_inputs,
+        }
+
+        if arguments_dict:
+            run_params['arguments'] = [
+                elem
+                for key, val in arguments_dict.items()
+                for elem in [f'--{key}', val]
+            ]
+
+        script_processor.run(**run_params)
