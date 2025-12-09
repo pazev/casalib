@@ -128,6 +128,8 @@ def init_machine():
     libs_to_install = [
         f
         for f in output_folder_files
+        for f_suffixes in [f.suffixes]
+        if len(f_suffixes) >= 1
         if f.suffixes[-1] == '.whl'
     ]
     logging.info("Libs to install: %s", libs_to_install)
