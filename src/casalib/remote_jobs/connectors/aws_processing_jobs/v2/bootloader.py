@@ -23,6 +23,19 @@ LIBS_FLD = '/opt/ml/processing/libs'
 
 File = namedtuple('File', ['dest_folder', 'orig_file', 'dest_file'])
 
+
+def extract_tar_gz(tar_path: str | Path, target_folder: str | Path) -> None:
+    import tarfile
+
+    tar_path = Path(tar_path)
+    target_folder = Path(target_folder)
+
+    target_folder.mkdir(parents=True, exist_ok=True)
+
+    with tarfile.open(tar_path, "r:gz") as tar:
+        tar.extractall(path=target_folder)
+
+
 def init_machine():
     """
     Initialize the Processing Job to run the code.
@@ -95,6 +108,12 @@ def init_machine():
 
     logging.info("Adjustments")
     logging.info('\n' + pformat(cp_libs_fld))
+
+    logging.info('Extracting contents_libs_to_send.tar.gz')
+    extract_tar_gz(
+        tar_path=dest_root / 'contents_libs_to_send.tar.gz',
+        target_folder=dest_root
+    )
 
     logging.info("Final libs folder")
     output_folder_files = [
