@@ -25,7 +25,7 @@ class MakeQueryAbstract(ABC):
         """ Get the query template collection """
 
     @abstractmethod
-    def agg_query(
+    def agg(
         self,
         query: str,
         groupby: Optional[List[str]] = None,

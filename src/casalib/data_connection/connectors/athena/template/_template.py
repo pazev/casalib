@@ -52,7 +52,7 @@ class AthenaTemplates(TemplateAbstract):
 
 
     @staticmethod
-    def agg_query(
+    def agg(
         query: str,
         groupby: Optional[List[str]] = None,
         count_: Optional[List[str]] = None,
