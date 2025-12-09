@@ -3,6 +3,7 @@ Program that will be used as bootloader at the remote
 machine
 """
 import argparse
+from collections import namedtuple
 from itertools import zip_longest
 import logging
 import os
@@ -19,6 +20,8 @@ LIBS_FLD = '/opt/ml/processing/libs'
 
 # TODO: Unpack the tar.gz file; continue to install whl
 #   files and any other special behaviour
+
+File = namedtuple('File', ['dest_folder', 'orig_file', 'dest_file'])
 
 def init_machine():
     """
@@ -42,11 +45,13 @@ def init_machine():
     #       the folder structure
     logging.info("Starting Init")
 
+    logging.info("Adjusting input folder")
+
     orig_root = Path(LIBS_ORIG_FLD)
     dest_root = Path(LIBS_FLD)
 
     cp_libs_fld = [
-        (
+        File(
             (dest_root / correct_parent).parent,
             file_path,
             dest_root / correct_parent
@@ -66,7 +71,12 @@ def init_machine():
     ]
 
     def adj_path(dest_fld: Path, orig_path: Path, dest_path: Path):
-        if orig_path.parent.parent.name == "main_program.py":
+        special_names = [
+            'main_program.py',
+            'contents_libs_to_send.tar.gz',
+        ]
+
+        if orig_path.parent.parent.name in special_names:
             dest_fld = dest_fld.parent
             dest_path = dest_path.parent
 
@@ -77,15 +87,14 @@ def init_machine():
         for dest_folder, orig_path, dest_path in cp_libs_fld
     ]
 
-    logging.info("Input folder")
-    logging.info(pformat(cp_libs_fld))
+    logging.info('\n' + pformat(cp_libs_fld))
 
     for path_fld, old_path, new_path in cp_libs_fld:
         path_fld.mkdir(parents=True, exist_ok=True)
         shutil.move(old_path, new_path)
 
-    logging.info("Input folder")
-    logging.info(pformat(cp_libs_fld))
+    logging.info("Adjustments")
+    logging.info('\n' + pformat(cp_libs_fld))
 
     logging.info("Final libs folder")
     output_folder_files = [
@@ -93,7 +102,7 @@ def init_machine():
         for root, dirs, files in os.walk(LIBS_FLD)
         for file in files
     ]
-    logging.info(pformat(output_folder_files))
+    logging.info('\n' + pformat(output_folder_files))
 
     # Installing Libs
     logging.info("Installing whl libs")

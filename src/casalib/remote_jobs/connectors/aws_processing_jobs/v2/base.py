@@ -248,7 +248,7 @@ def run_processor(
         files_inputs.extend(
             gen_processing_input(
                 str(output_file_),
-                '/opt/ml/processing/libs_cp/contents.tar.gz'
+                '/opt/ml/processing/libs_cp/contents_libs_to_send.tar.gz'
             )
         )
 
