@@ -182,5 +182,5 @@ if __name__ == '__main__':
 
     logging.info(dict_params)
 
-    # import main_program   # type: ignore  # pylint: disable=import-error
-    # main_program.main(**dict_params)
+    import main_program   # type: ignore  # pylint: disable=import-error
+    main_program.main(**dict_params)
