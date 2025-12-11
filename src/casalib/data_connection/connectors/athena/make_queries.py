@@ -190,6 +190,7 @@ class MakeQuery(MakeQueryAbstract):
         query: str,
         groupby: Optional[List[str]] = None,
         count_: Optional[List[str]] = None,
+        count_null_: Optional[List[str]] = None,
         count_distinct_: Optional[List[str]] = None,
         sum_: Optional[List[str]] = None,
         mean_: Optional[List[str]] = None,
@@ -208,6 +209,7 @@ class MakeQuery(MakeQueryAbstract):
                 query=query,
                 groupby=groupby,
                 count_=count_,
+                count_null_=count_null_,
                 count_distinct_=count_distinct_,
                 sum_=sum_,
                 mean_=mean_,
@@ -273,7 +275,7 @@ class MakeQuery(MakeQueryAbstract):
 
         # Capture the columns
         queries_list = [root_query, *other_queries]
-        cols_list = [
+        cols_list: List[List[Union[str, Tuple[str, str]]]] = [
             [
                 (col, col)
                 for col in conn.metadata(query).columns

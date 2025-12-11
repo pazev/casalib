@@ -6,6 +6,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.mypy]
+# strict = true
+check_untyped_defs = true
 exclude = ['src/casalib/scaffolding/templates']
 
 [tool.pylint]

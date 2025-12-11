@@ -50,6 +50,8 @@ SELECT
     {%- endif %}
     {%- elif op_tuple[0] == 'count_distinct' %}
     count(distinct {{col}}) as {{ col }}__count_distinct,
+    {%- elif op_tuple[0] == 'count_null' %}
+    count(case when {{col}} is null then {{col}} end) as {{ col }}__count_null
     {%- else %}
     {{ op_tuple[0] }}({{col}}) as {{ col }}__{{ op_tuple[0] }},
     {%- endif %}
@@ -83,6 +85,7 @@ def make_sql_agg_query_(
     query: str,
     groupby: Optional[List[str]] = None,
     count_: Optional[List[str]] = None,
+    count_null_: Optional[List[str]] = None,
     count_distinct_: Optional[List[str]] = None,
     sum_: Optional[List[str]] = None,
     mean_: Optional[List[str]] = None,
@@ -129,6 +132,7 @@ def make_sql_agg_query_(
     no_param_function_ = {
         'count': count_,
         'count_distinct': count_distinct_,
+        'count_null': count_null_,
         'sum': sum_,
         'mean': mean_,
         'min': min_,
