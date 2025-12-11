@@ -51,7 +51,7 @@ SELECT
     {%- elif op_tuple[0] == 'count_distinct' %}
     count(distinct {{col}}) as {{ col }}__count_distinct,
     {%- elif op_tuple[0] == 'count_null' %}
-    count(case when {{col}} is null then {{col}} end) as {{ col }}__count_null
+    count(case when {{col}} is null then {{col}} end) as {{ col }}__count_null,
     {%- else %}
     {{ op_tuple[0] }}({{col}}) as {{ col }}__{{ op_tuple[0] }},
     {%- endif %}
