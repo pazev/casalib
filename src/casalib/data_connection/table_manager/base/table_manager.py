@@ -28,7 +28,7 @@ class TableManagerAbstract(BaseTableManagerAbstract):
     connection_type: Type[ConnectionAbstract]
     partition_cols: Optional[List[str]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Inicialização """
         self.helper = TableHelper(self.table_name)
 

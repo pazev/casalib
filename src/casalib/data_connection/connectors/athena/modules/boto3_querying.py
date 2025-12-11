@@ -4,7 +4,7 @@ Módulo para rodar queries em Athena utilizando a boto3
 # pylint: disable=too-many-arguments
 from dataclasses import dataclass, field
 import time
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import boto3
 
@@ -26,7 +26,7 @@ class QueryExec:
     ) -> Dict[str, Any]:
         """ Captura dados da execução """
         athena = boto3_session.client('athena')
-        query_exec = athena.get_query_execution(
+        query_exec: Dict[str, Any] = athena.get_query_execution(
             QueryExecutionId=self.query_id
         )
         return query_exec
@@ -37,7 +37,8 @@ class QueryExec:
     ) -> str:
         """ Captura status de uma query """
         res = self.get_execution_info_(boto3_session)
-        return res['QueryExecution']['Status']['State']
+        output: str = res['QueryExecution']['Status']['State']
+        return output
 
     def wait(
         self,
@@ -75,7 +76,7 @@ class QueryExec:
     def get_query_results(
         self,
         boto3_session: boto3.Session
-    ):
+    ) -> List[Dict[str, Any]]:
         """ Captura resultados da query """
         athena = boto3_session.client('athena')
 

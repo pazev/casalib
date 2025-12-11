@@ -9,7 +9,8 @@ import awswrangler as wr
 import boto3
 import pandas as pd
 
-from .metadata import get_table_metadata, Metadata
+from .metadata import get_table_metadata
+from ....base import Metadata
 
 
 def create_table_pandas_dataframe(

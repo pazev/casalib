@@ -5,7 +5,7 @@ NamesManagerFunction.
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
-    Any, ClassVar, Dict, Optional, Protocol, Union,
+    Any, ClassVar, Dict, Iterator, List, Optional, Protocol, Union,
 )
 
 
@@ -28,20 +28,19 @@ class NamesManager:
     name: ClassVar[str] = 'NamesManager'
     dict_functions_: ClassVar[Dict[str, NamesManagerFunction]] = {}
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Post-init """
-        self.dict_functions_ = self.dict_functions_ or {}
         self.file = Path(self.file) if self.file else None
 
     @classmethod
-    def register_func(cls, func_name: str, func: NamesManagerFunction):
+    def register_func(cls, func_name: str, func: NamesManagerFunction) -> None:
         """ Register the function """
         if cls.dict_functions_ is None:
             cls.dict_functions_ = {}
 
         cls.dict_functions_[func_name] = func
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """ Representation """
         return (
             self.name +
@@ -50,15 +49,15 @@ class NamesManager:
             ')'
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """ Iter """
         return iter(self.dict_names)
 
-    def keys(self):
+    def keys(self) -> List[str]:
         """ Return the known keys """
-        return self.dict_names.keys()
+        return list(self.dict_names)
 
-    def __setitem__(self, key: str, val: Any):
+    def __setitem__(self, key: str, val: Any) -> None:
         """ Set a new property """
         if self.file:
             self.load(self.file)
@@ -80,7 +79,7 @@ class NamesManager:
         """ Get the info """
         return self.get_info_(key)
 
-    def __getattr__(self, key: str):
+    def __getattr__(self, key: str) -> str:
         """
         If an attribute is requested but not found,
         check if the object dictionary of known tables
@@ -94,7 +93,7 @@ class NamesManager:
         """
         return key in self.dict_names
 
-    def get_info_(self, key: str):
+    def get_info_(self, key: str) -> str:
         """ Return the tables in tb """
         if self.file:
             self.load(self.file)
@@ -149,7 +148,7 @@ class NamesManager:
         )
         return return_dict
 
-    def save(self, filename: Union[str, Path]):
+    def save(self, filename: Union[str, Path]) -> "NamesManager":
         """
         Save the known tables to a file.
         """

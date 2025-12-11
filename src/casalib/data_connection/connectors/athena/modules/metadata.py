@@ -66,7 +66,7 @@ def get_query_metadata(
     default_schema_name: str,
     workgroup: str,
     query: str
-):
+) -> Metadata:
     """ Captura o metadado da query """
     # Captura o JSON explain
     query_explain = f'explain (format json)\n{query}'

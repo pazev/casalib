@@ -50,6 +50,8 @@ def kahn_toposort(
         CycleError: if the graph contains a cycle (i.e., it
         is not a DAG).
     """
+    # pylint: disable=too-complex
+
     # Build adjacency (as sets to avoid counting duplicate
     # edges) and in-degrees
     adj: DefaultDict[T, Set[T]] = defaultdict(set)

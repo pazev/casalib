@@ -16,7 +16,7 @@ class QueryTableManager(TableManagerAbstract):
     query_template: str
 
     def get_table_input(
-        self, **params
+        self, **params: Any
     ) -> List[str]:
         """ Return the list of table inputs """
         query = self.make_query(**params)
@@ -34,7 +34,7 @@ class QueryTableManager(TableManagerAbstract):
         )
 
     # Methods required for the run
-    def make_query(self, **params) -> str:
+    def make_query(self, **params: Any) -> str:
         """ Make the query that will be executed """
         env = jinja2.Environment(
             undefined=jinja2.StrictUndefined
@@ -43,7 +43,7 @@ class QueryTableManager(TableManagerAbstract):
         query = template.render(**params)
         return query
 
-    def create_insert_(self, **params) -> "QueryTableManager":
+    def create_insert_(self, **params: Any) -> "QueryTableManager":
         """ Create/insert the query on table """
         conn = self.helper.get_conn()
         conn.create_insert(
@@ -53,11 +53,11 @@ class QueryTableManager(TableManagerAbstract):
         )
         return self
 
-    def discover_params_(self, **params) -> List[Dict[str, Any]]:
+    def discover_params_(self, **params: Any) -> List[Dict[str, Any]]:
         """ Discover parameters for execution """
         return [params]
 
-    def run(self, **params) -> "QueryTableManager":
+    def run(self, **params: Any) -> "QueryTableManager":
         """ Run the TableManager """
         params_list = self.discover_params_(**params)
 

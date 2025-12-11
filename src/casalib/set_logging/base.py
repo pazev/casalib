@@ -19,7 +19,7 @@ class FilterPackages(logging.Filter):
         self.pkg_ignlevel_message = pkg_ignlevel_message
         super().__init__()
 
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         """ Filtering method """
         if self.pkg_ignlevel_message is None:
             return True
@@ -44,7 +44,7 @@ def set_logging_function(
     pkg_ignlevel_message: Optional[List[
         Tuple[str, int, Optional[str]]
     ]] = None,
-):
+) -> None:
     """ Set logging """
     pkg_ignlevel_message = pkg_ignlevel_message or []
 

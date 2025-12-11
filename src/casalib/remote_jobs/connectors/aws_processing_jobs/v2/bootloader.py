@@ -34,7 +34,7 @@ def extract_tar_gz(tar_path: str | Path, target_folder: str | Path) -> None:
         tar.extractall(path=target_folder)
 
 
-def init_machine():
+def init_machine() -> None:
     """
     Initialize the Processing Job to run the code.
     """
@@ -81,7 +81,9 @@ def init_machine():
         for correct_parent in [str(file_path_rel.parent)]
     ]
 
-    def adj_path(dest_fld: Path, orig_path: Path, dest_path: Path):
+    def adj_path(
+        dest_fld: Path, orig_path: Path, dest_path: Path
+    ) -> File:
         special_names = [
             'main_program.py',
             'contents_libs_to_send.tar.gz',
@@ -91,7 +93,7 @@ def init_machine():
             dest_fld = dest_fld.parent
             dest_path = dest_path.parent
 
-        return dest_fld, orig_path, dest_path
+        return File(dest_fld, orig_path, dest_path)
 
     cp_libs_fld = [
         adj_path(dest_folder, orig_path, dest_path)
@@ -146,7 +148,7 @@ def init_machine():
     logging.info("Ending Init")
 
 
-def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
+def grouper(iterable, n, *, incomplete='fill', fillvalue=None):  # type: ignore
     "Collect data into non-overlapping fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
     # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
@@ -174,7 +176,7 @@ if __name__ == '__main__':
     # Get arguments dict
     dict_params = {
         param_adj: val
-        for param, val in grouper(unknown, 2)
+        for param, val in grouper(unknown, 2)  # type: ignore
         for param_adj in [param.replace('--', '')]
     }
 

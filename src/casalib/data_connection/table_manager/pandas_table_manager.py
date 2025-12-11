@@ -5,7 +5,7 @@ pipeline to a Table
 # pylint: disable=too-many-public-methods
 from dataclasses import dataclass, field
 from typing import (
-    Callable, Dict, List, Optional
+    Any, Callable, Dict, List, Optional
 )
 
 import jinja2
@@ -50,7 +50,7 @@ class PandasTableManager(TableManagerAbstract):
         None
     ]] = field(default=None, repr=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Post-init """
         self.helper = TableHelper(
             table_name=self.table_name,
@@ -75,7 +75,7 @@ class PandasTableManager(TableManagerAbstract):
         """ List the variables in the template """
         return self.required_params
 
-    def missing_params_(self, **params) -> List[str]:
+    def missing_params_(self, **params: Any) -> List[str]:
         """ Validate if all required variables are given """
         var_miss = list(
             set(self.input_vars()) - set(params)
@@ -86,7 +86,7 @@ class PandasTableManager(TableManagerAbstract):
 
         return var_miss
 
-    def make_query(self, **params) -> Dict[str, str]:
+    def make_query(self, **params: Any) -> Dict[str, str]:
         """ Make the query that will be executed """
         self.missing_params_(**params)
 
@@ -107,7 +107,7 @@ class PandasTableManager(TableManagerAbstract):
         }
 
     def get_table_input(
-        self, **params
+        self, **params: Any
     ) -> List[str]:
         """ Return the list of table inputs """
         query_dict = self.make_query(**params)
@@ -127,7 +127,7 @@ class PandasTableManager(TableManagerAbstract):
         return input_tables
 
     def extract_dataframes_(
-        self, **params
+        self, **params: Any
     ) -> Dict[str, pd.DataFrame]:
         """ Extract the dataframes (Extract of ETL) """
         return {
@@ -160,7 +160,7 @@ class PandasTableManager(TableManagerAbstract):
 
         raise ValueError("pandas_pipeline must be set.")
 
-    def run(self, **params) -> "PandasTableManager":
+    def run(self, **params: Any) -> "PandasTableManager":
         """ Run the TableManager """
         # Validate if all required params are being passed
         self.missing_params_(**params)

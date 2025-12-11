@@ -1,10 +1,10 @@
 """ Useful codes to process things at AWS """
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import boto3
 
 
-def s3_split_bucket_key(uri: str):
+def s3_split_bucket_key(uri: str) -> Tuple[str, str]:
     """ Split URI into bucket/prefix """
     _, _, bucket, *key_parts = uri.split('/')
     return (bucket, '/'.join(key_parts))

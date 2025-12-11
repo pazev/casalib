@@ -12,8 +12,9 @@ from typing import Dict, List, Optional, Protocol, Union
 
 import boto3
 import sagemaker
+import sagemaker.session
 from sagemaker.processing import Processor, ProcessingInput
-from sagemaker.pytorch import PyTorchProcessor
+from sagemaker.pytorch.processing import PyTorchProcessor
 
 from ....base import (
     AbstractRemoteJob, list_files, make_tar_gz_file
@@ -28,7 +29,7 @@ class AwsProcessingJobsMaker(Protocol):
         self,
         base_job_name: str,
         sagemaker_role: str,
-        sagemaker_session: sagemaker.Session,
+        sagemaker_session: sagemaker.session.Session,
         instance_type: str = 'ml.g5.4xlarge',
         max_runtime_in_seconds: int = 7200,
     ) -> Processor:
@@ -55,11 +56,11 @@ class ProcessingJob(AbstractRemoteJob):
     processor_maker: Optional[AwsProcessingJobsMaker] = None
     boto3_session: Optional[str] = None
     sagemaker_role: Optional[str] = None
-    sagemaker_session: Optional[sagemaker.Session] = None
+    sagemaker_session: Optional[sagemaker.session.Session] = None
     default_bucket: Optional[str] = None
     default_bucket_prefix: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Post-init validations """
         if (
             (self.sagemaker_session is None) and
@@ -78,7 +79,7 @@ class ProcessingJob(AbstractRemoteJob):
         """ Return basename """
         return self.basename
 
-    def get_sagemaker_session_(self) -> sagemaker.Session:
+    def get_sagemaker_session_(self) -> sagemaker.session.Session:
         """ Get the sagemaker.Session """
         if self.sagemaker_session is not None:
             return self.sagemaker_session
@@ -86,7 +87,7 @@ class ProcessingJob(AbstractRemoteJob):
         if self.default_bucket is not None and self.default_bucket_prefix is not None:
             boto3_session = self.boto3_session or boto3.Session()
 
-            return sagemaker.Session(
+            return sagemaker.session.Session(
                 boto_session=boto3_session,
                 default_bucket=self.default_bucket,
                 default_bucket_prefix=self.default_bucket_prefix,
@@ -100,7 +101,11 @@ class ProcessingJob(AbstractRemoteJob):
 
     def get_sagemaker_role_(self) -> str:
         """ Get the SageMaker role """
-        return self.sagemaker_role or sagemaker.get_execution_role()
+        role: str = (
+            self.sagemaker_role or
+            sagemaker.session.get_execution_role()  # type: ignore
+        )
+        return role
 
     def make_processor_(
         self,
@@ -114,7 +119,7 @@ class ProcessingJob(AbstractRemoteJob):
                 sagemaker_session=self.get_sagemaker_session_(),
                 instance_type=self.instance_type,
                 max_runtime_in_seconds=max_runtime_in_seconds,
-            )  # type: ignore
+            )
 
         return standard_processor_(
             base_job_name=self.get_basename(),
@@ -130,7 +135,7 @@ class ProcessingJob(AbstractRemoteJob):
         libs_to_send: Optional[List[Union[str, Path]]] = None,
         arguments_dict: Optional[Dict[str, str]] = None,
         max_runtime_in_seconds: int = 7200,
-    ):
+    ) -> None:
         """ Run a Job """
         script_processor = self.make_processor_(
             max_runtime_in_seconds=max_runtime_in_seconds
@@ -147,7 +152,7 @@ class ProcessingJob(AbstractRemoteJob):
 def standard_processor_(
     base_job_name: str,
     sagemaker_role: str,
-    sagemaker_session: sagemaker.Session,
+    sagemaker_session: sagemaker.session.Session,
     instance_type: str = 'ml.g5.4xlarge',
     max_runtime_in_seconds: int = 7200,
 ) -> Processor:
@@ -215,7 +220,7 @@ def run_processor(
     main_program: Union[str, Path],
     libs_to_send: Optional[List[Union[str, Path]]] = None,
     arguments_dict: Optional[Dict[str, str]] = None,
-):
+) -> None:
     """
     The main program will be send as main_program.py to the
     ProcessingJob. The bootloader will load it and run the
@@ -226,11 +231,9 @@ def run_processor(
 
     libs_to_send = libs_to_send or []
 
-    files_to_send = dict(
-        **ChainMap(
-            *[list_files(path) for path in libs_to_send]
-        )
-    )
+    files_to_send = {**ChainMap(
+        *[list_files(path) for path in libs_to_send]
+    )}
 
     with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
         output_file_ = make_tar_gz_file(

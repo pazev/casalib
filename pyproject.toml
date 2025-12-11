@@ -6,21 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.mypy]
-check_untyped_defs = true
-allow_redefinition = false
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_subclassing_any = true
-# disallow_untyped_calls = true
-disallow_untyped_decorators = true
-# disallow_untyped_defs = true
-no_implicit_optional = true
-strict_equality = true
-warn_no_return = true
-# warn_return_any = true
-warn_unused_configs = true
-warn_unused_ignores = true
-
+strict = true
 exclude = ['src/casalib/scaffolding/templates']
 
 [tool.pylint]
@@ -28,3 +14,26 @@ disable = [
     'duplicate-code',
     'import-outside-toplevel',
 ]
+
+[tool.pylint.main]
+# Fail the run if score is below this
+fail-under = 9.5
+# Load some stricter plugins
+load-plugins = [
+  # "pylint.extensions.check_docs",
+  "pylint.extensions.mccabe",
+]
+
+[tool.pylint."MESSAGES CONTROL"]
+# Start from "everything on"…
+# enable = ["all"]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.design]
+max-args = 5
+max-locals = 15
+max-branches = 12
+max-statements = 50
+max-attributes = 7

@@ -36,7 +36,7 @@ class AthenaConnection(ConnectionAbstract):
     boto3_session_maker: Boto3SessionMaker
     table_prefix: str = ''
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Create basic modules to use """
         self.conn_ = AthenaBaseConnection(
             schema_name=self.schema_name,

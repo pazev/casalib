@@ -8,12 +8,14 @@ que a estrutura irá carregá-lo normalmente.
 import importlib
 import os
 from pathlib import Path
+from typing import Dict, List
+from types import ModuleType
 
 
 PLUGIN_FLD = Path(__file__).parent
 
 
-def list_plugins_():
+def list_plugins_() -> List[str]:
     """ Carrega os plugins """
     list_plugins = [
         file_prefix
@@ -33,7 +35,7 @@ def list_plugins_():
     return list_plugins
 
 
-def load_plugins():
+def load_plugins() -> Dict[str, ModuleType]:
     """ Carrega os plugins """
     plugins = {
         name: importlib.import_module(

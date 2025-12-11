@@ -27,7 +27,7 @@ def naming_generator_factory(
     Generates a new dataclass with the given name and
     fields.
     '''
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-complex
     validation_procedures = validation_procedures or {}
     constraints = constraints or {}
 
@@ -43,6 +43,7 @@ def naming_generator_factory(
 
 
     def make_name(self) -> str:
+        ''' Function to generate name '''
         template = getattr(self, 'make_template_')()
         data = {
             'prefix_': prefix_,
@@ -109,7 +110,7 @@ def naming_generator_factory(
     def as_tuple(self) -> Tuple[str]:
         return tuple(getattr(self, fld) for fld in fields)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for f in fields:
             value = getattr(self, f)
 
@@ -164,7 +165,7 @@ def _reconstruct_instance(
         str, List[Callable[[str], bool]]
     ],
     constraints: Dict[str, List[str]],
-    values: tuple,
+    values: Tuple,
 ):
     # pylint: disable=too-many-arguments
     cls = naming_generator_factory(

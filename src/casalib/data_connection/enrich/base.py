@@ -13,7 +13,7 @@ class Public:
     columns: List[str]
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Test if the event column is in the columns """
         if self.event_ymd_column not in self.columns:
             raise ValueError(
@@ -41,7 +41,7 @@ class Source:
     columns: List[str] = field(repr=False)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Test if the event column is in the columns  """
         if self.info_ymd_column not in self.columns:
             raise ValueError(

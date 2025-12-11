@@ -11,13 +11,14 @@ from pprint import pformat
 import shutil
 import subprocess
 import sys
+from typing import Tuple
 
 
 LIBS_ORIG_FLD = '/opt/ml/processing/libs_cp'
 LIBS_FLD = '/opt/ml/processing/libs'
 
 
-def init_machine():
+def init_machine() -> None:
     """
     Initialize the Processing Job to run the code.
     """
@@ -51,7 +52,9 @@ def init_machine():
         for correct_parent in [str(file_path_rel.parent)]
     ]
 
-    def adj_path(dest_fld: Path, orig_path: Path, dest_path: Path):
+    def adj_path(
+        dest_fld: Path, orig_path: Path, dest_path: Path
+    ) -> Tuple[Path, Path, Path]:
         if orig_path.parent.parent.name == "main_program.py":
             dest_fld = dest_fld.parent
             dest_path = dest_path.parent
@@ -104,7 +107,7 @@ def init_machine():
     logging.info("Ending Init")
 
 
-def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
+def grouper(iterable, n, *, incomplete='fill', fillvalue=None):    # type: ignore
     "Collect data into non-overlapping fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
     # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
@@ -132,7 +135,7 @@ if __name__ == '__main__':
     # Get arguments dict
     dict_params = {
         param_adj: val
-        for param, val in grouper(unknown, 2)
+        for param, val in grouper(unknown, 2)  # type: ignore
         for param_adj in [param.replace('--', '')]
     }
 

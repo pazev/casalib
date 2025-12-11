@@ -67,7 +67,7 @@ def make_create_ctas_query_(
     schema_name: str,
     s3_output: str,
     columns_types: Dict[str, str],
-):
+) -> str:
     """ Make the query to create a table passing the
         schema
     """
@@ -207,7 +207,7 @@ def create_insert(
     query: str,
     partition_cols: Union[List[str], None],
     s3_output: str,
-):
+) -> Metadata:
     """ Cria uma tabela se não existir, e insere dados na
         mesma.
     """

@@ -4,14 +4,14 @@ SageMaker Training Jobs.
 """
 # pylint: disable=import-outside-toplevel
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 
 def make(
     default_instance_type: str,
     default_bucket: str,
     default_bucket_prefix: str,
-):
+) -> Callable:    # type: ignore[type-arg]
     """ Receipt to quick load a remote job; not ready """
     from casalib.remote_jobs.connectors.aws_processing_jobs import (
         ProcessingJob
@@ -26,7 +26,7 @@ def make(
         instance_type: Optional[str] = None,
         s3_bucket: Optional[str] = None,
         s3_prefix: Optional[str] = None,
-    ):
+    ) -> None:
         """ Function to run the processing job """
         # pylint: disable=too-many-arguments
         proc = ProcessingJob(

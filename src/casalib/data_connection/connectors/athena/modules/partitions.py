@@ -44,7 +44,7 @@ def drop_partitions(
     default_schema_name: str,
     table_name: str,
     partitions_to_drop: List[Tuple[str, ...]]
-):
+) -> None:
     """ Dropa as partições indicadas na tabela """
     # Quebra nome da tabela
     schema_name, table_name = split_table_name(

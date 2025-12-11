@@ -423,7 +423,7 @@ class AthenaQueries:
     queries_list: List[Dict[str, str]] = field(repr=False)
     partition_cols: List[str] = field(default_factory=list)
 
-    def __getitem__(self, key: int):
+    def __getitem__(self, key: int) -> Dict[str, str]:
         """ Return the item """
         return self.queries_list[key]
 
@@ -431,7 +431,7 @@ class AthenaQueries:
         """ Length of the object """
         return len(self.queries_list)
 
-    def table_names(self):
+    def table_names(self) -> List[str]:
         """ Return the table names """
         return list(
             {
@@ -440,15 +440,15 @@ class AthenaQueries:
             }
         )
 
-    def public_queries(self):
+    def public_queries(self) -> List[Dict[str, str]]:
         """ Return the public query """
         return [self.queries_list[0]]
 
-    def sources_queries(self):
+    def sources_queries(self) -> List[Dict[str, str]]:
         """ Return the queries """
         return self.queries_list[1:]
 
-    def sources_queries_interleaved(self):
+    def sources_queries_interleaved(self) -> List[Dict[str, str]]:
         """ Return the queries, but in a interleaved way """
         queries_index = defaultdict(list)
         for qdict in self.sources_queries():
@@ -575,7 +575,7 @@ class AthenaCompiler:
     study: str
     partition_cols: Optional[List[str]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """ Post-init """
         self.conn_maker: Optional[
             Callable[[], AthenaConnection]

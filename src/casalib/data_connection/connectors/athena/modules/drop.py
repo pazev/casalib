@@ -20,7 +20,7 @@ from .s3_ops import (
 def list_and_remove_files_(
     boto3_session: boto3.Session,
     location: str,
-):
+) -> None:
     """
     Function to list all files in a S3 bucket/prefix and
     delete them

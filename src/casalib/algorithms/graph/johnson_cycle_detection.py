@@ -54,6 +54,8 @@ def simple_cycles(
         - Time can grow with the number of cycles; this
             enumerates *all* of them.
     """
+    # pylint: disable=too-complex
+
     # ---- Build directed graph as adjacency sets (dedupe
     #   parallel edges) ----
     adj: DefaultDict[T, Set[T]] = defaultdict(set)

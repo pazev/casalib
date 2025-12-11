@@ -11,7 +11,7 @@ import requests
 
 def download_file(
     fileobj: BinaryIO, url: str, verify_ssl: bool = True
-):
+) -> requests.Response:
     """ Baixa arquivos para um file object """
     with warnings.catch_warnings():
         warnings.filterwarnings(
