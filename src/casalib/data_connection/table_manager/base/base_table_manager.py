@@ -127,6 +127,6 @@ class BaseTableManagerAbstract(ABC):
 
     @abstractmethod
     def run(
-        self, **kwargs
+        self, **kwargs: Any
     ) -> "BaseTableManagerAbstract":
         """ Run the procedure that generate the table """

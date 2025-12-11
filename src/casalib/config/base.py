@@ -33,7 +33,7 @@ def default_cfg_() -> Path:
     return dft_file
 
 
-def load_cfg_(config_file: Optional[str] = None) -> Dict:
+def load_cfg_(config_file: Optional[str] = None) -> Dict[str, Any]:
     """ Carrega as configurações """
     config_file_ = config_file or default_cfg_()
 

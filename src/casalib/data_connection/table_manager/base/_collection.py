@@ -133,7 +133,7 @@ class TableManagerCollection:
 
         return self
 
-    def run(self, **kwargs) -> "TableManagerCollection":
+    def run(self, **kwargs: Any) -> "TableManagerCollection":
         """
         Run the TableManagerCollection (all the
         TableManagers inside it).

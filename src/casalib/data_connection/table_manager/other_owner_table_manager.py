@@ -1,7 +1,7 @@
 """ Module adds a simple TableManager, to manage some
     operations as drop, drop_partition, list_partition.
 """
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from .base import TableManagerAbstract
 
@@ -56,7 +56,7 @@ class OtherOwnerTableManager(TableManagerAbstract):
         )
 
     # Implementation of run: do nothing
-    def run(self, **kwargs) -> "OtherOwnerTableManager":
+    def run(self, **kwargs: Any) -> "OtherOwnerTableManager":
         """ Run the procedure that generate the table """
         return self
 

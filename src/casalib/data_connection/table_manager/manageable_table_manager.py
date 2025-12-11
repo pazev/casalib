@@ -1,7 +1,7 @@
 """ Module adds a simple TableManager, to manage some
     operations as drop, drop_partition, list_partition.
 """
-from typing import List
+from typing import Any, List
 from .base import TableManagerAbstract
 
 
@@ -15,7 +15,7 @@ class ManageableTableManager(TableManagerAbstract):
         about how to run the table.
     """
     # Implementation of run: do nothing
-    def run(self, **kwargs) -> "ManageableTableManager":
+    def run(self, **kwargs: Any) -> "ManageableTableManager":
         """ Run the procedure that generate the table """
         return self
 

@@ -61,7 +61,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
             perform the tasks
         """
 
-    def query_method_(self, query) -> pd.DataFrame:
+    def query_method_(self, query: str) -> pd.DataFrame:
         """ Return the results of a query as a dataframe """
         return self.get_connection_.query_method_(query)
 

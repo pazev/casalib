@@ -158,6 +158,6 @@ class TableManagerAbstract(BaseTableManagerAbstract):
 
     @abstractmethod
     def run(
-        self, **kwargs
+        self, **kwargs: Any
     ) -> "TableManagerAbstract":
         """ Run the procedure that generate the table """

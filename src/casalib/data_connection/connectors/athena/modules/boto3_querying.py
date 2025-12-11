@@ -23,7 +23,7 @@ class QueryExec:
 
     def get_execution_info_(
         self, boto3_session: boto3.Session
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """ Captura dados da execução """
         athena = boto3_session.client('athena')
         query_exec = athena.get_query_execution(

@@ -24,7 +24,7 @@ import requests
 def get_index_page(
     url: str,
     verify_ssl: bool = True,
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """ Captura a lista de meses """
     # Carrega lista
@@ -52,7 +52,7 @@ def process_index_page(
     url: str,
     content: str,
     filtering_regex: str,
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """ Processa a lista HTML, extraindo os parámetros
         desejados em um dicionário

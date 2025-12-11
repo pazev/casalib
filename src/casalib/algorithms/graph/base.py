@@ -5,6 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 
 from typing import (
+    Any,
     Generic,
     Hashable,
     Iterable,
@@ -34,7 +35,7 @@ class Graph(Generic[T]):
         cls,
         edges: Iterable[Tuple[T, T]],
         nodes: Optional[Iterable[T]] = None
-    ) -> "Graph":
+    ) -> "Graph[Any]":
         """ Create a graph from edges and nodes """
         graph = cls()
         nodes = nodes or []
@@ -44,14 +45,14 @@ class Graph(Generic[T]):
             graph.add_node(u)
         return graph
 
-    def add_node(self, node: T) -> "Graph":
+    def add_node(self, node: T) -> "Graph[Any]":
         """ Add a node to the graph """
         _ = self.relations[node]
         return self
 
     def add_edge(
         self, origin: T, destination: T,
-    ) -> "Graph":
+    ) -> "Graph[Any]":
         """ Add an edge to the graph """
         _ = (
             self.relations[origin],

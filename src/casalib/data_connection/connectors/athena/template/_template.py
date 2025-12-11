@@ -198,7 +198,7 @@ class AthenaTemplates(TemplateAbstract):
         cols_after: Optional[List[Tuple[str, str]]] = None,
         select_cols: Optional[List[str]] = None,
         samples: Optional[int] = None,
-    ):
+    ) -> str:
         """
         Generate a query to LEFT JOIN several queries to a
         root one
