@@ -171,7 +171,7 @@ def simple_cycles(
                     B[w].add(s)
 
         stack.pop()
-        return found_cycle  # type: ignore[return-value]
+        return found_cycle
 
     # Iterate over subgraphs starting at the least-indexed
     #   remaining vertex and progressively remove start

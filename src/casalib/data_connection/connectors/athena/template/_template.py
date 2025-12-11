@@ -73,6 +73,7 @@ class AthenaTemplates(TemplateAbstract):
             query=query,
             groupby=groupby,
             count_=count_,
+            count_null_=count_null_,
             count_distinct_=count_distinct_,
             sum_=sum_,
             mean_=mean_,
