@@ -15,16 +15,17 @@ class NamesManagerFunction(Protocol):
     to create new functionalities.
     '''
     # pylint: disable=too-few-public-methods
-    def __call__(self, tb: "NamesManager", tab: str):
-        pass
+    def __call__(self, tb: "NamesManager", tab: str) -> Optional[str]:
+        ...
 
 
 @dataclass
 class NamesManager:
     """ Names Manager """
     dict_names: Dict[str, str] = field(default_factory=dict)
-    name: str = 'NamesManager'
-    file: Optional[Union[str, Path]] = None
+    file: Optional[Union[str, Path]] = field(default=None, repr=False)
+
+    name: ClassVar[str] = 'NamesManager'
     dict_functions_: ClassVar[Dict[str, NamesManagerFunction]] = {}
 
     def __post_init__(self):
@@ -87,6 +88,12 @@ class NamesManager:
         """
         return self.get_info_(key)
 
+    def __contains__(self, key: str) -> bool:
+        """
+        Check if a key is in the known names dict
+        """
+        return key in self.dict_names
+
     def get_info_(self, key: str):
         """ Return the tables in tb """
         if self.file:
@@ -125,18 +132,22 @@ class NamesManager:
         Return a dict with all combinations of tab and
         selected_
         """
+        dict_names = self.dict_names or {}
         dict_functions = self.dict_functions_ or {}
 
-        return (
-            self.dict_names
+        return_dict = (
+            dict_names
             |
             {
-                f'{func_name}___{key}': func(self, key)
+                f'{func_name}___{key}': res
                 for func_name in sorted(dict_functions)
                 for func in [dict_functions[func_name]]
-                for key in sorted(self.dict_names)
+                for key in sorted(dict_names)
+                for res in [func(self, key)]
+                if res
             }
         )
+        return return_dict
 
     def save(self, filename: Union[str, Path]):
         """
