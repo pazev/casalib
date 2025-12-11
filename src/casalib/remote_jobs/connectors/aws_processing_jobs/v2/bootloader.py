@@ -18,13 +18,11 @@ LIBS_ORIG_FLD = '/opt/ml/processing/libs_cp'
 LIBS_FLD = '/opt/ml/processing/libs'
 
 
-# TODO: Unpack the tar.gz file; continue to install whl
-#   files and any other special behaviour
-
 File = namedtuple('File', ['dest_folder', 'orig_file', 'dest_file'])
 
 
 def extract_tar_gz(tar_path: str | Path, target_folder: str | Path) -> None:
+    ''' Extract the passed tar.gz file '''
     import tarfile
 
     tar_path = Path(tar_path)
@@ -100,14 +98,14 @@ def init_machine():
         for dest_folder, orig_path, dest_path in cp_libs_fld
     ]
 
-    logging.info('\n' + pformat(cp_libs_fld))
+    logging.info('\n%s', (pformat(cp_libs_fld)))
 
     for path_fld, old_path, new_path in cp_libs_fld:
         path_fld.mkdir(parents=True, exist_ok=True)
         shutil.move(old_path, new_path)
 
     logging.info("Adjustments")
-    logging.info('\n' + pformat(cp_libs_fld))
+    logging.info('\n%s', pformat(cp_libs_fld))
 
     logging.info('Extracting contents_libs_to_send.tar.gz')
     extract_tar_gz(
@@ -121,7 +119,7 @@ def init_machine():
         for root, dirs, files in os.walk(LIBS_FLD)
         for file in files
     ]
-    logging.info('\n' + pformat(output_folder_files))
+    logging.info('\n%s', pformat(output_folder_files))
 
     # Installing Libs
     logging.info("Installing whl libs")

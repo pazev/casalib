@@ -226,8 +226,10 @@ def run_processor(
 
     libs_to_send = libs_to_send or []
 
-    files_to_send = ChainMap(
-        *[list_files(path) for path in libs_to_send]
+    files_to_send = dict(
+        **ChainMap(
+            *[list_files(path) for path in libs_to_send]
+        )
     )
 
     with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
