@@ -28,7 +28,7 @@ from ...base import (
 
 @dataclass
 class AthenaConnection(ConnectionAbstract):
-    """ Classe para conexão no Athena. """
+    """ Class for connection in Athena. """
     schema_name: str
     workgroup: str
     s3_staging_dir: str

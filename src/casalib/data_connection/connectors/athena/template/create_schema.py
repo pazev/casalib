@@ -1,6 +1,5 @@
 """
-Template para criar uma tabela através da especificação de
-um schema.
+Template to create a table through schema specification.
 """
 import re
 from typing import Dict, Optional

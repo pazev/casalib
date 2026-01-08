@@ -29,7 +29,7 @@ class TableManagerAbstract(BaseTableManagerAbstract):
     partition_cols: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
-        """ Inicialização """
+        """ Initialization """
         self.helper = TableHelper(self.table_name)
 
     def get_helper(self) -> TableHelper:

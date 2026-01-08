@@ -1,5 +1,5 @@
 """
-Módulo para lidar com metadados de tabelas
+Module to handle table metadata
 """
 # pylint: disable=too-many-arguments
 import json
@@ -18,7 +18,7 @@ def get_table_metadata(
     table_name: str
 ) -> Metadata:
     """
-    Captura o metadado de uma tabela Athena usando a boto3
+    Captures the metadata of an Athena table using boto3
     """
     # pylint: disable=unused-argument
     athena = boto3_session.client('athena')
@@ -47,7 +47,7 @@ def get_table_metadata(
         for c in metadata_dict['PartitionKeys']
     }
 
-    # Cria o obieto Metadata
+    # Creates the Metadata object
     metadata_obj = Metadata(
         connection_type='athena.AthenaConnection',
         columns=columns,
@@ -67,8 +67,8 @@ def get_query_metadata(
     workgroup: str,
     query: str
 ) -> Metadata:
-    """ Captura o metadado da query """
-    # Captura o JSON explain
+    """ Captures the metadata of the query """
+    # Captures the JSON explain
     query_explain = f'explain (format json)\n{query}'
 
     query_obj = run_query(
@@ -92,7 +92,7 @@ def get_query_metadata(
 
     result_json = json.loads("\n".join(result_list[1:]))
 
-    # Extrai os dados
+    # Extracts the data
     columns = (
         result_json['0']['descriptor']['columnNames'][1:-1]
         .split(', ')
@@ -105,7 +105,7 @@ def get_query_metadata(
 
     types = dict(zip(columns, output_types))
 
-    # Cria objeto de Metadados
+    # Creates Metadata object
     metadata_obj = Metadata(
         connection_type='athena.AthenaConnection',
         columns=types,

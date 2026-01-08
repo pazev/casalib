@@ -1,5 +1,5 @@
 """
-Módulo com os comandos de CLI para o casalib.scaffolding
+Module with CLI commands for casalib.scaffolding
 """
 from fire import Fire  # type: ignore
 

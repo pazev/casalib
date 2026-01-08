@@ -41,7 +41,7 @@ class MakeQueryAbstract(ABC):
         cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
         cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> List[str]:
-        """ Realiza uma agregação na query indicada """
+        """ Performs an aggregation on the indicated query """
 
     @abstractmethod
     def get_duplicates(
@@ -59,8 +59,8 @@ class MakeQueryAbstract(ABC):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> List[str]:
-        """ Cria uma tabela se não existir e insere dados.
-            Realiza reordenação de colunas se necessário.
+        """ Creates a table if it doesn't exist and inserts data.
+            Performs column reordering if necessary.
         """
 
     @abstractmethod
@@ -70,7 +70,7 @@ class MakeQueryAbstract(ABC):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> List[str]:
-        """ Cria uma tabela com comando CREATE TABLE AS
+        """ Creates a table with CREATE TABLE AS command
         """
 
     @abstractmethod

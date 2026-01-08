@@ -70,11 +70,11 @@ class ConnectionAbstract(BaseConnectionAbstract):
         table_name: str,
         samples: Union[int, None] = 100
     ) -> pd.DataFrame:
-        """ Retorna uma amostra da tabela. O padrão são 100
-            registros, mas este número pode ser alterado no
-            parâmetro `samples`. Caso `samples` receba um
-            número negativo ou None retorna a tabela
-            inteira.
+        """ Returns a sample of the table. The default is 100
+            records, but this number can be changed in the
+            `samples` parameter. If `samples` receives a
+            negative number or None, returns the entire
+            table.
         """
         return self.get_connection_.table(
             table_name=table_name, samples=samples,
@@ -85,15 +85,15 @@ class ConnectionAbstract(BaseConnectionAbstract):
         query: Optional[str] = None,
         table_name: Optional[str] = None,
     ) -> Metadata:
-        """ Retorna o metadados da tabela ou query. Somente
-            um dos dois deve ser setado.
+        """ Returns the metadata of the table or query. Only
+            one of the two should be set.
         """
         return self.get_connection_.metadata(
             query=query, table_name=table_name,
         )
 
     def drop(self, table_name: str) -> "ConnectionAbstract":
-        """ Dropa uma tabela """
+        """ Drops a table """
         self.get_connection_.drop(
             table_name=table_name,
         )
@@ -105,8 +105,8 @@ class ConnectionAbstract(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "ConnectionAbstract":
-        """ Cria uma tabela se não existir e insere dados.
-            Realiza reordenação de colunas se necessário.
+        """ Creates a table if it doesn't exist and inserts data.
+            Performs column reordering if necessary.
         """
         self.get_connection_.create_insert(
             query=query, table_name=table_name,
@@ -120,7 +120,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "ConnectionAbstract":
-        """ Cria uma tabela com comando CREATE TABLE AS
+        """ Creates a table with CREATE TABLE AS command
         """
         self.get_connection_.create_ctas(
             query=query, table_name=table_name,
@@ -132,7 +132,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         self,
         table_name: str,
     ) -> Dict[Tuple[str, ...], str]:
-        """ Lista as partições """
+        """ Lists the partitions """
         return self.get_connection_.list_partitions(
             table_name=table_name,
         )
@@ -142,7 +142,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         table_name: str,
         partitions_to_drop: List[Tuple[str, ...]],
     ) -> "ConnectionAbstract":
-        """ Dropa as partições indicadas na tabela """
+        """ Drops the indicated partitions in the table """
         self.get_connection_.drop_partitions(
             table_name=table_name,
             partitions_to_drop=partitions_to_drop,
@@ -155,7 +155,7 @@ class ConnectionAbstract(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> Metadata:
-        """ Envia um pandas DataFrame para o banco """
+        """ Sends a pandas DataFrame to the database """
         return self.get_connection_.send_pandas(
             dff=dff, table_name=table_name,
             partition_cols=partition_cols,

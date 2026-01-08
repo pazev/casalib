@@ -22,7 +22,7 @@ input_partition_col_ as (
     from input_
 )
 ,
--- Seleciona as partições
+-- Selects the partitions
 list_partitions_ as (
     with
     mesref__ (mesref) as (values ('{{mesref}}'))

@@ -1,6 +1,6 @@
 """
-Template para rodar a receita de um objeto salvo em uma
-configuração.
+Template to run the recipe of an object saved in a
+configuration.
 """
 import os
 from pathlib import Path
@@ -12,7 +12,7 @@ from . import receipts
 
 
 def default_cfg_() -> Path:
-    """ Carrega o local padrão das configurações """
+    """ Loads the default location of configurations """
     # Default file
     home_folder = (
         os.environ.get('USERPROFILE') or
@@ -34,7 +34,7 @@ def default_cfg_() -> Path:
 
 
 def load_cfg_(config_file: Optional[str] = None) -> Any:
-    """ Carrega as configurações """
+    """ Loads the configurations """
     config_file_ = config_file or default_cfg_()
 
     with open(config_file_, 'r', encoding='utf-8') as f:
@@ -46,7 +46,7 @@ def load_cfg_(config_file: Optional[str] = None) -> Any:
 def make_obj_params_(
     obj_type: str, params: Dict[str, Any]
 ) -> Any:
-    """ Cria o objeto """
+    """ Creates the object """
     obj = receipts.load_plugins()[obj_type].make(**params)
     return obj
 
@@ -54,7 +54,7 @@ def make_obj_params_(
 def load_obj(
     name: str, config_file: Optional[str] = None
 ) -> Any:
-    """ Cria um objeto a partir das configurações """
+    """ Creates an object from the configurations """
     config = load_cfg_(config_file)
 
     try:
@@ -64,8 +64,8 @@ def load_obj(
         known_configs = list(config.keys())
 
         raise KeyError(
-            f'A configuração {key_error} não existe; temos '
-            f'as seguintes configurações: {known_configs}'
+            f'The configuration {key_error} does not exist; we have '
+            f'the following configurations: {known_configs}'
         ) from exc
 
     return make_obj_params_(**config_params)

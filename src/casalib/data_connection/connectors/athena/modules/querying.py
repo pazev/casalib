@@ -1,6 +1,6 @@
 """
-Módulo implementa a funcionalidade de realizar queries ao
-Athena, se valendo da funcionalidade do awswrangler.
+Module implements the functionality of performing queries to
+Athena, using the awswrangler functionality.
 """
 # pylint: disable=too-many-arguments
 from datetime import datetime
@@ -25,7 +25,7 @@ def run_query_get_pandas(
     table_prefix: str,
     query: str
 ) -> pd.DataFrame:
-    """ Faz uma query no Athena """
+    """ Performs a query in Athena """
     # pylint: disable=unused-argument
     dttm = datetime.now().strftime('%Y%m%d%H%M%S')
     uuid_str = uuid4().hex
@@ -79,8 +79,8 @@ def run_table_get_pandas(
     table_name: str,
     samples: Union[int, None],
 ) -> pd.DataFrame:
-    """ Faz uma query para obter dados de uma tabela
-        no Athena
+    """ Performs a query to get data from a table
+        in Athena
     """
     env = jinja2.Environment()
 

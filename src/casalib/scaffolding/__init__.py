@@ -1,5 +1,5 @@
 """
-Módulo implementa a operação de scaffolding da casalib, que
-funciona criando projetos que sigam uma determinada
-estrutura.
+Module implements the scaffolding operation of casalib, which
+works by creating projects that follow a certain
+structure.
 """

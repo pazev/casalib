@@ -1,1 +1,1 @@
-""" Módulo para funcionalidade de crawler """
+""" Module for crawler functionality """

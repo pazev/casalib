@@ -1,4 +1,4 @@
-""" Receita para criação rápida de uma conexão Athena """
+""" Recipe for quickly creating an Athena connection """
 from typing import Optional
 
 from casalib.data_connection.connectors.athena import (
@@ -19,7 +19,7 @@ def make(
     boto3_profile_name: Optional[str] = None,
     boto3_region_name: str = 'us-east-1'
 ) -> AthenaConnection:
-    """ Cria uma conexão com o Athena """
+    """ Creates a casalib AthenaConnection """
     # pylint: disable=too-many-arguments
     athena = AthenaConnection(
         schema_name=schema_name,

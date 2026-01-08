@@ -50,8 +50,8 @@ from .modules.send_pandas import (
 
 @dataclass
 class Boto3SessionMaker:
-    """ Classe responsável por guardar e gerenciar a criação
-        de conexões ao boto3, sempre que necessário.
+    """ Class responsible for storing and managing the creation
+        of connections to boto3 whenever necessary.
     """
     aws_access_key_id: Optional[str] = field(default=None, repr=False)
     aws_secret_access_key: Optional[str] = field(default=None, repr=False)
@@ -60,7 +60,7 @@ class Boto3SessionMaker:
     region_name: Optional[str] = None
 
     def make(self) -> boto3.Session:
-        """ Cria a sessão boto3 """
+        """ Creates the boto3 session """
         par = {}
 
         if self.aws_access_key_id is not None:
@@ -91,7 +91,7 @@ class Boto3SessionMaker:
 
 @dataclass
 class AthenaBaseConnection(BaseConnectionAbstract):
-    """ Classe para conexão no Athena. """
+    """ Class for connection in Athena. """
     schema_name: str
     workgroup: str
     s3_staging_dir: str
@@ -101,7 +101,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
 
     def query_method_(self, query: str) -> pd.DataFrame:
         """
-        Retorna o resultado da query como um DataFrame
+        Returns the query result as a DataFrame
         """
         return run_query_get_pandas(
             boto3_session=self.boto3_session_maker.make(),
@@ -118,11 +118,11 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         table_name: str,
         samples: Union[int, None] = 100
     ) -> pd.DataFrame:
-        """ Retorna uma amostra da tabela. O padrão são 100
-            registros, mas este número pode ser alterado no
-            parâmetro `samples`. Caso `samples` receba um
-            número negativo ou None retorna a tabela
-            inteira.
+        """ Returns a sample of the table. The default is 100
+            records, but this number can be changed in the
+            `samples` parameter. If `samples` receives a
+            negative number or None, returns the entire
+            table.
         """
         return run_table_get_pandas(
             boto3_session=self.boto3_session_maker.make(),
@@ -140,16 +140,16 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         query: Optional[str] = None,
         table_name: Optional[str] = None
     ) -> Metadata:
-        """ Retorna o metadados da tabela ou query.
-            Somente um dos dois deve ser setado.
+        """ Returns the metadata of the table or query.
+            Only one of the two should be set.
         """
         if (query is not None) and (table_name is not None):
             raise ValueError(
-                "Ou `query` ou `tablename` precisa ser "
-                "setado."
+                "Either `query` or `tablename` needs to be "
+                "set."
             )
 
-        # Captura o metadado
+        # Captures the metadata
         if table_name is not None:
             return get_table_metadata(
                 table_name=table_name,
@@ -169,12 +169,12 @@ class AthenaBaseConnection(BaseConnectionAbstract):
             )
 
         raise ValueError(
-            "Ou `query` ou `tablename` precisa ser "
-            "setado."
+            "Either `query` or `tablename` needs to be "
+            "set."
         )
 
     def drop(self, table_name: str) -> "AthenaBaseConnection":
-        """ Dropa uma tabela
+        """ Drops a table
         """
         drop_table(
             boto3_session=self.boto3_session_maker.make(),
@@ -191,8 +191,8 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "AthenaBaseConnection":
-        """ Cria uma tabela se não existir e insere dados.
-            Realiza reordenação de colunas se necessário.
+        """ Creates a table if it doesn't exist and inserts data.
+            Performs column reordering if necessary.
         """
         create_insert(
             boto3_session=self.boto3_session_maker.make(),
@@ -212,7 +212,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "AthenaBaseConnection":
-        """ Cria uma tabela através de um CREATE TABLE AS
+        """ Creates a table via CREATE TABLE AS
         """
         create_ctas(
             boto3_session=self.boto3_session_maker.make(),
@@ -231,7 +231,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         self,
         table_name: str,
     ) -> Dict[Tuple[str, ...], str]:
-        """ Lista as partições """
+        """ Lists the partitions """
         return list_partitions(
             boto3_session=self.boto3_session_maker.make(),
             default_schema_name=self.schema_name,
@@ -243,7 +243,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         table_name: str,
         partitions_to_drop: List[Tuple[str, ...]],
     ) -> "AthenaBaseConnection":
-        """ Dropa partições indicadas na tabela """
+        """ Drops the indicated partitions in the table """
         drop_partitions(
             boto3_session=self.boto3_session_maker.make(),
             default_schema_name=self.schema_name,
@@ -258,7 +258,7 @@ class AthenaBaseConnection(BaseConnectionAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None
     ) -> Metadata:
-        """ Envia um pandas DataFrame para o banco """
+        """ Sends a pandas DataFrame to the database """
         return create_table_pandas_dataframe(
             boto3_session=self.boto3_session_maker.make(),
             data_catalog=self.data_catalog,

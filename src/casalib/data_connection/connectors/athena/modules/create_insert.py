@@ -1,6 +1,6 @@
 """
-Módulo implementa funções de criação e inserção de dados em
-tabelas no AWS Athena.
+Module implements functions for creating and inserting data
+into tables in AWS Athena.
 """
 # pylint: disable=too-many-arguments
 from typing import Dict, List, Union
@@ -23,7 +23,7 @@ def create_schema(
     partition_columns_types: Dict[str, str],
     s3_output: str,
 ) -> Metadata:
-    """ Cria tabela com o schema passado """
+    """ Creates table with the passed schema """
     schema_name, table_name = (
         AthenaTemplates.split_schema_name(
             table_name=table_name,
@@ -95,7 +95,7 @@ def create_ctas(
     partition_cols: Union[List[str], None],
     s3_output: str
 ) -> Metadata:
-    """ Cria tabela com o método CREATE TABLE AS """
+    """ Creates table with CREATE TABLE AS method """
     partition_cols = partition_cols or []
 
     schema_name, table_name = (
@@ -107,7 +107,7 @@ def create_ctas(
 
     s3_output = f'{s3_output}/{schema_name}.{table_name}'
 
-    # Captura metadata da query
+    # Captures query metadata
     query_meta = get_query_metadata(
         boto3_session=boto3_session,
         data_catalog=data_catalog,
@@ -208,14 +208,14 @@ def create_insert(
     partition_cols: Union[List[str], None],
     s3_output: str,
 ) -> Metadata:
-    """ Cria uma tabela se não existir, e insere dados na
-        mesma.
+    """ Creates a table if it doesn't exist, and inserts
+        data into it.
     """
     # pylint: disable=broad-exception-caught
 
     partition_cols = partition_cols or []
 
-    # Captura metadata da query
+    # Captures query metadata
     query_meta = get_query_metadata(
         boto3_session=boto3_session,
         data_catalog=data_catalog,
@@ -224,18 +224,18 @@ def create_insert(
         query=query,
     )
 
-    # Check inicial - colunas de partição estão na query?
+    # Initial check - are partition columns in the query?
     not_found_part_cols = (
         set(partition_cols) - set(query_meta.columns)
     )
 
     if not_found_part_cols:
         raise ValueError(
-            f'As colunas {not_found_part_cols} não foram '
-            'encontradas na query.'
+            f'The columns {not_found_part_cols} were not '
+            'found in the query.'
         )
 
-    # Captura metadado da tabela, cria se necessário
+    # Captures table metadata, creates if necessary
     metadata = None
 
     try:
@@ -276,8 +276,8 @@ def create_insert(
             s3_output=s3_output,
         )
 
-    # Checa se todas as colunas solicitadas pela tabela
-    # estão na query
+    # Checks if all columns requested by the table
+    # are in the query
     not_found_table_cols = (
         (
             set(metadata.columns)
@@ -294,11 +294,11 @@ def create_insert(
 
     if not_found_table_cols:
         raise ValueError(
-            f'As colunas {not_found_table_cols} não foram '
-            'encontradas na query.'
+            f'The columns {not_found_table_cols} were not '
+            'found in the query.'
         )
 
-    # Insere os dados
+    # Inserts the data
     insert(
         boto3_session=boto3_session,
         workgroup=workgroup,

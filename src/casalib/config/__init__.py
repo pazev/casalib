@@ -1,12 +1,12 @@
 """
-Módulo de configuração rápida, para criação de objetos
-seguindo algumas instruções pré-determinadas.
+Quick configuration module for creating objects
+following some predefined instructions.
 
-Habilita o carregamento rápido de objetos com receita
-conhecida (habilitadas no diretório receipts), para ser
-utilizado na função load_obj.
+Enables fast loading of objects with a known recipe
+(enabled in the receipts directory), to be
+used in the load_obj function.
 
-Necessário criar um arquivo config.yaml na pasta
+You must create a config.yaml file in the folder
 
 ~/.config/casalib/config.yaml
 """

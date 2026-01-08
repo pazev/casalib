@@ -1,5 +1,5 @@
 """
-Módulo para rodar queries em Athena utilizando a boto3
+Module to run queries in Athena using boto3
 """
 # pylint: disable=too-many-arguments
 from dataclasses import dataclass, field
@@ -12,7 +12,7 @@ import boto3
 @dataclass
 class QueryExec:
     """
-    Classe para gerenciar a execução de queries usando boto3
+    Class to manage the execution of queries using boto3
     """
     query: str = field(repr=False)
     query_id: str
@@ -24,7 +24,7 @@ class QueryExec:
     def get_execution_info_(
         self, boto3_session: boto3.Session
     ) -> Dict[str, Any]:
-        """ Captura dados da execução """
+        """ Captures execution data """
         athena = boto3_session.client('athena')
         query_exec: Dict[str, Any] = athena.get_query_execution(
             QueryExecutionId=self.query_id
@@ -35,7 +35,7 @@ class QueryExec:
         self,
         boto3_session: boto3.Session
     ) -> str:
-        """ Captura status de uma query """
+        """ Captures the status of a query """
         res = self.get_execution_info_(boto3_session)
         output: str = res['QueryExecution']['Status']['State']
         return output
@@ -44,7 +44,7 @@ class QueryExec:
         self,
         boto3_session: boto3.Session
     ) -> "QueryExec":
-        """ Espera a execução da query """
+        """ Waits for query execution """
         while True:
             status = self.get_status(boto3_session)
             if status in ['CANCELLED']:
@@ -77,7 +77,7 @@ class QueryExec:
         self,
         boto3_session: boto3.Session
     ) -> List[Dict[str, Any]]:
-        """ Captura resultados da query """
+        """ Captures query results """
         athena = boto3_session.client('athena')
 
         self.wait(boto3_session)
@@ -109,7 +109,7 @@ def run_query(
     query: str, schema_name: str, data_catalog: str,
     workgroup: str, boto3_session: boto3.Session
 ) -> QueryExec:
-    """ Roda uma query """
+    """ Runs a query """
     athena = boto3_session.client('athena')
 
     query_exec = athena.start_query_execution(

@@ -1,6 +1,6 @@
 """
-Módulo de utilidades, para realizar operações diversas no
-S3 relacionadas com o Athena.
+Utilities module to perform various S3 operations
+related to Athena.
 """
 # pylint: disable=too-many-arguments
 from itertools import chain
@@ -12,7 +12,7 @@ import boto3
 
 def get_bucket_prefix(uri: str) -> Tuple[str, str]:
     """
-    Dado um URI, extrai o bucket e o prefixo do objeto
+    Given a URI, extracts the bucket and the object prefix
     """
     re_obj = re.match(
         r's3:\/\/(.+?)\/(.*?)\/*$',

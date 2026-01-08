@@ -1,6 +1,6 @@
 """
-Módulo implementa a funcionalidade de enviar um dataframe
-pandas para o banco de dados.
+Module implements the functionality of sending a pandas
+dataframe to the database.
 """
 # pylint: disable=too-many-arguments
 from typing import List, Union
@@ -23,8 +23,8 @@ def create_table_pandas_dataframe(
     dff: pd.DataFrame,
     partition_cols: Union[List[str], None],
 ) -> Metadata:
-    """ Envia um pandas DataFrame para a localização
-        indicada
+    """ Sends a pandas DataFrame to the indicated
+        location
     """
     # pylint: disable=broad-exception-caught
 
@@ -67,7 +67,7 @@ def create_table_pandas_dataframe(
             "argument empty."
         )
 
-    # Envia o arquivo
+    # Sends the file
     schema_name, table_name = [
         default_schema_name,
         *table_name.split('.')
@@ -88,7 +88,7 @@ def create_table_pandas_dataframe(
         boto3_session=boto3_session,
     )
 
-    # Captura o metadado
+    # Captures the metadata
     res = get_table_metadata(
         boto3_session=boto3_session,
         data_catalog=data_catalog,

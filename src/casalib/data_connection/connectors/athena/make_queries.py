@@ -34,8 +34,8 @@ class MakeQuery(MakeQueryAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> List[str]:
-        """ Cria uma tabela se não existir e insere dados.
-            Realiza reordenação de colunas se necessário.
+        """ Creates a table if it doesn't exist and inserts data.
+            Performs column reordering if necessary.
         """
         # pylint: disable=too-many-locals
         output_queries = []
@@ -149,7 +149,7 @@ class MakeQuery(MakeQueryAbstract):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> List[str]:
-        """ Cria uma tabela com comando CREATE TABLE AS
+        """ Creates a table with CREATE TABLE AS command
         """
         # pylint: disable=too-many-arguments
 
@@ -201,7 +201,7 @@ class MakeQuery(MakeQueryAbstract):
         cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
         cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> List[str]:
-        """ Realiza uma agregação na query indicada """
+        """ Performs an aggregation on the indicated query """
         # pylint: disable=too-many-arguments
 
         return [

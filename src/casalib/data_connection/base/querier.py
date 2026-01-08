@@ -42,7 +42,7 @@ class Querier:
         cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
         sort: bool = False
     ) -> pd.DataFrame:
-        """ Realiza uma agregação na query indicada """
+        """ Performs an aggregation on the indicated query """
         # pylint: disable=too-many-arguments,too-many-locals
         groupby_: List[str] = groupby or []
 

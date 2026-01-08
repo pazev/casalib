@@ -15,13 +15,14 @@ from ._metadata import Metadata
 
 
 class BaseConnectionAbstract(ABC):
-    """ Classe abstrata de conexão, contendo os métodos
-        mínimos para funcionar.
+    """
+    Abstract connection class containing the minimum methods
+    required to function.
     """
     @abstractmethod
     def query_method_(self, query: str) -> pd.DataFrame:
-        """ Retorna o resultado da query como um
-            DataFrame
+        """
+        Returns the query result as a DataFrame.
         """
 
     @abstractmethod
@@ -30,11 +31,11 @@ class BaseConnectionAbstract(ABC):
         table_name: str,
         samples: Union[int, None] = 100
     ) -> pd.DataFrame:
-        """ Retorna uma amostra da tabela. O padrão são 100
-            registros, mas este número pode ser alterado no
-            parâmetro `samples`. Caso `samples` receba um
-            número negativo ou None retorna a tabela
-            inteira.
+        """
+        Returns a sample of the table. The default is 100
+        records, but this number can be changed in the
+        `samples` parameter. If `samples` is negative
+        or None, it returns the entire table.
         """
 
     @abstractmethod
@@ -43,13 +44,16 @@ class BaseConnectionAbstract(ABC):
         query: Optional[str] = None,
         table_name: Optional[str] = None,
     ) -> Metadata:
-        """ Retorna o metadados da tabela ou query. Somente
-            um dos dois deve ser setado.
+        """
+        Returns the metadata for the table or query. Only
+        one of the two should be set.
         """
 
     @abstractmethod
     def drop(self, table_name: str) -> "BaseConnectionAbstract":
-        """ Dropa uma tabela """
+        """
+        Drops a table.
+        """
 
     @abstractmethod
     def create_insert(
@@ -58,8 +62,10 @@ class BaseConnectionAbstract(ABC):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "BaseConnectionAbstract":
-        """ Cria uma tabela se não existir e insere dados.
-            Realiza reordenação de colunas se necessário.
+        """
+        Creates a table if it does not exist and inserts data.
+
+        Reorders columns if necessary.
         """
 
     @abstractmethod
@@ -69,7 +75,8 @@ class BaseConnectionAbstract(ABC):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> "BaseConnectionAbstract":
-        """ Cria uma tabela com comando CREATE TABLE AS
+        """
+        Creates a table using the CREATE TABLE AS command.
         """
 
     @abstractmethod
@@ -77,7 +84,9 @@ class BaseConnectionAbstract(ABC):
         self,
         table_name: str,
     ) -> Dict[Tuple[str, ...], str]:
-        """ Lista as partições """
+        """
+        Lists the partitions.
+        """
 
     @abstractmethod
     def drop_partitions(
@@ -85,7 +94,9 @@ class BaseConnectionAbstract(ABC):
         table_name: str,
         partitions_to_drop: List[Tuple[str, ...]],
     ) -> "BaseConnectionAbstract":
-        """ Dropa as partições indicadas na tabela """
+        """
+        Drops the specified partitions in the table.
+        """
 
     @abstractmethod
     def send_pandas(
@@ -94,7 +105,9 @@ class BaseConnectionAbstract(ABC):
         table_name: str,
         partition_cols: Optional[List[str]] = None,
     ) -> Metadata:
-        """ Envia um pandas DataFrame para o banco """
+        """
+        Sends a pandas DataFrame to the database.
+        """
 
     @abstractmethod
     def get_input_tables(

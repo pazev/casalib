@@ -1,4 +1,4 @@
 """
-Módulo para conexão a fontes de dados, para realização de
-diversos tipos de consultas e operações.
+Module for connecting to data sources to perform
+various types of queries and operations.
 """

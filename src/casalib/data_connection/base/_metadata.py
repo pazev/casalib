@@ -8,7 +8,9 @@ from typing import Any, Dict, Union, Optional
 
 @dataclass
 class Metadata:
-    """ Objeto para extrair dados de uma tabela no banco """
+    """
+    Object to extract data from a table in the database
+    """
     connection_type: str
     columns: Dict[str, str]
     partition_cols: Dict[str, str]

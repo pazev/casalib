@@ -1,6 +1,5 @@
 """
-Módulo faz a implementação do data_connection para o
-Amazon Athena.
+Module implements the data_connection for Amazon Athena.
 """
 from .base_connection import Boto3SessionMaker
 from .connection import AthenaConnection

@@ -1,6 +1,5 @@
 """
-Módulo com comandos para gerenciamento de templates da
-casalib.
+Module with commands for managing casalib templates.
 """
 import os
 from pathlib import Path
@@ -13,8 +12,8 @@ BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = BASE_DIR / 'templates'
 
 def list_templates() -> List[str]:
-    """ Lista os templates presentes na biblioteca, dentro
-        do diretório templates
+    """ Lists the templates present in the library, inside
+        the templates directory
     """
     return [
         f
@@ -24,7 +23,7 @@ def list_templates() -> List[str]:
 
 
 def run_template(name: str) -> None:
-    """ Executa um template, passando o nome do template
-        para ser executado
+    """ Executes a template, passing the template name
+        to be executed
     """
     cookiecutter(str(TEMPLATES_DIR / name))

@@ -1,6 +1,5 @@
 """
-Módulo para baixar, via requests, uma URL para um file
-object.
+Module to download, via requests, a URL into a file object.
 """
 import shutil
 from typing import BinaryIO
@@ -12,7 +11,7 @@ import requests
 def download_file(
     fileobj: BinaryIO, url: str, verify_ssl: bool = True
 ) -> requests.Response:
-    """ Baixa arquivos para um file object """
+    """ Downloads files into a file object """
     with warnings.catch_warnings():
         warnings.filterwarnings(
             action='ignore',

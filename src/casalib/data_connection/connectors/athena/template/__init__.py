@@ -1,5 +1,5 @@
 """
-Templates de queries para o AWS Athena.
+Query templates for AWS Athena.
 """
 from ._load_templates import templates_dict
 from ._template import AthenaTemplates

@@ -1,9 +1,9 @@
 """
-Módulo implementa estrutura de plugin para as receitas
-do inclusas neste diretório.
+Module implements a plugin structure for the recipes
+included in this directory.
 
-Basta que o arquivo .py implemente uma função make(**params)
-que a estrutura irá carregá-lo normalmente.
+It is enough for the .py file to implement a make(**params)
+function and the structure will load it normally.
 """
 import importlib
 import os

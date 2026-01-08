@@ -1,16 +1,16 @@
 """
-Neste módulo, temos funções para extrair informações de
-páginas de listagem de arquivos "Index of", que acontecem
-com frequência.
+In this module, we have functions to extract information
+from "Index of" file listing pages, which occur frequently.
 
-Temos duas funções:
-1. get_index_page: captura a página de index, como HTML;
-   verifica se ocorreu tudo certo e retorna um dicionário
-   com as informações;
+We have two functions:
+1. get_index_page: fetches the index page as HTML;
+   checks that everything went fine and returns a dictionary
+   with the information;
 
-2. process_index_page: processa a informação obtida pela
-   função get_index_page, gerando a lista de links
-   disponíveis.
+2. process_index_page: processes the information obtained by
+   the get_index_page function, generating the list of
+   available links.
+
 """
 # pylint: disable=unused-argument
 import re
@@ -26,8 +26,8 @@ def get_index_page(
     verify_ssl: bool = True,
     **kwargs: Any
 ) -> Dict[str, Any]:
-    """ Captura a lista de meses """
-    # Carrega lista
+    """ Gets the url code """
+    # Loads list
     with warnings.catch_warnings():
         warnings.filterwarnings(
             action='ignore',
@@ -41,8 +41,8 @@ def get_index_page(
 
     if response.status_code != 200:
         raise RuntimeError(
-            'Site retornou status code '
-            f'{response.status_code}. Por favor, verifique.'
+            'Site returned status code '
+            f'{response.status_code}. Please check.'
         )
 
     return {'url': url, 'content': response.text}
@@ -54,8 +54,9 @@ def process_index_page(
     filtering_regex: str,
     **kwargs: Any
 ) -> Dict[str, Any]:
-    """ Processa a lista HTML, extraindo os parámetros
-        desejados em um dicionário
+    """
+    Processes the HTML list, extracting the desired
+    parameters into a dictionary.
     """
     soup = BeautifulSoup(content, 'html.parser')
     elems = soup.select('li a')

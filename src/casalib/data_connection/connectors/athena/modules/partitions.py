@@ -1,5 +1,5 @@
 """
-Módulo com funções para lidar com partições de tabelas.
+Module with functions to handle table partitions.
 """
 # pylint: disable=too-many-arguments
 from typing import Dict, List, Tuple
@@ -20,7 +20,7 @@ def list_partitions(
     default_schema_name: str,
     table_name: str,
 ) -> Dict[Tuple[str, ...], str]:
-    """ Lista partições da tabela """
+    """ Lists table partitions """
     schema_name, table_name = split_table_name(
         table_name, default_schema_name
     )
@@ -45,20 +45,20 @@ def drop_partitions(
     table_name: str,
     partitions_to_drop: List[Tuple[str, ...]]
 ) -> None:
-    """ Dropa as partições indicadas na tabela """
-    # Quebra nome da tabela
+    """ Drops the indicated partitions in the table """
+    # Parses the table name
     schema_name, table_name = split_table_name(
         table_name, default_schema_name
     )
 
-    # Lista as partições
+    # Lists the partitions
     partitions = list_partitions(
         boto3_session=boto3_session,
         default_schema_name=schema_name,
         table_name=table_name
     )
 
-    # Apaga os arquivos
+    # Deletes the files
     for part_spec in partitions_to_drop:
         path = partitions[tuple(part_spec)]
         bucket, prefix = get_bucket_prefix(path)
@@ -71,7 +71,7 @@ def drop_partitions(
 
         delete_objects(boto3_session, files_to_delete)
 
-    # Apaga do metadados
+    # Deletes from metadata
     wr.catalog.delete_partitions(
         table=table_name,
         database=schema_name,

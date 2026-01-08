@@ -97,7 +97,7 @@ class ProcessingJob(AbstractRemoteJob):
         self,
         max_runtime_in_seconds: int
     ) -> Processor:
-        """ Create o Processor """
+        """ Create the Processor """
         if self.processor_maker is not None:
             return self.processor_maker(
                 base_job_name=self.get_basename(),
@@ -177,7 +177,7 @@ def gen_processing_input(
     if not source_.exists():
         raise FileNotFoundError(f'File not found: {source}')
 
-    # If is a falder, send all files in subfolders
+    # If is a folder, send all files in subfolders
     if source_.is_dir():
         return [
             ProcessingInput(

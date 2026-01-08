@@ -1,5 +1,5 @@
 """
-Template para selecionar a última partição de uma tabela
+Template to select the last partition of a table
 """
 from typing import Any, List
 

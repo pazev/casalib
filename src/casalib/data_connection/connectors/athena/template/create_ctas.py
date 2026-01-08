@@ -1,6 +1,6 @@
 """
-Template para operação de criar uma tabela através do
-resultado de uma query.
+Template for the operation of creating a table from
+query results.
 """
 from typing import List, Optional
 

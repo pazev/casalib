@@ -1,5 +1,5 @@
 """
-Template para inserir dados em uma tabela.
+Template to insert data into a table.
 """
 from typing import List, Optional
 

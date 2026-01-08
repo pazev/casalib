@@ -1,9 +1,9 @@
 """
-Módulo contém a implementação do drop de tabelas no Athena.
+Module contains the implementation of dropping tables in Athena.
 
-No Athena, o simples drop ainda mantém os dados presentes no
-S3. Assim, precisamos utilizar do boto3 para listar os
-arquivos e apagar os arquivos físicos presentes no S3.
+In Athena, a simple drop still keeps the data in S3.
+Therefore, we need to use boto3 to list the files and
+delete the physical files in S3.
 """
 # pylint: disable=too-many-arguments
 import boto3

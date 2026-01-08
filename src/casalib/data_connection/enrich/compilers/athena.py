@@ -148,7 +148,7 @@ def compile_enrichment_plans(
     partition_cols = partition_cols or []
 
     for idx, enr_plan in enumerate(enrichment_plan_list):
-        # Cria o nome da tabela
+        # Creates the table name
         optional_number = None if ignore_numbering else idx
 
         table_name = make_name_function(
@@ -582,7 +582,7 @@ class AthenaCompiler:
         ] = None
 
     def get_conn_(self) -> AthenaConnection:
-        """ Captura a conexão """
+        """ Captures the connection """
         if self.conn_maker is None:
             raise ValueError(
                 "Set the connection maker with set_conn_maker"
