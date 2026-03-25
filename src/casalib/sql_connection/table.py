@@ -58,7 +58,7 @@ class Table:
         '''
         Create a Query object that selects all data from the table.
         '''
-        q = Query(f"SELECT * FROM {self.table_name}", self.dialect)
+        q = self.dialect.select(self.table_name)
         q.set_worker(self.worker)
         return q
 
