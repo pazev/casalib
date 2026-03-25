@@ -43,7 +43,7 @@ class Query:
 
         raise RuntimeError('`Worker` not set. Please check')
 
-    def set_worker(self, worker: WorkerAbstract) -> "Query":
+    def set_worker(self, worker: Optional[WorkerAbstract]) -> "Query":
         self.worker_ = worker
         return self
 

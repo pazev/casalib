@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pandas as pd
 
@@ -23,7 +23,7 @@ class Table:
 
         raise RuntimeError('`Worker` not set. Please check')
 
-    def set_worker(self, worker: WorkerAbstract) -> "Table":
+    def set_worker(self, worker: Optional[WorkerAbstract]) -> "Table":
         self.worker_ = worker
         return self
 
