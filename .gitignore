@@ -8,6 +8,10 @@
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
+# Claude
+claude_talks/
+repo-tracked.zip
+
 # IPython
 profile_default/
 ipython_config.py

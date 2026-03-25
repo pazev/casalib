@@ -1,6 +1,0 @@
-{
-    "project_name": null,
-    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
-    "release": "1.0.0",
-    "description": null
-}
