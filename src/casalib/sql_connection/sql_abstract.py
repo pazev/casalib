@@ -150,15 +150,17 @@ class SqlDialectAbstract(ABC):
         `exclude`     — drop these columns (applied after add/rename).
         '''
 
+    @classmethod
     @abstractmethod
-    def has_fullname(self, table_name: str) -> bool:
+    def util_table_name_has_fullname(cls, table_name: str) -> bool:
         '''
         Return True if `table_name` contains all the information needed
         to fully identify the table (e.g. schema and table name).
         '''
 
+    @classmethod
     @abstractmethod
-    def split_tablename(self, table_name: str) -> Tuple[str, str]:
+    def util_table_name_split_schema(cls, table_name: str) -> Tuple[str, str]:
         '''
         Split `table_name` into a (schema, table) tuple.
         '''
