@@ -18,10 +18,9 @@ class Query:
     query: str
     dialect: SqlDialectAbstract
 
-    def set_worker(self, worker: WorkerAbstract) -> "Query":
-        self.worker_ = worker
-
-    def get_worker(self) -> WorkerAbstract:
+    @property
+    def worker(self) -> WorkerAbstract:
+        ''' Return the database worker '''
         worker = getattr(self, 'worker_', None)
 
         if worker:
@@ -29,9 +28,11 @@ class Query:
 
         raise RuntimeError('`Worker` not set. Please check')
 
-    def run(self) -> pd.DataFrame:
-        worker = self.get_worker()
-        return worker.run_query(self.query)
+    def set_worker(self, worker: WorkerAbstract) -> "Query":
+        self.worker_ = worker
+
+    def collect(self) -> pd.DataFrame:
+        return self.worker.run_query(self.query)
 
     def create_insert(
         self,
@@ -42,8 +43,7 @@ class Query:
         Create the table if it doesn't exist. Insert
         if it exist.
         '''
-        worker = self.get_worker()
-        return worker.create_insert(
+        return self.worker.create_insert(
             query=self.query,
             table_name=table_name,
             partition_cols=partition_cols,
@@ -57,8 +57,7 @@ class Query:
         '''
         Create the table via CTAS command.
         '''
-        worker = self.get_worker()
-        return worker.create_ctas(
+        return self.worker.create_ctas(
             query=self.query,
             table_name=table_name,
             partition_cols=partition_cols,
@@ -69,5 +68,4 @@ class Query:
         Get query metadata, returning the columns and types
         for the query.
         '''
-        worker = self.get_worker()
-        return worker.get_query_metadata(self.query)
+        return self.worker.get_query_metadata(self.query)
