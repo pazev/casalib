@@ -2,7 +2,7 @@
 Connection class
 '''
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Type
 
 from .query import Query
 from .sql_abstract import SqlDialectAbstract
@@ -12,7 +12,7 @@ from .worker_abstract import WorkerAbstract
 
 @dataclass
 class Connection:
-    dialect: SqlDialectAbstract
+    dialect: Type[SqlDialectAbstract]
 
     @property
     def worker(self) -> Optional[WorkerAbstract]:

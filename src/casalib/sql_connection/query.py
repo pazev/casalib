@@ -4,7 +4,7 @@
 In this class, we have methods to work with a stored query.
 """
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import pandas as pd
 
@@ -16,20 +16,20 @@ from .worker_abstract import WorkerAbstract
 @dataclass
 class Query:
     query: str
-    dialect: SqlDialectAbstract
+    dialect: Type[SqlDialectAbstract]
 
     @classmethod
     def from_table_name(
         cls,
         table_name: str,
-        dialect: SqlDialectAbstract
+        dialect: Type[SqlDialectAbstract],
     ) -> "Query":
         '''
         Create a Query that selects all data from `table_name`
         using the given dialect.
         '''
         return cls(
-            query=dialect.select(table_name).query,
+            query=dialect(input_query=table_name).select(table_name).query,
             dialect=dialect,
         )
 

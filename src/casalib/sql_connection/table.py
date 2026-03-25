@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type
 
 import pandas as pd
 
@@ -12,7 +12,7 @@ from .worker_abstract import WorkerAbstract
 @dataclass
 class Table:
     table_name: str
-    dialect: SqlDialectAbstract
+    dialect: Type[SqlDialectAbstract]
 
     @property
     def worker(self) -> WorkerAbstract:
@@ -58,7 +58,7 @@ class Table:
         '''
         Create a Query object that selects all data from the table.
         '''
-        q = self.dialect.select(self.table_name)
+        q = Query.from_table_name(self.table_name, self.dialect)
         q.set_worker(self.worker)
         return q
 
