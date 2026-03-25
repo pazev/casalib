@@ -1,9 +1,8 @@
-'''
-SqlDialectAbstract — base class for SQL dialect implementations.
+"""SqlDialectAbstract — base class for SQL dialect implementations.
 
-Each method transforms `input_query` into a new SQL string and
-returns it wrapped in a `Query` object.
-'''
+Each method transforms ``input_query`` into a new SQL string and returns
+it wrapped in a ``Query`` object.
+"""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -16,13 +15,25 @@ if TYPE_CHECKING:
 
 @dataclass
 class SqlDialectAbstract(ABC):
+    """Base class for SQL dialect implementations.
+
+    Attributes:
+        input_query: The SQL string that serves as input for transformation
+            methods.
+    """
+
     input_query: str
 
     @abstractmethod
     def select(self, table_name: str) -> Query:
-        '''
-        SELECT * FROM `table_name`.
-        '''
+        """Generate a SELECT * query for a table.
+
+        Args:
+            table_name: Fully qualified table name.
+
+        Returns:
+            A Query wrapping ``SELECT * FROM <table_name>``.
+        """
 
     @abstractmethod
     def agg(
@@ -41,47 +52,68 @@ class SqlDialectAbstract(ABC):
         cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
         cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
     ) -> Query:
-        '''
-        Aggregate `query`.
+        """Generate an aggregation query.
 
-        Generated column names follow the pattern `col__aggregation`
-        (e.g. `amount__sum`, `id__count_distinct`).
+        Generated column names follow the ``col__aggregation`` convention,
+        e.g. ``amount__sum``, ``id__count_distinct``.
 
-        `groupby`                     — columns to GROUP BY.
-        `count_`                      — columns to COUNT.
-        `count_null_`                 — columns to COUNT including nulls.
-        `count_distinct_`             — columns to COUNT DISTINCT.
-        `sum_`                        — columns to SUM.
-        `mean_`                       — columns to AVG.
-        `min_`                        — columns to MIN.
-        `max_`                        — columns to MAX.
-        `percentile_`                 — mapping of percentile (0–100) → columns.
-        `percentile_ignore_values_`   — mapping of column → list of values to
-                                        exclude before computing percentile.
-        `cols_before`                 — extra expressions prepended to SELECT,
-                                        either a column name or (expression, alias).
-        `cols_after`                  — extra expressions appended to SELECT,
-                                        either a column name or (expression, alias).
-        '''
+        Args:
+            query: Source SQL query to aggregate.
+            groupby: Columns to GROUP BY.
+            count_: Columns to COUNT.
+            count_null_: Columns to COUNT including nulls.
+            count_distinct_: Columns to COUNT DISTINCT.
+            sum_: Columns to SUM.
+            mean_: Columns to AVG.
+            min_: Columns to MIN.
+            max_: Columns to MAX.
+            percentile_: Mapping of percentile value (0–100) to columns.
+            percentile_ignore_values_: Mapping of column name to a list of
+                values to exclude before computing the percentile.
+            cols_before: Extra expressions prepended to SELECT. Each element
+                is either a column name or an ``(expression, alias)`` tuple.
+            cols_after: Extra expressions appended to SELECT. Each element
+                is either a column name or an ``(expression, alias)`` tuple.
+
+        Returns:
+            A Query wrapping the aggregation SQL.
+        """
 
     @abstractmethod
     def get_duplicates(self, keys: List[str]) -> Query:
-        '''
-        Return all rows whose combination of `keys` appears more than once.
-        '''
+        """Return all rows whose key combination appears more than once.
+
+        Args:
+            keys: Columns that form the duplicate key.
+
+        Returns:
+            A Query whose result contains only the duplicated rows.
+        """
 
     @abstractmethod
     def jsonify(self, keys: List[str], columns: List[str]) -> Query:
-        '''
-        Keep `keys` as regular columns and collapse `columns` into a
-        single JSON value. Syntax varies by dialect — implement in subclass.
-        '''
+        """Collapse columns into a single JSON value, keeping keys intact.
+
+        Syntax varies by SQL dialect and must be implemented in subclasses.
+
+        Args:
+            keys: Columns to keep as regular output columns.
+            columns: Columns to fold into a JSON value.
+
+        Returns:
+            A Query with ``keys`` as columns and a JSON column for the rest.
+        """
 
     @abstractmethod
     def sample(self, num_samples: int) -> Query:
-        '''
-        Return a sample of `num_samples` rows from the input query.
-        '''
+        """Return a sample of rows from the input query.
+
+        Args:
+            num_samples: Number of rows to return.
+
+        Returns:
+            A Query limited to ``num_samples`` rows.
+        """
 
     @abstractmethod
     def last_partitions(
@@ -89,14 +121,19 @@ class SqlDialectAbstract(ABC):
         date_ingestion: str,
         columns: List[str],
     ) -> Query:
-        '''
-        For each combination of `columns`, select only the rows from the
-        most recent `date_ingestion` value (i.e. the last partition).
+        """Select only the most recent partition rows for each key group.
 
-        `date_ingestion` — name of the date/timestamp column that identifies
-                           the ingestion partition.
-        `columns`        — columns that define the partition key.
-        '''
+        For each combination of ``columns``, keep only the rows where
+        ``date_ingestion`` is at its maximum value.
+
+        Args:
+            date_ingestion: Name of the date/timestamp column that identifies
+                the ingestion partition.
+            columns: Columns that define the partition key.
+
+        Returns:
+            A Query containing only the latest-partition rows.
+        """
 
     @abstractmethod
     def enrich(
@@ -105,16 +142,20 @@ class SqlDialectAbstract(ABC):
         keys: List[Union[str, Tuple[str, str]]],
         prefix: Optional[Union[str, List[str]]] = None,
     ) -> Query:
-        '''
-        LEFT JOIN `input_query` with one or more queries, bringing all
-        columns from the joined side(s).
+        """LEFT JOIN the input query with one or more queries.
 
-        `other`   — a single query string or a list of query strings to join.
-        `keys`    — join condition. Each element is either a column name
-                    (same in both sides) or a (left_col, right_col) tuple.
-        `prefix`  — optional prefix for columns coming from the joined side(s).
-                    If `other` is a list, a list of prefixes can be passed.
-        '''
+        All columns from the joined side(s) are included in the result.
+
+        Args:
+            other: A single query string or a list of query strings to join.
+            keys: Join condition. Each element is either a column name (same
+                on both sides) or a ``(left_col, right_col)`` tuple.
+            prefix: Optional prefix for columns from the joined side(s). When
+                ``other`` is a list, a list of prefixes may be provided.
+
+        Returns:
+            A Query wrapping the enriched result set.
+        """
 
     @abstractmethod
     def get_diffs(
@@ -123,15 +164,18 @@ class SqlDialectAbstract(ABC):
         keys: List[Union[str, Tuple[str, str]]],
         columns: List[Union[str, Tuple[str, str]]],
     ) -> Query:
-        '''
-        Compare `columns` between `input_query` and `other`.
+        """Compare column values between the input query and another query.
 
-        `other`   — the second query to compare against.
-        `keys`    — join keys. Each element is a column name (same in both
-                    queries) or a (left_col, right_col) tuple.
-        `columns` — columns to compare. Each element is a column name (same
-                    in both queries) or a (left_col, right_col) tuple.
-        '''
+        Args:
+            other: The second query to compare against.
+            keys: Join keys. Each element is a column name (same in both
+                queries) or a ``(left_col, right_col)`` tuple.
+            columns: Columns to compare. Each element is a column name (same
+                in both queries) or a ``(left_col, right_col)`` tuple.
+
+        Returns:
+            A Query showing the differing rows and their values.
+        """
 
     @abstractmethod
     def op(
@@ -141,26 +185,40 @@ class SqlDialectAbstract(ABC):
         select_only: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Query:
-        '''
-        Operate on the columns of `input_query`.
+        """Apply column-level operations to the input query.
 
-        `add`         — {new_col: sql_expression} columns to add.
-        `rename`      — {new_name: old_name} columns to rename.
-        `select_only` — keep only these columns (applied after add/rename).
-        `exclude`     — drop these columns (applied after add/rename).
-        '''
+        Args:
+            add: Mapping of ``{new_col: sql_expression}`` for columns to add.
+            rename: Mapping of ``{new_name: old_name}`` for columns to rename.
+            select_only: Keep only these columns. Applied after ``add`` and
+                ``rename``.
+            exclude: Drop these columns. Applied after ``add`` and ``rename``.
+
+        Returns:
+            A Query with the column transformations applied.
+        """
 
     @classmethod
     @abstractmethod
     def util_table_name_has_fullname(cls, table_name: str) -> bool:
-        '''
-        Return True if `table_name` contains all the information needed
-        to fully identify the table (e.g. schema and table name).
-        '''
+        """Check whether a table name is fully qualified.
+
+        Args:
+            table_name: Table name to inspect.
+
+        Returns:
+            True if ``table_name`` contains all information needed to
+            identify the table (e.g. both schema and table name).
+        """
 
     @classmethod
     @abstractmethod
     def util_table_name_split_schema(cls, table_name: str) -> Tuple[str, str]:
-        '''
-        Split `table_name` into a (schema, table) tuple.
-        '''
+        """Split a table name into its schema and table components.
+
+        Args:
+            table_name: Fully qualified table name.
+
+        Returns:
+            A ``(schema, table)`` tuple.
+        """
