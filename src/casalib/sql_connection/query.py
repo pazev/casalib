@@ -18,6 +18,21 @@ class Query:
     query: str
     dialect: SqlDialectAbstract
 
+    @classmethod
+    def from_table_name(
+        cls,
+        table_name: str,
+        dialect: SqlDialectAbstract
+    ) -> "Query":
+        '''
+        Create a Query that selects all data from `table_name`
+        using the given dialect.
+        '''
+        return cls(
+            query=dialect.select(table_name).query,
+            dialect=dialect,
+        )
+
     @property
     def worker(self) -> WorkerAbstract:
         ''' Return the database worker '''
