@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from .query import Query
@@ -18,43 +18,54 @@ if TYPE_CHECKING:
 class SqlDialectAbstract(ABC):
     input_query: str
 
-    def _query(self, sql: str) -> Query:
-        from .query import Query
-        return Query(sql, self)
-
+    @abstractmethod
     def select(self) -> Query:
         '''
         SELECT * FROM the input query.
         '''
-        return self._query(f"SELECT * FROM ({self.input_query}) t")
 
-    def agg(self, group_cols: List[str], agg_cols: Dict[str, str]) -> Query:
+    @abstractmethod
+    def agg(
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_null_: Optional[List[str]] = None,
+        count_distinct_: Optional[List[str]] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[Dict[int, List[str]]] = None,
+        percentile_ignore_values_: Optional[Dict[str, List[float]]] = None,
+        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
+    ) -> Query:
         '''
-        Aggregate the input query.
+        Aggregate `query`.
 
-        `group_cols` — columns to GROUP BY.
-        `agg_cols`   — mapping of output alias → aggregation expression,
-                       e.g. {"total": "SUM(amount)", "n": "COUNT(*)"}.
+        `groupby`                     — columns to GROUP BY.
+        `count_`                      — columns to COUNT.
+        `count_null_`                 — columns to COUNT considering nulls.
+        `count_distinct_`             — columns to COUNT DISTINCT.
+        `sum_`                        — columns to SUM.
+        `mean_`                       — columns to AVG.
+        `min_`                        — columns to MIN.
+        `max_`                        — columns to MAX.
+        `percentile_`                 — mapping of percentile (0–100) → columns.
+        `percentile_ignore_values_`   — mapping of column → list of values to
+                                        exclude before computing percentile.
+        `cols_before`                 — extra expressions prepended to SELECT,
+                                        either a column name or (expression, alias).
+        `cols_after`                  — extra expressions appended to SELECT,
+                                        either a column name or (expression, alias).
         '''
-        group = ", ".join(group_cols)
-        aggs = ", ".join(f"{expr} AS {alias}" for alias, expr in agg_cols.items())
-        select_cols = f"{group}, {aggs}" if group_cols else aggs
-        group_clause = f" GROUP BY {group}" if group_cols else ""
-        sql = f"SELECT {select_cols} FROM ({self.input_query}) t{group_clause}"
-        return self._query(sql)
 
+    @abstractmethod
     def get_duplicates(self, keys: List[str]) -> Query:
         '''
         Return all rows whose combination of `keys` appears more than once.
         '''
-        partition = ", ".join(keys)
-        sql = (
-            f"SELECT * FROM ("
-            f"SELECT *, COUNT(*) OVER (PARTITION BY {partition}) AS _dup_count "
-            f"FROM ({self.input_query}) t"
-            f") t WHERE _dup_count > 1"
-        )
-        return self._query(sql)
 
     @abstractmethod
     def jsonify(self, keys: List[str], columns: List[str]) -> Query:
@@ -63,8 +74,8 @@ class SqlDialectAbstract(ABC):
         single JSON value. Syntax varies by dialect — implement in subclass.
         '''
 
+    @abstractmethod
     def sample(self, num_samples: int) -> Query:
         '''
-        Return the first `num_samples` rows from the input query.
+        Return a sample of `num_samples` rows from the input query.
         '''
-        return self._query(f"SELECT * FROM ({self.input_query}) t LIMIT {num_samples}")
