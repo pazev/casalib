@@ -8,6 +8,7 @@ class TableInfo:
     table_name: str
     schema: str
     table: str
+    partition_cols: Dict[str, str]
     custom_metadata: Dict[str, str]
 
 

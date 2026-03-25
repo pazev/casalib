@@ -67,3 +67,46 @@ class WorkerAbstract(ABC):
         Return the query metadata for a given query,
         informing the columns and types.
         '''
+
+    @abstractmethod
+    def get_table_metadata(
+        self,
+        table_name: str,
+    ) -> Metadata:
+        '''
+        Return the metadata for a given table,
+        informing the columns and types.
+        '''
+
+    @abstractmethod
+    def drop(
+        self,
+        table_name: str,
+    ) -> None:
+        '''
+        Drop the given table. Must raise if the table
+        does not exist.
+        '''
+
+    @abstractmethod
+    def list_partitions(
+        self,
+        table_name: str,
+    ) -> pd.DataFrame:
+        '''
+        Return a DataFrame with all partitions for the
+        given table. Must raise if the table does not
+        exist or is not partitioned.
+        '''
+
+    @abstractmethod
+    def drop_partitions(
+        self,
+        table_name: str,
+        partitions: pd.DataFrame,
+    ) -> None:
+        '''
+        Drop the partitions described in `partitions`
+        from the given table. Must raise if the table
+        does not exist or is not partitioned.
+        '''

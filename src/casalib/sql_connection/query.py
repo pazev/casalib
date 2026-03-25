@@ -30,6 +30,7 @@ class Query:
 
     def set_worker(self, worker: WorkerAbstract) -> "Query":
         self.worker_ = worker
+        return self
 
     def collect(self) -> pd.DataFrame:
         return self.worker.run_query(self.query)
@@ -43,11 +44,12 @@ class Query:
         Create the table if it doesn't exist. Insert
         if it exist.
         '''
-        return self.worker.create_insert(
+        self.worker.create_insert(
             query=self.query,
             table_name=table_name,
             partition_cols=partition_cols,
         )
+        return self
 
     def create_ctas(
         self,
@@ -57,11 +59,12 @@ class Query:
         '''
         Create the table via CTAS command.
         '''
-        return self.worker.create_ctas(
+        self.worker.create_ctas(
             query=self.query,
             table_name=table_name,
             partition_cols=partition_cols,
         )
+        return self
 
     def metadata(self) -> Metadata:
         '''
