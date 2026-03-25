@@ -1,5 +1,5 @@
-import fnmatch
 from dataclasses import dataclass
+from typing import List, Tuple
 
 import pandas as pd
 
@@ -41,16 +41,9 @@ class Table:
         filter passed as positional argument.
         '''
         meta = self.metadata()
-        partitions = self.worker.list_partitions(self.table_name)
-
-        if not filters or meta.table is None:
-            return partitions
-
-        mask = pd.Series(True, index=partitions.index)
-        for col, pattern in zip(meta.table.partition_cols.keys(), filters):
-            mask &= partitions[col].apply(lambda v, p=pattern: fnmatch.fnmatch(str(v), p))
-
-        return partitions[mask]
+        partition_cols = list(meta.table.partition_cols.keys())
+        partitions = self.worker.list_partitions(self.table_name, *filters)
+        return pd.DataFrame(partitions, columns=partition_cols)
 
     def drop_partitions(self, *filters: str) -> None:
         '''
@@ -58,8 +51,7 @@ class Table:
         each partition column using the corresponding fnmatch
         filter passed as positional argument.
         '''
-        partitions = self.list_partitions(*filters)
-        self.worker.drop_partitions(self.table_name, partitions)
+        self.worker.drop_partitions(self.table_name, *filters)
 
     @property
     def query(self) -> Query:

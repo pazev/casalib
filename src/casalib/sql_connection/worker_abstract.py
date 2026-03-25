@@ -2,7 +2,7 @@
 Worker abstract class
 '''
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import List, Optional, Tuple
 
 import pandas as pd
 
@@ -92,21 +92,30 @@ class WorkerAbstract(ABC):
     def list_partitions(
         self,
         table_name: str,
-    ) -> pd.DataFrame:
+        *filters: str,
+    ) -> List[Tuple[str, ...]]:
         '''
-        Return a DataFrame with all partitions for the
-        given table. Must raise if the table does not
-        exist or is not partitioned.
+        Return a list of tuples representing all partitions
+        for the given table. Each tuple contains the partition
+        values, one per partition column. If `filters` are
+        provided, each filter (fnmatch pattern) is applied to
+        the corresponding partition column.
+
+        Must raise if the table does not exist or is not
+        partitioned.
         '''
 
     @abstractmethod
     def drop_partitions(
         self,
         table_name: str,
-        partitions: pd.DataFrame,
+        *filters: str,
     ) -> None:
         '''
-        Drop the partitions described in `partitions`
-        from the given table. Must raise if the table
-        does not exist or is not partitioned.
+        Drop the partitions from the given table matching
+        the given filters. Each filter (fnmatch pattern) is
+        applied to the corresponding partition column.
+
+        Must raise if the table does not exist or is not
+        partitioned.
         '''
