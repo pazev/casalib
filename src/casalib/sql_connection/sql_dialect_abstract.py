@@ -6,7 +6,114 @@ a new SQL string and returns it.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
+T_co = TypeVar('T_co', covariant=True)
+
+
+class SqlDialectProtocol(Protocol[T_co]):
+    """Structural interface shared by dialect
+    instances and _QueryBuilder.
+
+    Transformation methods return T_co:
+    - str for concrete dialect implementations
+    - Query for _QueryBuilder
+    """
+
+    # pylint: disable=missing-function-docstring
+
+    def select(
+        self, table_name: str
+    ) -> T_co: ...
+
+    def agg(  # pylint: disable=too-many-arguments
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_null_: Optional[List[str]] = None,
+        count_distinct_: Optional[
+            List[str]
+        ] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[
+            Dict[int, List[str]]
+        ] = None,
+        percentile_ignore_values_: Optional[
+            Dict[str, List[float]]
+        ] = None,
+        cols_before: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+        cols_after: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+    ) -> T_co: ...
+
+    def get_duplicates(
+        self, keys: List[str]
+    ) -> T_co: ...
+
+    def jsonify(
+        self,
+        keys: List[str],
+        columns: List[str],
+    ) -> T_co: ...
+
+    def sample(
+        self, num_samples: int
+    ) -> T_co: ...
+
+    def last_partitions(
+        self,
+        date_ingestion: str,
+        columns: List[str],
+    ) -> T_co: ...
+
+    def enrich(
+        self,
+        other: Union[str, List[str]],
+        keys: List[
+            Union[str, Tuple[str, str]]
+        ],
+        prefix: Optional[
+            Union[str, List[str]]
+        ] = None,
+    ) -> T_co: ...
+
+    def get_diffs(
+        self,
+        other: str,
+        keys: List[
+            Union[str, Tuple[str, str]]
+        ],
+        columns: List[
+            Union[str, Tuple[str, str]]
+        ],
+    ) -> T_co: ...
+
+    def op(
+        self,
+        add: Optional[Dict[str, str]] = None,
+        rename: Optional[
+            Dict[str, str]
+        ] = None,
+        select_only: Optional[
+            List[str]
+        ] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> T_co: ...
 
 
 @dataclass

@@ -5,11 +5,14 @@ from typing import Dict, List, Optional, Tuple, Type, Union
 import pandas as pd
 
 from .metadata import Metadata
-from .sql_dialect_abstract import SqlDialectAbstract
+from .sql_dialect_abstract import (
+    SqlDialectAbstract,
+    SqlDialectProtocol,
+)
 from .worker_abstract import WorkerAbstract
 
 
-class _QueryBuilder:
+class _QueryBuilder(SqlDialectProtocol["Query"]):
     """Proxy for a dialect instance that wires
     worker/dialect onto returned Queries.
 
