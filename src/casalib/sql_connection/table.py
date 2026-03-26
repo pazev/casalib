@@ -1,12 +1,12 @@
 """Table class."""
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Type
+from typing import Optional, Type
 
 import pandas as pd
 
 from .metadata import Metadata
 from .query import Query
-from .sql_abstract import SqlDialectAbstract
+from .sql_dialect_abstract import SqlDialectAbstract
 from .worker_abstract import WorkerAbstract
 
 

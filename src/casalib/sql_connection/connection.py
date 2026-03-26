@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional, Type
 
 from .query import Query
-from .sql_abstract import SqlDialectAbstract
+from .sql_dialect_abstract import SqlDialectAbstract
 from .table import Table
 from .worker_abstract import WorkerAbstract
 
