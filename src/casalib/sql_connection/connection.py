@@ -1,5 +1,5 @@
 """Connection class."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Type
 
 from .query import Query
@@ -17,6 +17,7 @@ class Connection:
     """
 
     dialect: Type[SqlDialectAbstract]
+    worker_: Optional[WorkerAbstract] = field(default=None, init=False, repr=False)
 
     @property
     def worker(self) -> Optional[WorkerAbstract]:
@@ -25,7 +26,7 @@ class Connection:
         Returns:
             The configured WorkerAbstract instance, or None.
         """
-        return getattr(self, 'worker_', None)
+        return self.worker_
 
     def set_worker(self, worker: WorkerAbstract) -> "Connection":
         """Set the database worker.
@@ -59,4 +60,6 @@ class Connection:
         Returns:
             A Table with the dialect and worker already set.
         """
-        return Table(table_name=table_name, dialect=self.dialect).set_worker(self.worker)
+        return Table(table_name=table_name, dialect=self.dialect).set_worker(
+            self.worker
+        )

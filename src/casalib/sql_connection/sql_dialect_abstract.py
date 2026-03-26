@@ -30,7 +30,7 @@ class SqlDialectAbstract(ABC):
         """
 
     @abstractmethod
-    def agg(
+    def agg(  # pylint: disable=too-many-arguments
         self,
         query: str,
         groupby: Optional[List[str]] = None,

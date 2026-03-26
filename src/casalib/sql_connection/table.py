@@ -1,5 +1,5 @@
 """Table class."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Type
 
 import pandas as pd
@@ -21,6 +21,7 @@ class Table:
 
     table_name: str
     dialect: Type[SqlDialectAbstract]
+    worker_: Optional[WorkerAbstract] = field(default=None, init=False, repr=False)
 
     @property
     def worker(self) -> WorkerAbstract:
@@ -32,10 +33,8 @@ class Table:
         Raises:
             RuntimeError: If the worker has not been set.
         """
-        worker = getattr(self, 'worker_', None)
-
-        if worker:
-            return worker
+        if self.worker_ is not None:
+            return self.worker_
 
         raise RuntimeError('`Worker` not set. Please check')
 
@@ -82,6 +81,8 @@ class Table:
             per matching partition.
         """
         meta = self.metadata()
+        if meta.table is None:
+            raise RuntimeError(f'No table metadata available for {self.table_name!r}')
         partition_cols = list(meta.table.partition_cols.keys())
         partitions = self.worker.list_partitions(self.table_name, *filters)
         return pd.DataFrame(partitions, columns=partition_cols)

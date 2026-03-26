@@ -1,5 +1,5 @@
 """Query class."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
@@ -45,7 +45,7 @@ class _QueryBuilder:
         """
         return self._wrap(self._instance.select(table_name))
 
-    def agg(
+    def agg(  # pylint: disable=too-many-arguments
         self,
         query: str,
         groupby: Optional[List[str]] = None,
@@ -228,6 +228,7 @@ class Query:
 
     query: str
     dialect: Type[SqlDialectAbstract]
+    worker_: Optional[WorkerAbstract] = field(default=None, init=False, repr=False)
 
     @classmethod
     def from_table_name(
@@ -259,10 +260,8 @@ class Query:
         Raises:
             RuntimeError: If the worker has not been set.
         """
-        worker = getattr(self, 'worker_', None)
-
-        if worker:
-            return worker
+        if self.worker_ is not None:
+            return self.worker_
 
         raise RuntimeError('`Worker` not set. Please check')
 
@@ -291,7 +290,7 @@ class Query:
         return _QueryBuilder(
             dialect_instance=self.dialect(input_query=self.query),
             dialect=self.dialect,
-            worker=getattr(self, 'worker_', None),
+            worker=self.worker_,
         )
 
     def collect(self) -> pd.DataFrame:
