@@ -10,25 +10,33 @@ from .worker_abstract import WorkerAbstract
 
 @dataclass
 class Connection:
-    """Entry point for building Query and Table objects.
+    """Entry point for building Query and Table
+    objects.
 
     Attributes:
-        dialect: Dialect class used for SQL generation.
+        dialect: Dialect class used for SQL
+            generation.
     """
 
     dialect: Type[SqlDialectAbstract]
-    worker_: Optional[WorkerAbstract] = field(default=None, init=False, repr=False)
+    worker_: Optional[WorkerAbstract] = field(
+        default=None, init=False, repr=False
+    )
 
     @property
     def worker(self) -> Optional[WorkerAbstract]:
-        """Return the database worker, or None if not set.
+        """Return the database worker, or None
+        if not set.
 
         Returns:
-            The configured WorkerAbstract instance, or None.
+            The configured WorkerAbstract
+            instance, or None.
         """
         return self.worker_
 
-    def set_worker(self, worker: WorkerAbstract) -> "Connection":
+    def set_worker(
+        self, worker: WorkerAbstract
+    ) -> "Connection":
         """Set the database worker.
 
         Args:
@@ -47,19 +55,26 @@ class Connection:
             query: SQL query string.
 
         Returns:
-            A Query with the dialect and worker already set.
+            A Query with the dialect and worker
+            already set.
         """
-        return Query(query=query, dialect=self.dialect).set_worker(self.worker)
+        return Query(
+            query=query, dialect=self.dialect
+        ).set_worker(self.worker)
 
     def table(self, table_name: str) -> Table:
-        """Create a Table object for the given table name.
+        """Create a Table object for the given
+        table name.
 
         Args:
-            table_name: Fully qualified table name.
+            table_name: Fully qualified table
+                name.
 
         Returns:
-            A Table with the dialect and worker already set.
+            A Table with the dialect and worker
+            already set.
         """
-        return Table(table_name=table_name, dialect=self.dialect).set_worker(
-            self.worker
-        )
+        return Table(
+            table_name=table_name,
+            dialect=self.dialect,
+        ).set_worker(self.worker)

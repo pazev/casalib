@@ -1,6 +1,8 @@
-"""SqlDialectAbstract — base class for SQL dialect implementations.
+"""SqlDialectAbstract — base class for SQL
+dialect implementations.
 
-Each method transforms ``input_query`` into a new SQL string and returns it.
+Each method transforms ``input_query`` into
+a new SQL string and returns it.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -12,8 +14,8 @@ class SqlDialectAbstract(ABC):
     """Base class for SQL dialect implementations.
 
     Attributes:
-        input_query: The SQL string that serves as input for transformation
-            methods.
+        input_query: The SQL string that serves
+            as input for transformation methods.
     """
 
     input_query: str
@@ -23,10 +25,12 @@ class SqlDialectAbstract(ABC):
         """Generate a SELECT * query for a table.
 
         Args:
-            table_name: Fully qualified table name.
+            table_name: Fully qualified table
+                name.
 
         Returns:
-            A ``SELECT * FROM <table_name>`` SQL string.
+            A ``SELECT * FROM <table_name>``
+            SQL string.
         """
 
     @abstractmethod
@@ -41,72 +45,105 @@ class SqlDialectAbstract(ABC):
         mean_: Optional[List[str]] = None,
         min_: Optional[List[str]] = None,
         max_: Optional[List[str]] = None,
-        percentile_: Optional[Dict[int, List[str]]] = None,
-        percentile_ignore_values_: Optional[Dict[str, List[float]]] = None,
-        cols_before: Optional[List[Union[str, Tuple[str, str]]]] = None,
-        cols_after: Optional[List[Union[str, Tuple[str, str]]]] = None,
+        percentile_: Optional[
+            Dict[int, List[str]]
+        ] = None,
+        percentile_ignore_values_: Optional[
+            Dict[str, List[float]]
+        ] = None,
+        cols_before: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+        cols_after: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
     ) -> str:
         """Generate an aggregation query.
 
-        Generated column names follow the ``col__aggregation`` convention,
-        e.g. ``amount__sum``, ``id__count_distinct``.
+        Generated column names follow the
+        ``col__aggregation`` convention, e.g.
+        ``amount__sum``, ``id__count_distinct``.
 
         Args:
             query: Source SQL query to aggregate.
             groupby: Columns to GROUP BY.
             count_: Columns to COUNT.
-            count_null_: Columns to COUNT including nulls.
-            count_distinct_: Columns to COUNT DISTINCT.
+            count_null_: Columns to COUNT
+                including nulls.
+            count_distinct_: Columns to COUNT
+                DISTINCT.
             sum_: Columns to SUM.
             mean_: Columns to AVG.
             min_: Columns to MIN.
             max_: Columns to MAX.
-            percentile_: Mapping of percentile value (0–100) to columns.
-            percentile_ignore_values_: Mapping of column name to a list of
-                values to exclude before computing the percentile.
-            cols_before: Extra expressions prepended to SELECT. Each element
-                is either a column name or an ``(expression, alias)`` tuple.
-            cols_after: Extra expressions appended to SELECT. Each element
-                is either a column name or an ``(expression, alias)`` tuple.
+            percentile_: Mapping of percentile
+                value (0–100) to columns.
+            percentile_ignore_values_: Mapping
+                of column name to a list of
+                values to exclude before
+                computing the percentile.
+            cols_before: Extra expressions
+                prepended to SELECT. Each element
+                is either a column name or an
+                ``(expression, alias)`` tuple.
+            cols_after: Extra expressions
+                appended to SELECT. Each element
+                is either a column name or an
+                ``(expression, alias)`` tuple.
 
         Returns:
             The aggregation SQL string.
         """
 
     @abstractmethod
-    def get_duplicates(self, keys: List[str]) -> str:
-        """Return all rows whose key combination appears more than once.
+    def get_duplicates(
+        self, keys: List[str]
+    ) -> str:
+        """Return all rows whose key combination
+        appears more than once.
 
         Args:
-            keys: Columns that form the duplicate key.
+            keys: Columns that form the
+                duplicate key.
 
         Returns:
-            SQL string whose result contains only the duplicated rows.
+            SQL string whose result contains
+            only the duplicated rows.
         """
 
     @abstractmethod
-    def jsonify(self, keys: List[str], columns: List[str]) -> str:
-        """Collapse columns into a single JSON value, keeping keys intact.
+    def jsonify(
+        self, keys: List[str], columns: List[str]
+    ) -> str:
+        """Collapse columns into a single JSON
+        value, keeping keys intact.
 
-        Syntax varies by SQL dialect and must be implemented in subclasses.
+        Syntax varies by SQL dialect and must be
+        implemented in subclasses.
 
         Args:
-            keys: Columns to keep as regular output columns.
-            columns: Columns to fold into a JSON value.
+            keys: Columns to keep as regular
+                output columns.
+            columns: Columns to fold into a
+                JSON value.
 
         Returns:
-            SQL string with ``keys`` as columns and a JSON column for the rest.
+            SQL string with ``keys`` as columns
+            and a JSON column for the rest.
         """
 
     @abstractmethod
     def sample(self, num_samples: int) -> str:
-        """Return a sample of rows from the input query.
+        """Return a sample of rows from the
+        input query.
 
         Args:
-            num_samples: Number of rows to return.
+            num_samples: Number of rows to
+                return.
 
         Returns:
-            SQL string limited to ``num_samples`` rows.
+            SQL string limited to
+            ``num_samples`` rows.
         """
 
     @abstractmethod
@@ -115,18 +152,25 @@ class SqlDialectAbstract(ABC):
         date_ingestion: str,
         columns: List[str],
     ) -> str:
-        """Select only the most recent partition rows for each key group.
+        """Select only the most recent partition
+        rows for each key group.
 
-        For each combination of ``columns``, keep only the rows where
-        ``date_ingestion`` is at its maximum value.
+        For each combination of ``columns``,
+        keep only the rows where
+        ``date_ingestion`` is at its maximum
+        value.
 
         Args:
-            date_ingestion: Name of the date/timestamp column that identifies
-                the ingestion partition.
-            columns: Columns that define the partition key.
+            date_ingestion: Name of the
+                date/timestamp column that
+                identifies the ingestion
+                partition.
+            columns: Columns that define the
+                partition key.
 
         Returns:
-            SQL string containing only the latest-partition rows.
+            SQL string containing only the
+            latest-partition rows.
         """
 
     @abstractmethod
@@ -136,19 +180,27 @@ class SqlDialectAbstract(ABC):
         keys: List[Union[str, Tuple[str, str]]],
         prefix: Optional[Union[str, List[str]]] = None,
     ) -> str:
-        """LEFT JOIN the input query with one or more queries.
+        """LEFT JOIN the input query with one or
+        more queries.
 
-        All columns from the joined side(s) are included in the result.
+        All columns from the joined side(s) are
+        included in the result.
 
         Args:
-            other: A single query string or a list of query strings to join.
-            keys: Join condition. Each element is either a column name (same
-                on both sides) or a ``(left_col, right_col)`` tuple.
-            prefix: Optional prefix for columns from the joined side(s). When
-                ``other`` is a list, a list of prefixes may be provided.
+            other: A single query string or a
+                list of query strings to join.
+            keys: Join condition. Each element
+                is either a column name (same on
+                both sides) or a
+                ``(left_col, right_col)`` tuple.
+            prefix: Optional prefix for columns
+                from the joined side(s). When
+                ``other`` is a list, a list of
+                prefixes may be provided.
 
         Returns:
-            SQL string wrapping the enriched result set.
+            SQL string wrapping the enriched
+            result set.
         """
 
     @abstractmethod
@@ -158,17 +210,24 @@ class SqlDialectAbstract(ABC):
         keys: List[Union[str, Tuple[str, str]]],
         columns: List[Union[str, Tuple[str, str]]],
     ) -> str:
-        """Compare column values between the input query and another query.
+        """Compare column values between the
+        input query and another query.
 
         Args:
-            other: The second query to compare against.
-            keys: Join keys. Each element is a column name (same in both
-                queries) or a ``(left_col, right_col)`` tuple.
-            columns: Columns to compare. Each element is a column name (same
-                in both queries) or a ``(left_col, right_col)`` tuple.
+            other: The second query to compare
+                against.
+            keys: Join keys. Each element is a
+                column name (same in both
+                queries) or a
+                ``(left_col, right_col)`` tuple.
+            columns: Columns to compare. Each
+                element is a column name (same
+                in both queries) or a
+                ``(left_col, right_col)`` tuple.
 
         Returns:
-            SQL string showing the differing rows and their values.
+            SQL string showing the differing
+            rows and their values.
         """
 
     @abstractmethod
@@ -179,39 +238,56 @@ class SqlDialectAbstract(ABC):
         select_only: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> str:
-        """Apply column-level operations to the input query.
+        """Apply column-level operations to the
+        input query.
 
         Args:
-            add: Mapping of ``{new_col: sql_expression}`` for columns to add.
-            rename: Mapping of ``{new_name: old_name}`` for columns to rename.
-            select_only: Keep only these columns. Applied after ``add`` and
-                ``rename``.
-            exclude: Drop these columns. Applied after ``add`` and ``rename``.
+            add: Mapping of
+                ``{new_col: sql_expression}``
+                for columns to add.
+            rename: Mapping of
+                ``{new_name: old_name}`` for
+                columns to rename.
+            select_only: Keep only these
+                columns. Applied after ``add``
+                and ``rename``.
+            exclude: Drop these columns. Applied
+                after ``add`` and ``rename``.
 
         Returns:
-            SQL string with the column transformations applied.
+            SQL string with the column
+            transformations applied.
         """
 
     @classmethod
     @abstractmethod
-    def util_table_name_has_fullname(cls, table_name: str) -> bool:
-        """Check whether a table name is fully qualified.
+    def util_table_name_has_fullname(
+        cls, table_name: str
+    ) -> bool:
+        """Check whether a table name is fully
+        qualified.
 
         Args:
             table_name: Table name to inspect.
 
         Returns:
-            True if ``table_name`` contains all information needed to
-            identify the table (e.g. both schema and table name).
+            True if ``table_name`` contains all
+            information needed to identify the
+            table (e.g. both schema and table
+            name).
         """
 
     @classmethod
     @abstractmethod
-    def util_table_name_split_schema(cls, table_name: str) -> Tuple[str, str]:
-        """Split a table name into its schema and table components.
+    def util_table_name_split_schema(
+        cls, table_name: str
+    ) -> Tuple[str, str]:
+        """Split a table name into its schema
+        and table components.
 
         Args:
-            table_name: Fully qualified table name.
+            table_name: Fully qualified table
+                name.
 
         Returns:
             A ``(schema, table)`` tuple.
