@@ -1,0 +1,499 @@
+"""AwsAthenaDialect — SqlDialectAbstract for
+Athena using Jinja2 CTE templates.
+"""
+from dataclasses import dataclass
+from pathlib import Path
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+
+from jinja2 import Environment, FileSystemLoader
+
+from ..sql_dialect_abstract import SqlDialectAbstract
+
+_TEMPLATES = (
+    Path(__file__).parent / "templates"
+)
+_env = Environment(
+    loader=FileSystemLoader(str(_TEMPLATES)),
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=True,
+)
+
+
+# ----------------------------------
+# Private helpers
+# ----------------------------------
+
+def _render(name: str, **ctx: object) -> str:
+    return _env.get_template(name).render(**ctx)
+
+
+def _normalise_keys(
+    keys: List[Union[str, Tuple[str, str]]],
+) -> List[Tuple[str, str]]:
+    """Normalise key list to (left, right) pairs.
+
+    Args:
+        keys: Mix of bare column names and
+            (left_col, right_col) tuples.
+
+    Returns:
+        List of (left_col, right_col) pairs.
+    """
+    result = []
+    for k in keys:
+        if isinstance(k, tuple):
+            result.append(k)
+        else:
+            result.append((k, k))
+    return result
+
+
+def _join_on(
+    keys: List[Union[str, Tuple[str, str]]],
+    left: str = "l",
+    right: str = "r",
+) -> str:
+    """Build a SQL join ON clause string.
+
+    Args:
+        keys: Column pairs defining the join.
+        left: Alias for the left table.
+        right: Alias for the right table.
+
+    Returns:
+        SQL string like
+        ``l.a = r.a AND l.b = r.b``.
+    """
+    pairs = _normalise_keys(keys)
+    return " AND ".join(
+        f"{left}.{lk} = {right}.{rk}"
+        for lk, rk in pairs
+    )
+
+
+def _col_expr(
+    item: Union[str, Tuple[str, str]],
+) -> str:
+    """Render a column or (expr, alias) tuple
+    as a SQL SELECT expression.
+
+    Args:
+        item: Column name or
+            (expression, alias) tuple.
+
+    Returns:
+        SQL expression string.
+    """
+    if isinstance(item, tuple):
+        expr, alias = item
+        return f"{expr} AS {alias}"
+    return item
+
+
+def _agg_select(  # pylint: disable=too-many-arguments
+    groupby: Optional[List[str]],
+    count_: Optional[List[str]],
+    count_null_: Optional[List[str]],
+    count_distinct_: Optional[List[str]],
+    sum_: Optional[List[str]],
+    mean_: Optional[List[str]],
+    min_: Optional[List[str]],
+    max_: Optional[List[str]],
+    percentile_: Optional[Dict[int, List[str]]],
+    percentile_ignore_values_: Optional[
+        Dict[str, List[float]]
+    ],
+    cols_before: Optional[
+        List[Union[str, Tuple[str, str]]]
+    ],
+    cols_after: Optional[
+        List[Union[str, Tuple[str, str]]]
+    ],
+) -> str:
+    """Build the SELECT expression list for agg.
+
+    Args:
+        groupby: Columns to GROUP BY.
+        count_: Columns to COUNT (non-null).
+        count_null_: Columns to count NULLs.
+        count_distinct_: Columns to COUNT
+            DISTINCT.
+        sum_: Columns to SUM.
+        mean_: Columns to AVG.
+        min_: Columns to MIN.
+        max_: Columns to MAX.
+        percentile_: Percentile → columns map.
+        percentile_ignore_values_: Column →
+            values to exclude map.
+        cols_before: Expressions prepended to
+            SELECT.
+        cols_after: Expressions appended to
+            SELECT.
+
+    Returns:
+        Comma-separated SELECT expression
+        string.
+    """
+    parts: List[str] = []
+    ignore = percentile_ignore_values_ or {}
+
+    for item in cols_before or []:
+        parts.append(_col_expr(item))
+    for col in groupby or []:
+        parts.append(col)
+    for col in count_ or []:
+        parts.append(
+            f"COUNT({col}) AS {col}__count"
+        )
+    for col in count_null_ or []:
+        parts.append(
+            f"SUM(CASE WHEN {col} IS NULL"
+            f" THEN 1 ELSE 0 END)"
+            f" AS {col}__count_null"
+        )
+    for col in count_distinct_ or []:
+        parts.append(
+            f"COUNT(DISTINCT {col})"
+            f" AS {col}__count_distinct"
+        )
+    for col in sum_ or []:
+        parts.append(
+            f"SUM({col}) AS {col}__sum"
+        )
+    for col in mean_ or []:
+        parts.append(
+            f"AVG({col}) AS {col}__mean"
+        )
+    for col in min_ or []:
+        parts.append(
+            f"MIN({col}) AS {col}__min"
+        )
+    for col in max_ or []:
+        parts.append(
+            f"MAX({col}) AS {col}__max"
+        )
+    for p, cols in (percentile_ or {}).items():
+        pct = p / 100.0
+        for col in cols:
+            excl = ignore.get(col, [])
+            if excl:
+                vals = ", ".join(
+                    str(v) for v in excl
+                )
+                inner = (
+                    f"CASE WHEN {col}"
+                    f" NOT IN ({vals})"
+                    f" THEN {col}"
+                    f" ELSE NULL END"
+                )
+            else:
+                inner = col
+            parts.append(
+                f"approx_percentile"
+                f"({inner}, {pct})"
+                f" AS {col}__p{p}"
+            )
+    for item in cols_after or []:
+        parts.append(_col_expr(item))
+
+    return ",\n    ".join(parts)
+
+
+def _op_select(
+    add: Optional[Dict[str, str]],
+    rename: Optional[Dict[str, str]],
+    select_only: Optional[List[str]],
+    exclude: Optional[List[str]],
+) -> str:
+    """Build the SELECT expression for op.
+
+    Requires Athena Engine v3 when ``exclude``
+    is used without ``select_only`` (uses
+    ``SELECT * EXCEPT``).
+
+    Args:
+        add: ``{new_col: sql_expression}``.
+        rename: ``{new_name: old_name}``.
+        select_only: Final column names to keep.
+        exclude: Final column names to drop.
+
+    Returns:
+        SQL SELECT expression string.
+    """
+    add = add or {}
+    rename = rename or {}
+
+    if select_only:
+        parts: List[str] = []
+        for col in select_only:
+            if col in rename:
+                old = rename[col]
+                parts.append(f"{old} AS {col}")
+            elif col in add:
+                parts.append(
+                    f"{add[col]} AS {col}"
+                )
+            else:
+                parts.append(col)
+        return ",\n    ".join(parts)
+
+    # No select_only — use SELECT * EXCEPT
+    excluded: List[str] = (
+        list(rename.values()) + list(exclude or [])
+    )
+    extras: List[str] = [
+        f"{old} AS {new}"
+        for new, old in rename.items()
+    ] + [
+        f"{expr} AS {new}"
+        for new, expr in add.items()
+    ]
+
+    if not excluded and not extras:
+        return "*"
+    if not excluded:
+        return "*, " + ", ".join(extras)
+    excl_str = ", ".join(excluded)
+    if not extras:
+        return f"* EXCEPT ({excl_str})"
+    return (
+        f"* EXCEPT ({excl_str}),\n    "
+        + ",\n    ".join(extras)
+    )
+
+
+# ----------------------------------
+# Dialect
+# ----------------------------------
+
+@dataclass
+class AwsAthenaDialect(SqlDialectAbstract):
+    """SqlDialectAbstract implementation for
+    AWS Athena (Presto/Trino SQL).
+
+    Methods return SQL strings built from
+    Jinja2 templates that use CTEs to compose
+    transformations cleanly.
+
+    Note:
+        ``op`` with ``exclude`` requires Athena
+        Engine v3 (``SELECT * EXCEPT``).
+        ``enrich`` with ``prefix`` is not
+        supported — alias columns in your query
+        before calling enrich.
+    """
+
+    def select(self, table_name: str) -> str:
+        return _render(
+            "select.sql",
+            table_name=table_name,
+        )
+
+    def agg(  # pylint: disable=too-many-arguments
+        self,
+        query: str,
+        groupby: Optional[List[str]] = None,
+        count_: Optional[List[str]] = None,
+        count_null_: Optional[List[str]] = None,
+        count_distinct_: Optional[
+            List[str]
+        ] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[
+            Dict[int, List[str]]
+        ] = None,
+        percentile_ignore_values_: Optional[
+            Dict[str, List[float]]
+        ] = None,
+        cols_before: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+        cols_after: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+    ) -> str:
+        select_list = _agg_select(
+            groupby=groupby,
+            count_=count_,
+            count_null_=count_null_,
+            count_distinct_=count_distinct_,
+            sum_=sum_,
+            mean_=mean_,
+            min_=min_,
+            max_=max_,
+            percentile_=percentile_,
+            percentile_ignore_values_=(
+                percentile_ignore_values_
+            ),
+            cols_before=cols_before,
+            cols_after=cols_after,
+        )
+        return _render(
+            "agg.sql",
+            input_query=self.input_query,
+            select_list=select_list,
+            groupby=groupby,
+        )
+
+    def get_duplicates(
+        self, keys: List[str]
+    ) -> str:
+        join_on = _join_on(
+            keys, left="base", right="counts"
+        )
+        return _render(
+            "get_duplicates.sql",
+            input_query=self.input_query,
+            keys=keys,
+            join_on=join_on,
+        )
+
+    def jsonify(
+        self,
+        keys: List[str],
+        columns: List[str],
+    ) -> str:
+        col_names = ", ".join(
+            f"'{c}'" for c in columns
+        )
+        col_values = ", ".join(
+            f"CAST({c} AS VARCHAR)"
+            for c in columns
+        )
+        return _render(
+            "jsonify.sql",
+            input_query=self.input_query,
+            keys=keys,
+            col_names=col_names,
+            col_values=col_values,
+        )
+
+    def sample(self, num_samples: int) -> str:
+        return _render(
+            "sample.sql",
+            input_query=self.input_query,
+            num_samples=num_samples,
+        )
+
+    def last_partitions(
+        self,
+        date_ingestion: str,
+        columns: List[str],
+    ) -> str:
+        join_on = _join_on(
+            columns,
+            left="base",
+            right="__latest",
+        )
+        return _render(
+            "last_partitions.sql",
+            input_query=self.input_query,
+            date_ingestion=date_ingestion,
+            columns=columns,
+            join_on=join_on,
+        )
+
+    def enrich(
+        self,
+        other: Union[str, List[str]],
+        keys: List[Union[str, Tuple[str, str]]],
+        prefix: Optional[
+            Union[str, List[str]]
+        ] = None,
+    ) -> str:
+        others = (
+            [other] if isinstance(other, str)
+            else other
+        )
+        join_ons = [
+            _join_on(
+                keys,
+                left="base",
+                right=f"__other_{i}",
+            )
+            for i in range(len(others))
+        ]
+        return _render(
+            "enrich.sql",
+            input_query=self.input_query,
+            others=others,
+            join_ons=join_ons,
+        )
+
+    def get_diffs(
+        self,
+        other: str,
+        keys: List[Union[str, Tuple[str, str]]],
+        columns: List[
+            Union[str, Tuple[str, str]]
+        ],
+    ) -> str:
+        norm_keys = _normalise_keys(keys)
+        norm_cols = _normalise_keys(columns)
+        join_on = _join_on(
+            keys, left="l", right="r"
+        )
+        key_cols = ",\n    ".join(
+            f"COALESCE(l.{lk}, r.{rk}) AS {lk}"
+            for lk, rk in norm_keys
+        )
+        diff_cols = ",\n    ".join(
+            f"l.{lc} AS {lc}__left,"
+            f"\n    r.{rc} AS {rc}__right"
+            for lc, rc in norm_cols
+        )
+        diff_where = "\n    OR ".join(
+            f"(l.{lc} IS DISTINCT FROM r.{rc})"
+            for lc, rc in norm_cols
+        )
+        return _render(
+            "get_diffs.sql",
+            input_query=self.input_query,
+            other=other,
+            join_on=join_on,
+            key_cols=key_cols,
+            diff_cols=diff_cols,
+            diff_where=diff_where,
+        )
+
+    def op(
+        self,
+        add: Optional[Dict[str, str]] = None,
+        rename: Optional[Dict[str, str]] = None,
+        select_only: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> str:
+        select_list = _op_select(
+            add=add,
+            rename=rename,
+            select_only=select_only,
+            exclude=exclude,
+        )
+        return _render(
+            "op.sql",
+            input_query=self.input_query,
+            select_list=select_list,
+        )
+
+    @classmethod
+    def util_table_name_has_fullname(
+        cls, table_name: str
+    ) -> bool:
+        return "." in table_name
+
+    @classmethod
+    def util_table_name_split_schema(
+        cls, table_name: str
+    ) -> Tuple[str, str]:
+        schema, table = table_name.split(".", 1)
+        return schema, table
