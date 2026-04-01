@@ -134,7 +134,7 @@ def make_sql_agg_query_(
         'count_distinct': count_distinct_,
         'count_null': count_null_,
         'sum': sum_,
-        'mean': mean_,
+        'avg': mean_,
         'min': min_,
         'max': max_,
     }
