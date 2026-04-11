@@ -1,5 +1,5 @@
-"""AwsAthenaDialect — SqlDialectAbstract for
-Athena using Jinja2 CTE templates.
+"""PrestoDialect — SqlDialectAbstract for
+Presto/Trino SQL using Jinja2 CTE templates.
 """
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +13,7 @@ from typing import (
 
 from jinja2 import Environment, FileSystemLoader
 
-from ..sql_dialect_abstract import SqlDialectAbstract
+from ...sql_dialect_abstract import SqlDialectAbstract
 
 _TEMPLATES = (
     Path(__file__).parent / "templates"
@@ -274,17 +274,17 @@ def _op_select(
 # ----------------------------------
 
 @dataclass
-class AwsAthenaDialect(SqlDialectAbstract):
+class PrestoDialect(SqlDialectAbstract):
     """SqlDialectAbstract implementation for
-    AWS Athena (Presto/Trino SQL).
+    Presto/Trino SQL.
 
     Methods return SQL strings built from
     Jinja2 templates that use CTEs to compose
     transformations cleanly.
 
     Note:
-        ``op`` with ``exclude`` requires Athena
-        Engine v3 (``SELECT * EXCEPT``).
+        ``op`` with ``exclude`` requires Presto
+        0.217+ / Trino (``SELECT * EXCEPT``).
         ``enrich`` with ``prefix`` is not
         supported — alias columns in your query
         before calling enrich.

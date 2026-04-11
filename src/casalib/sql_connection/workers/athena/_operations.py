@@ -20,7 +20,7 @@ import awswrangler as wr
 import boto3
 import pandas as pd
 
-from ..metadata import Metadata, TableInfo
+from ...metadata import Metadata, TableInfo
 
 
 # ----------------------------------

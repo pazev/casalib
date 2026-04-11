@@ -8,8 +8,8 @@ from typing import Any, List, Optional, Tuple
 import boto3
 import pandas as pd
 
-from ..metadata import Metadata
-from ..worker_abstract import WorkerAbstract
+from ...metadata import Metadata
+from ...worker_abstract import WorkerAbstract
 from . import _operations as ops
 
 
