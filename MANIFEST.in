@@ -1,2 +1,4 @@
 include version
 graft src/casalib/scaffolding/templates/
+graft src/casalib/sql_connection/dialects/ansi/templates/
+graft src/casalib/sql_connection/dialects/presto/templates/
