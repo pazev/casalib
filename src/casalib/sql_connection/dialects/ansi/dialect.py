@@ -104,7 +104,7 @@ def _col_expr(
     return item
 
 
-def _agg_select(  # pylint: disable=too-many-arguments
+def _agg_select(
     groupby: Optional[List[str]],
     count_: Optional[List[str]],
     count_null_: Optional[List[str]],
@@ -124,6 +124,8 @@ def _agg_select(  # pylint: disable=too-many-arguments
         List[Union[str, Tuple[str, str]]]
     ],
 ) -> str:
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
     """Build the SELECT expression list for agg.
 
     Args:
@@ -315,6 +317,7 @@ class AnsiDialect(SqlDialectAbstract):
         self,
         query: str,
         groupby: Optional[List[str]] = None,
+        *,
         count_: Optional[List[str]] = None,
         count_null_: Optional[List[str]] = None,
         count_distinct_: Optional[

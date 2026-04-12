@@ -37,6 +37,7 @@ class MockDialect(SqlDialectAbstract):
         self,
         query: str,
         groupby=None,
+        *,
         count_=None,
         count_null_=None,
         count_distinct_=None,

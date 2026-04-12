@@ -65,6 +65,7 @@ class _QueryBuilder(SqlDialectProtocol["Query"]):
         self,
         query: str,
         groupby: Optional[List[str]] = None,
+        *,
         count_: Optional[List[str]] = None,
         count_null_: Optional[List[str]] = None,
         count_distinct_: Optional[List[str]] = None,
