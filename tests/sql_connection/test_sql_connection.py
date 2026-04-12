@@ -35,7 +35,6 @@ class MockDialect(SqlDialectAbstract):
 
     def agg(  # pylint: disable=too-many-arguments
         self,
-        query: str,
         groupby=None,
         *,
         count_=None,
@@ -50,7 +49,7 @@ class MockDialect(SqlDialectAbstract):
         cols_before=None,
         cols_after=None,
     ) -> str:
-        return f"SELECT agg FROM ({query})"
+        return f"SELECT agg FROM ({self.input_query})"
 
     def get_duplicates(
         self, keys: List[str]
@@ -314,10 +313,7 @@ class TestQueryBuilder:
         q = Query(
             query="SELECT * FROM t", dialect=dialect
         ).set_worker(worker)
-        result = q.q.agg(
-            query="SELECT * FROM t",
-            groupby=["col"],
-        )
+        result = q.q.agg(groupby=["col"])
         assert isinstance(result, Query)
         assert result.worker_ is worker
 

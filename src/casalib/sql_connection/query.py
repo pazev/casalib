@@ -63,7 +63,6 @@ class _QueryBuilder(SqlDialectProtocol["Query"]):
 
     def agg(  # pylint: disable=too-many-arguments
         self,
-        query: str,
         groupby: Optional[List[str]] = None,
         *,
         count_: Optional[List[str]] = None,
@@ -89,7 +88,6 @@ class _QueryBuilder(SqlDialectProtocol["Query"]):
         """Generate an aggregation query.
 
         Args:
-            query: Source SQL query to aggregate.
             groupby: Columns to GROUP BY.
             count_: Columns to COUNT.
             count_null_: Columns to COUNT
@@ -115,7 +113,6 @@ class _QueryBuilder(SqlDialectProtocol["Query"]):
         """
         return self._wrap(
             self._instance.agg(
-                query=query,
                 groupby=groupby,
                 count_=count_,
                 count_null_=count_null_,

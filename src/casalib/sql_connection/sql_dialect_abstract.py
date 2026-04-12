@@ -36,7 +36,6 @@ class SqlDialectProtocol(Protocol[T_co]):
 
     def agg(  # pylint: disable=too-many-arguments
         self,
-        query: str,
         groupby: Optional[List[str]] = None,
         *,
         count_: Optional[List[str]] = None,
@@ -144,7 +143,6 @@ class SqlDialectAbstract(ABC):
     @abstractmethod
     def agg(  # pylint: disable=too-many-arguments
         self,
-        query: str,
         groupby: Optional[List[str]] = None,
         *,
         count_: Optional[List[str]] = None,
@@ -174,7 +172,6 @@ class SqlDialectAbstract(ABC):
         ``amount__sum``, ``id__count_distinct``.
 
         Args:
-            query: Source SQL query to aggregate.
             groupby: Columns to GROUP BY.
             count_: Columns to COUNT.
             count_null_: Columns to COUNT
