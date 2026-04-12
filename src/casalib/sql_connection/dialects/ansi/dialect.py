@@ -126,6 +126,9 @@ def _agg_select(
 ) -> str:
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-positional-arguments
+    # pylint: disable=too-complex
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-locals
     """Build the SELECT expression list for agg.
 
     Args:
