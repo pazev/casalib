@@ -661,22 +661,20 @@ def _get_raw_partitions(
         Mapping of S3 path to list of partition
         column values.
     """
-    raw = wr.catalog.get_partitions(
-        database=schema, table=table
+    raw: Dict[str, List[str]] = (
+        wr.catalog.get_partitions(
+            database=schema, table=table
+        )
     )
     if not filters:
-        return {
-            path: list(vals.values())
-            for path, vals in raw.items()
-        }
+        return dict(raw)
     result: Dict[str, List[str]] = {}
-    for path, vals_dict in raw.items():
-        row = tuple(vals_dict.values())
+    for path, vals in raw.items():
         if all(
             fnmatch.fnmatch(v, f)
-            for v, f in zip(row, filters)
+            for v, f in zip(vals, filters)
         ):
-            result[path] = list(row)
+            result[path] = list(vals)
     return result
 
 
