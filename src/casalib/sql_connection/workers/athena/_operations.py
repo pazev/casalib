@@ -24,6 +24,39 @@ from ...metadata import Metadata, TableInfo
 
 
 # ----------------------------------
+# Type normalisation
+# ----------------------------------
+
+_CATALOG = "AwsDataCatalog"
+
+# Common Athena type aliases unified to a
+# canonical form for compatibility checks.
+_TYPE_ALIASES: Dict[str, str] = {
+    "string": "varchar",
+    "int": "integer",
+    "long": "bigint",
+    "float": "real",
+}
+
+
+def _normalize_type(t: str) -> str:
+    """Lowercase, strip precision spec, apply
+    alias map.
+
+    ``decimal(10, 2)`` → ``decimal``,
+    ``string`` → ``varchar``, etc.
+
+    Args:
+        t: Raw Athena type string.
+
+    Returns:
+        Normalised type string.
+    """
+    t = t.strip().lower().split("(")[0]
+    return _TYPE_ALIASES.get(t, t)
+
+
+# ----------------------------------
 # S3 helpers
 # ----------------------------------
 
@@ -124,6 +157,37 @@ def _fetch(
     return pd.DataFrame(rows, columns=headers)
 
 
+def _col_info(
+    client: Any,
+    execution_id: str,
+) -> Dict[str, str]:
+    """Return {label: native_type} from a
+    completed query execution.
+
+    Reads the first page of results only;
+    ColumnInfo is present even for 0-row
+    result sets.
+
+    Args:
+        client: boto3 Athena client.
+        execution_id: Completed query ID.
+
+    Returns:
+        Ordered mapping of column label to
+        Athena native type string.
+    """
+    resp = client.get_query_results(
+        QueryExecutionId=execution_id,
+        MaxResults=1,
+    )
+    info = (
+        resp["ResultSet"]
+        ["ResultSetMetadata"]
+        ["ColumnInfo"]
+    )
+    return {c["Label"]: c["Type"] for c in info}
+
+
 @contextmanager
 def _managed_execution(
     client: Any,
@@ -167,8 +231,8 @@ def _managed_execution(
         raise
 
 
-def run_query(
-    client: Any,
+def run_query(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    session: boto3.Session,
     query: str,
     database: str,
     s3_output: str,
@@ -183,7 +247,7 @@ def run_query(
     are deleted.
 
     Args:
-        client: boto3 Athena client.
+        session: boto3 Session.
         query: SQL query string to execute.
         database: Default Glue/Athena database.
         s3_output: S3 URI for query results.
@@ -199,6 +263,7 @@ def run_query(
         RuntimeError: If the query fails or
             is cancelled on the Athena side.
     """
+    client = session.client("athena")
     with _managed_execution(
         client, query, database,
         s3_output, workgroup,
@@ -208,30 +273,173 @@ def run_query(
 
 
 # ----------------------------------
-# awswrangler operations
+# Metadata helpers
 # ----------------------------------
 
-def create_insert(
+def _parse_table_meta(
+    resp: Dict[str, Any],
+) -> Tuple[
+    Dict[str, str],
+    Dict[str, str],
+    Dict[str, str],
+]:
+    """Parse a GetTableMetadata API response.
+
+    Args:
+        resp: Full boto3 response dict.
+
+    Returns:
+        Tuple of (non-partition cols,
+        partition cols, table parameters),
+        each as an ordered {name: type} dict.
+        Column order matches the API response.
+    """
+    meta = resp["TableMetadata"]
+    cols = {
+        c["Name"]: c["Type"]
+        for c in meta.get("Columns", [])
+    }
+    part_cols = {
+        c["Name"]: c["Type"]
+        for c in meta.get("PartitionKeys", [])
+    }
+    params = {
+        k: str(v)
+        for k, v in meta.get(
+            "Parameters", {}
+        ).items()
+    }
+    return cols, part_cols, params
+
+
+def _check_schema_compatibility(
+    table_meta: Metadata,
+    query_meta: Metadata,
+) -> None:
+    """Verify the query output is compatible
+    with the target table schema.
+
+    Every column defined in the table must be
+    present in the query output with a
+    compatible type. Extra columns in the query
+    are ignored (they will be excluded by
+    ``_reorder_query``).
+
+    Args:
+        table_meta: Metadata of the target
+            table.
+        query_meta: Metadata inferred from the
+            source query.
+
+    Raises:
+        ValueError: A required column is absent
+            from the query output.
+        TypeError: A column's type in the query
+            output is incompatible with the
+            table definition.
+    """
+    for col, col_type in table_meta.cols.items():
+        if col not in query_meta.cols:
+            raise ValueError(
+                f"Column '{col}' is required by"
+                f" table but missing from query."
+            )
+        q_type = _normalize_type(
+            query_meta.cols[col]
+        )
+        t_type = _normalize_type(col_type)
+        if q_type != t_type:
+            raise TypeError(
+                f"Column '{col}': table expects"
+                f" '{col_type}', query returns"
+                f" '{query_meta.cols[col]}'."
+            )
+
+
+def _reorder_query(
+    query: str,
+    col_order: List[str],
+) -> str:
+    """Wrap query in a CTE and SELECT columns
+    in ``col_order``.
+
+    The result is suitable for use as the
+    body of an ``INSERT INTO`` statement whose
+    target table defines columns in that order.
+
+    Args:
+        query: Original SQL query.
+        col_order: Column names in the order
+            required by the target table
+            (non-partition first, partition
+            last).
+
+    Returns:
+        Rewritten SQL query.
+    """
+    cols = ",\n    ".join(col_order)
+    return (
+        f"WITH __src AS (\n"
+        f"{query}\n"
+        f")\n"
+        f"SELECT\n"
+        f"    {cols}\n"
+        f"FROM __src"
+    )
+
+
+# ----------------------------------
+# awswrangler / boto3 operations
+# ----------------------------------
+
+def create_insert(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+    session: boto3.Session,
     query: str,
     table_name: str,
     s3_output: str,
     workgroup: str,
+    database: str,
+    catalog: str = _CATALOG,
+    poll_interval: float = 0.5,
     partition_cols: Optional[List[str]] = None,
 ) -> str:
     """Create a table or insert into an existing
     one using awswrangler.
 
+    When the table already exists, the query
+    schema is validated against the table
+    schema before inserting:
+
+    1. Both missing columns and type mismatches
+       raise an error.
+    2. The query columns are reordered to match
+       the table's column definition order
+       (non-partition columns first, partition
+       columns last).
+
     Args:
+        session: boto3 Session.
         query: SELECT query to materialise.
         table_name: Destination table name
             (schema.table format).
         s3_output: S3 URI for output data.
         workgroup: Athena workgroup name.
+        database: Default Athena database for
+            metadata queries.
+        catalog: Athena data catalog name.
+        poll_interval: Seconds between status
+            polls for the metadata query.
         partition_cols: Partition keys used
             only when creating a new table.
 
     Returns:
         The resolved table name.
+
+    Raises:
+        ValueError: A required column is absent
+            from the query output.
+        TypeError: A column's type in the query
+            is incompatible with the table.
     """
     schema, table = table_name.split(".", 1)
     exists = wr.catalog.does_table_exist(
@@ -250,15 +458,37 @@ def create_insert(
             wait=True,
         )
     else:
+        table_meta = get_table_metadata(
+            session=session,
+            table_name=table_name,
+            catalog=catalog,
+        )
+        query_meta = get_query_metadata(
+            session=session,
+            query=query,
+            database=database,
+            s3_output=s3_output,
+            workgroup=workgroup,
+            poll_interval=poll_interval,
+            catalog=catalog,
+        )
+        _check_schema_compatibility(
+            table_meta, query_meta
+        )
+        col_order = list(table_meta.cols.keys())
+        ordered_query = _reorder_query(
+            query, col_order
+        )
         wr.athena.start_query_execution(
             sql=(
-                f"INSERT INTO {table_name}"
-                f"\n{query}"
+                f"INSERT INTO {table_name}\n"
+                f"{ordered_query}"
             ),
             database=schema,
             s3_output=s3_output,
             workgroup=workgroup,
             wait=True,
+            boto3_session=session,
         )
     return table_name
 
@@ -301,90 +531,92 @@ def create_ctas(
     return table_name
 
 
-def get_query_metadata(
+def get_query_metadata(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    session: boto3.Session,
     query: str,
     database: str,
+    s3_output: str,
+    workgroup: str,
+    poll_interval: float,
+    catalog: str = _CATALOG,  # pylint: disable=unused-argument
 ) -> Metadata:
-    """Return metadata for a query result set
-    using awswrangler.
+    """Return metadata for a query result set.
 
-    Executes a zero-row version of the query
-    to infer the column schema.
+    Runs ``SELECT * FROM (<query>) LIMIT 0``
+    via the boto3 Athena client and reads the
+    native Athena column types from the
+    ``ColumnInfo`` section of the response.
+    No temporary tables are created.
 
     Args:
+        session: boto3 Session.
         query: SQL query to inspect.
         database: Default Glue/Athena database.
+        s3_output: S3 URI for query results.
+        workgroup: Athena workgroup name.
+        poll_interval: Seconds between polls.
+        catalog: Athena data catalog name
+            (reserved for future use).
 
     Returns:
-        Metadata with column types.
+        Metadata with native Athena column
+        types.
     """
-    df = wr.athena.read_sql_query(
-        sql=(
-            f"SELECT * FROM ({query})"
-            f" LIMIT 0"
-        ),
-        database=database,
-        ctas_approach=False,
+    client = session.client("athena")
+    meta_query = (
+        f"SELECT * FROM ({query})"
+        f" AS __meta_src LIMIT 0"
     )
-    cols: Dict[str, str] = {
-        str(c): str(t)
-        for c, t in df.dtypes.items()
-    }
+    with _managed_execution(
+        client, meta_query, database,
+        s3_output, workgroup,
+    ) as execution_id:
+        _wait(client, execution_id, poll_interval)
+        cols = _col_info(client, execution_id)
     return Metadata(cols=cols)
 
 
-def _get_partition_cols(
-    schema: str,
-    table: str,
-    region: str,
-) -> Dict[str, str]:
-    glue = boto3.client(
-        "glue", region_name=region
-    )
-    resp = glue.get_table(
-        DatabaseName=schema, Name=table
-    )
-    return {
-        col["Name"]: col["Type"]
-        for col in resp["Table"].get(
-            "PartitionKeys", []
-        )
-    }
-
-
 def get_table_metadata(
+    session: boto3.Session,
     table_name: str,
-    region: str,
+    catalog: str = _CATALOG,
 ) -> Metadata:
     """Return metadata for a physical table
-    using awswrangler and boto3 Glue.
+    using the boto3 Athena GetTableMetadata API.
+
+    Returns native Athena types (e.g.
+    ``varchar``, ``bigint``) rather than
+    pandas dtype strings.
 
     Args:
+        session: boto3 Session.
         table_name: Fully qualified name
             (schema.table).
-        region: AWS region name.
+        catalog: Athena data catalog name.
+            Defaults to ``AwsDataCatalog``.
 
     Returns:
-        Metadata with column and partition
-        information.
+        Metadata with native Athena column and
+        partition information.
     """
+    client = session.client("athena")
     schema, table = table_name.split(".", 1)
-    col_types = wr.catalog.get_table_types(
-        database=schema, table=table
+    resp = client.get_table_metadata(
+        CatalogName=catalog,
+        DatabaseName=schema,
+        TableName=table,
     )
-    params = wr.catalog.get_table_parameters(
-        database=schema, table=table
+    cols, part_cols, params = _parse_table_meta(
+        resp
     )
-    partition_cols = _get_partition_cols(
-        schema, table, region
-    )
+    all_cols = {**cols, **part_cols}
     return Metadata(
-        cols=col_types,
+        cols=all_cols,
         table=TableInfo(
             table_name=table_name,
             schema=schema,
             table=table,
-            partition_cols=partition_cols,
+            partition_cols=part_cols,
             custom_metadata=params,
         ),
     )
@@ -495,7 +727,7 @@ def drop_partitions(
         return
     for path in raw:
         _delete_s3_prefix(path)
-    wr.catalog.delete_partitions_if_exist(
+    wr.catalog.delete_partitions(
         table=table,
         database=schema,
         partitions_values=list(raw.values()),

@@ -3,7 +3,7 @@
 Delegates all operations to _operations.
 """
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import boto3
 import pandas as pd
@@ -28,6 +28,11 @@ class AwsAthenaWorker(WorkerAbstract):
         workgroup: Athena workgroup name.
         poll_interval: Seconds between status
             polls in run_query.
+        catalog: Athena data catalog name.
+        session_: Optional pre-built boto3
+            Session for dependency injection.
+            When ``None`` (default) a session
+            is created lazily using ``region``.
     """
 
     database: str
@@ -35,19 +40,24 @@ class AwsAthenaWorker(WorkerAbstract):
     region: str
     workgroup: str = "primary"
     poll_interval: float = 0.5
-    _client: Any = field(
-        default=None, init=False, repr=False
+    catalog: str = "AwsDataCatalog"
+    session_: Optional[boto3.Session] = field(
+        default=None, repr=False
     )
 
     @property
-    def client(self) -> Any:
-        """Lazy boto3 Athena client."""
-        if self._client is None:
-            self._client = boto3.client(
-                "athena",
+    def session(self) -> boto3.Session:
+        """Return the boto3 Session.
+
+        Uses the injected ``session_`` if
+        provided; otherwise creates one lazily
+        from ``region`` and caches it.
+        """
+        if self.session_ is None:
+            self.session_ = boto3.Session(
                 region_name=self.region,
             )
-        return self._client
+        return self.session_
 
     def run_query(
         self, query: str
@@ -67,7 +77,7 @@ class AwsAthenaWorker(WorkerAbstract):
                 is cancelled.
         """
         return ops.run_query(
-            client=self.client,
+            session=self.session,
             query=query,
             database=self.database,
             s3_output=self.s3_output,
@@ -86,6 +96,11 @@ class AwsAthenaWorker(WorkerAbstract):
         """Create a table or insert into an
         existing one.
 
+        When the table exists, validates the
+        query schema against the table schema
+        and reorders columns to match before
+        inserting.
+
         Args:
             query: SELECT query to materialise.
             table_name: Destination table name
@@ -95,12 +110,23 @@ class AwsAthenaWorker(WorkerAbstract):
 
         Returns:
             The resolved table name.
+
+        Raises:
+            ValueError: A required column is
+                absent from the query output.
+            TypeError: A column type in the
+                query is incompatible with the
+                table definition.
         """
         return ops.create_insert(
+            session=self.session,
             query=query,
             table_name=table_name,
             s3_output=self.s3_output,
             workgroup=self.workgroup,
+            database=self.database,
+            catalog=self.catalog,
+            poll_interval=self.poll_interval,
             partition_cols=partition_cols,
         )
 
@@ -139,35 +165,43 @@ class AwsAthenaWorker(WorkerAbstract):
         self, query: str
     ) -> Metadata:
         """Return metadata for a query result
-        set.
+        set with native Athena types.
 
         Args:
             query: SQL query to inspect.
 
         Returns:
-            Metadata with column types.
+            Metadata with native Athena column
+            types.
         """
         return ops.get_query_metadata(
+            session=self.session,
             query=query,
             database=self.database,
+            s3_output=self.s3_output,
+            workgroup=self.workgroup,
+            poll_interval=self.poll_interval,
+            catalog=self.catalog,
         )
 
     def get_table_metadata(
         self, table_name: str
     ) -> Metadata:
-        """Return metadata for a physical table.
+        """Return metadata for a physical table
+        with native Athena types.
 
         Args:
             table_name: Fully qualified name
                 (schema.table).
 
         Returns:
-            Metadata with column and partition
-            information.
+            Metadata with native Athena column
+            and partition information.
         """
         return ops.get_table_metadata(
+            session=self.session,
             table_name=table_name,
-            region=self.region,
+            catalog=self.catalog,
         )
 
     def drop(self, table_name: str) -> None:
