@@ -392,7 +392,75 @@ def _reorder_query(
 # awswrangler / boto3 operations
 # ----------------------------------
 
-def create_insert(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+def _insert_into_existing(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    session: boto3.Session,
+    query: str,
+    table_name: str,
+    schema: str,
+    s3_output: str,
+    workgroup: str,
+    database: str,
+    catalog: str,
+    poll_interval: float,
+) -> None:
+    """Validate schema and INSERT query results
+    into an existing Athena table.
+
+    Args:
+        session: boto3 Session.
+        query: SELECT query to materialise.
+        table_name: Destination table name
+            (schema.table format).
+        schema: Glue database name.
+        s3_output: S3 URI for output data.
+        workgroup: Athena workgroup name.
+        database: Default Athena database for
+            metadata queries.
+        catalog: Athena data catalog name.
+        poll_interval: Seconds between status
+            polls for the metadata query.
+
+    Raises:
+        ValueError: A required column is absent
+            from the query output.
+        TypeError: A column's type in the query
+            is incompatible with the table.
+    """
+    table_meta = get_table_metadata(
+        session=session,
+        table_name=table_name,
+        catalog=catalog,
+    )
+    query_meta = get_query_metadata(
+        session=session,
+        query=query,
+        database=database,
+        s3_output=s3_output,
+        workgroup=workgroup,
+        poll_interval=poll_interval,
+        catalog=catalog,
+    )
+    _check_schema_compatibility(
+        table_meta, query_meta
+    )
+    col_order = list(table_meta.cols.keys())
+    ordered_query = _reorder_query(
+        query, col_order
+    )
+    wr.athena.start_query_execution(
+        sql=(
+            f"INSERT INTO {table_name}\n"
+            f"{ordered_query}"
+        ),
+        database=schema,
+        s3_output=s3_output,
+        workgroup=workgroup,
+        wait=True,
+        boto3_session=session,
+    )
+
+
+def create_insert(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     session: boto3.Session,
     query: str,
     table_name: str,
@@ -443,57 +511,33 @@ def create_insert(  # pylint: disable=too-many-arguments,too-many-positional-arg
     """
     schema, table = table_name.split(".", 1)
     exists = wr.catalog.does_table_exist(
-        database=schema, table=table
+        database=schema, table=table,
+        boto3_session=session,
     )
     if not exists:
-        wr.athena.create_ctas_table(
-            sql=query,
-            database=schema,
-            ctas_table=table,
-            ctas_database=schema,
-            s3_output=s3_output,
-            partitioning_info=(
-                partition_cols or []
-            ),
-            wait=True,
-        )
-    else:
-        table_meta = get_table_metadata(
-            session=session,
-            table_name=table_name,
-            catalog=catalog,
-        )
-        query_meta = get_query_metadata(
+        return create_ctas(
             session=session,
             query=query,
-            database=database,
+            table_name=table_name,
             s3_output=s3_output,
-            workgroup=workgroup,
-            poll_interval=poll_interval,
-            catalog=catalog,
+            partition_cols=partition_cols,
         )
-        _check_schema_compatibility(
-            table_meta, query_meta
-        )
-        col_order = list(table_meta.cols.keys())
-        ordered_query = _reorder_query(
-            query, col_order
-        )
-        wr.athena.start_query_execution(
-            sql=(
-                f"INSERT INTO {table_name}\n"
-                f"{ordered_query}"
-            ),
-            database=schema,
-            s3_output=s3_output,
-            workgroup=workgroup,
-            wait=True,
-            boto3_session=session,
-        )
+    _insert_into_existing(
+        session=session,
+        query=query,
+        table_name=table_name,
+        schema=schema,
+        s3_output=s3_output,
+        workgroup=workgroup,
+        database=database,
+        catalog=catalog,
+        poll_interval=poll_interval,
+    )
     return table_name
 
 
 def create_ctas(
+    session: boto3.Session,
     query: str,
     table_name: str,
     s3_output: str,
@@ -503,6 +547,7 @@ def create_ctas(
     via awswrangler.
 
     Args:
+        session: boto3 Session.
         query: SELECT query to materialise.
         table_name: Name for the new table
             (schema.table format).
@@ -527,6 +572,7 @@ def create_ctas(
             partition_cols or []
         ),
         wait=True,
+        boto3_session=session,
     )
     return table_name
 
@@ -622,7 +668,10 @@ def get_table_metadata(
     )
 
 
-def drop(table_name: str) -> None:
+def drop(
+    session: boto3.Session,
+    table_name: str,
+) -> None:
     """Drop a table and delete its S3 data.
 
     Deletes all S3 objects at the table's
@@ -630,21 +679,25 @@ def drop(table_name: str) -> None:
     Glue catalog entry.
 
     Args:
+        session: boto3 Session.
         table_name: Fully qualified name
             (schema.table).
     """
     schema, table = table_name.split(".", 1)
     location = wr.catalog.get_table_location(
-        database=schema, table=table
+        database=schema, table=table,
+        boto3_session=session,
     )
     if location:
         _delete_s3_prefix(location)
     wr.catalog.delete_table_if_exists(
-        database=schema, table=table
+        database=schema, table=table,
+        boto3_session=session,
     )
 
 
 def _get_raw_partitions(
+    session: boto3.Session,
     schema: str,
     table: str,
     filters: Tuple[str, ...],
@@ -652,6 +705,7 @@ def _get_raw_partitions(
     """Return matching partitions with S3 paths.
 
     Args:
+        session: boto3 Session.
         schema: Glue database name.
         table: Table name.
         filters: fnmatch patterns, one per
@@ -663,7 +717,8 @@ def _get_raw_partitions(
     """
     raw: Dict[str, List[str]] = (
         wr.catalog.get_partitions(
-            database=schema, table=table
+            database=schema, table=table,
+            boto3_session=session,
         )
     )
     if not filters:
@@ -679,6 +734,7 @@ def _get_raw_partitions(
 
 
 def list_partitions(
+    session: boto3.Session,
     table_name: str,
     *filters: str,
 ) -> List[Tuple[str, ...]]:
@@ -686,6 +742,7 @@ def list_partitions(
     optionally filtered via fnmatch.
 
     Args:
+        session: boto3 Session.
         table_name: Fully qualified name
             (schema.table).
         *filters: Optional fnmatch patterns,
@@ -696,12 +753,13 @@ def list_partitions(
     """
     schema, table = table_name.split(".", 1)
     raw = _get_raw_partitions(
-        schema, table, filters
+        session, schema, table, filters
     )
     return [tuple(v) for v in raw.values()]
 
 
 def drop_partitions(
+    session: boto3.Session,
     table_name: str,
     *filters: str,
 ) -> None:
@@ -712,6 +770,7 @@ def drop_partitions(
     entries.
 
     Args:
+        session: boto3 Session.
         table_name: Fully qualified name
             (schema.table).
         *filters: fnmatch patterns, one per
@@ -719,7 +778,7 @@ def drop_partitions(
     """
     schema, table = table_name.split(".", 1)
     raw = _get_raw_partitions(
-        schema, table, filters
+        session, schema, table, filters
     )
     if not raw:
         return
@@ -729,4 +788,5 @@ def drop_partitions(
         table=table,
         database=schema,
         partitions_values=list(raw.values()),
+        boto3_session=session,
     )

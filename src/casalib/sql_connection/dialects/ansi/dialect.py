@@ -104,6 +104,21 @@ def _col_expr(
     return item
 
 
+_SIMPLE_AGGS: List[Tuple[str, str]] = [
+    ("COUNT({})", "__count"),
+    (
+        "SUM(CASE WHEN {} IS NULL"
+        " THEN 1 ELSE 0 END)",
+        "__count_null",
+    ),
+    ("COUNT(DISTINCT {})", "__count_distinct"),
+    ("SUM({})", "__sum"),
+    ("AVG({})", "__mean"),
+    ("MIN({})", "__min"),
+    ("MAX({})", "__max"),
+]
+
+
 def _agg_select(
     groupby: Optional[List[str]],
     count_: Optional[List[str]],
@@ -126,8 +141,6 @@ def _agg_select(
 ) -> str:
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-positional-arguments
-    # pylint: disable=too-complex
-    # pylint: disable=too-many-branches
     # pylint: disable=too-many-locals
     """Build the SELECT expression list for agg.
 
@@ -162,37 +175,19 @@ def _agg_select(
         parts.append(_col_expr(item))
     for col in groupby or []:
         parts.append(col)
-    for col in count_ or []:
-        parts.append(
-            f"COUNT({col}) AS {col}__count"
-        )
-    for col in count_null_ or []:
-        parts.append(
-            f"SUM(CASE WHEN {col} IS NULL"
-            f" THEN 1 ELSE 0 END)"
-            f" AS {col}__count_null"
-        )
-    for col in count_distinct_ or []:
-        parts.append(
-            f"COUNT(DISTINCT {col})"
-            f" AS {col}__count_distinct"
-        )
-    for col in sum_ or []:
-        parts.append(
-            f"SUM({col}) AS {col}__sum"
-        )
-    for col in mean_ or []:
-        parts.append(
-            f"AVG({col}) AS {col}__mean"
-        )
-    for col in min_ or []:
-        parts.append(
-            f"MIN({col}) AS {col}__min"
-        )
-    for col in max_ or []:
-        parts.append(
-            f"MAX({col}) AS {col}__max"
-        )
+
+    col_lists: List[Optional[List[str]]] = [
+        count_, count_null_, count_distinct_,
+        sum_, mean_, min_, max_,
+    ]
+    for (tpl, suffix), cols in zip(
+        _SIMPLE_AGGS, col_lists
+    ):
+        for col in cols or []:
+            parts.append(
+                f"{tpl.format(col)} AS {col}{suffix}"
+            )
+
     for p, cols in (percentile_ or {}).items():
         pct = p / 100.0
         for col in cols:

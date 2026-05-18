@@ -155,6 +155,7 @@ class AwsAthenaWorker(WorkerAbstract):
                 exists.
         """
         return ops.create_ctas(
+            session=self.session,
             query=query,
             table_name=table_name,
             s3_output=self.s3_output,
@@ -211,7 +212,7 @@ class AwsAthenaWorker(WorkerAbstract):
             table_name: Fully qualified name
                 (schema.table).
         """
-        ops.drop(table_name)
+        ops.drop(self.session, table_name)
 
     def list_partitions(
         self,
@@ -231,7 +232,7 @@ class AwsAthenaWorker(WorkerAbstract):
             List of tuples of partition values.
         """
         return ops.list_partitions(
-            table_name, *filters
+            self.session, table_name, *filters
         )
 
     def drop_partitions(
@@ -248,4 +249,6 @@ class AwsAthenaWorker(WorkerAbstract):
             *filters: fnmatch patterns, one per
                 partition column.
         """
-        ops.drop_partitions(table_name, *filters)
+        ops.drop_partitions(
+            self.session, table_name, *filters
+        )
