@@ -3,9 +3,12 @@ from typing import Optional
 
 import boto3
 
-from ..connection import Connection
+from ..connection import AsyncConnection, Connection
 from ..dialects.presto import PrestoDialect
-from ..workers.athena import AwsAthenaWorker
+from ..workers.athena import (
+    AsyncAwsAthenaWorker,
+    AwsAthenaWorker,
+)
 
 
 def make_athena(  # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -68,3 +71,64 @@ def make_athena(  # pylint: disable=too-many-arguments,too-many-positional-argum
     return Connection(
         dialect=PrestoDialect,
     ).set_worker(worker)
+
+
+def make_athena_async(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    database: str,
+    s3_output: str,
+    region: str,
+    workgroup: str = "primary",
+    poll_interval: float = 0.5,
+    catalog: str = "AwsDataCatalog",
+    session: Optional[boto3.Session] = None,
+) -> AsyncConnection:
+    """Create a fully wired async Athena
+    Connection.
+
+    Builds an ``AwsAthenaWorker``, wraps it
+    in ``AsyncAwsAthenaWorker``, and returns
+    a ready-to-use ``AsyncConnection`` using
+    ``PrestoDialect``.
+
+    Args:
+        database: Default Glue/Athena database.
+        s3_output: S3 URI for query results.
+        region: AWS region name.
+        workgroup: Athena workgroup name.
+        poll_interval: Seconds between polls.
+        catalog: Athena data catalog name.
+        session: Optional pre-built boto3
+            Session for dependency injection.
+
+    Returns:
+        An ``AsyncConnection`` configured with
+        ``PrestoDialect`` and an
+        ``AsyncAwsAthenaWorker``.
+
+    Example::
+
+        conn = make_athena_async(
+            database="my_db",
+            s3_output="s3://bucket/results/",
+            region="us-east-1",
+        )
+        df = await conn.table(
+            "my_db.orders"
+        ).collect()
+    """
+    sync_worker = AwsAthenaWorker(
+        database=database,
+        s3_output=s3_output,
+        region=region,
+        workgroup=workgroup,
+        poll_interval=poll_interval,
+        catalog=catalog,
+        session_=session,
+    )
+    return AsyncConnection(
+        dialect=PrestoDialect,
+    ).set_worker(
+        AsyncAwsAthenaWorker(
+            sync_worker=sync_worker
+        )
+    )

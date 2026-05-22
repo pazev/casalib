@@ -1,4 +1,4 @@
 """AWS Athena worker."""
-from .worker import AwsAthenaWorker
+from .worker import AsyncAwsAthenaWorker, AwsAthenaWorker
 
-__all__ = ["AwsAthenaWorker"]
+__all__ = ["AsyncAwsAthenaWorker", "AwsAthenaWorker"]

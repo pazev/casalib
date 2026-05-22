@@ -1,0 +1,524 @@
+"""Tests for async casalib.sql_connection."""
+from typing import List, Optional, Tuple
+from unittest.mock import AsyncMock
+from dataclasses import dataclass
+
+import pandas as pd
+import pytest
+
+from casalib.sql_connection.connection import (
+    AsyncConnection,
+)
+from casalib.sql_connection.metadata import (
+    Metadata,
+    TableInfo,
+)
+from casalib.sql_connection.query import AsyncQuery
+from casalib.sql_connection.sql_dialect_abstract import (
+    SqlDialectAbstract,
+)
+from casalib.sql_connection.table import AsyncTable
+from casalib.sql_connection.worker_abstract import (
+    AsyncWorkerAbstract,
+)
+
+
+# ------------------------------------
+# Fixtures: concrete implementations
+# ------------------------------------
+
+@dataclass
+class MockDialect(SqlDialectAbstract):
+    """Minimal dialect returning predictable SQL."""
+
+    def select(self, table_name: str) -> str:
+        return f"SELECT * FROM {table_name}"
+
+    def agg(  # pylint: disable=too-many-arguments
+        self,
+        groupby=None,
+        *,
+        count_=None,
+        count_null_=None,
+        count_distinct_=None,
+        sum_=None,
+        mean_=None,
+        min_=None,
+        max_=None,
+        percentile_=None,
+        percentile_ignore_values_=None,
+        cols_before=None,
+        cols_after=None,
+    ) -> str:
+        return f"SELECT agg FROM ({self.input_query})"
+
+    def get_duplicates(
+        self, keys: List[str]
+    ) -> str:
+        return (
+            f"SELECT dupes FROM ({self.input_query})"
+        )
+
+    def jsonify(
+        self,
+        keys: List[str],
+        columns: List[str],
+    ) -> str:
+        return (
+            f"SELECT json FROM ({self.input_query})"
+        )
+
+    def sample(self, num_samples: int) -> str:
+        return (
+            f"SELECT * FROM ({self.input_query})"
+            f" LIMIT {num_samples}"
+        )
+
+    def last_partitions(
+        self,
+        date_ingestion: str,
+        columns: List[str],
+    ) -> str:
+        return (
+            f"SELECT last FROM ({self.input_query})"
+        )
+
+    def enrich(
+        self,
+        other,
+        keys,
+        prefix=None,
+    ) -> str:
+        return (
+            "SELECT enriched"
+            f" FROM ({self.input_query})"
+        )
+
+    def get_diffs(
+        self,
+        other: str,
+        keys,
+        columns,
+    ) -> str:
+        return (
+            f"SELECT diffs FROM ({self.input_query})"
+        )
+
+    def op(
+        self,
+        add=None,
+        rename=None,
+        select_only=None,
+        exclude=None,
+    ) -> str:
+        return (
+            f"SELECT op FROM ({self.input_query})"
+        )
+
+    @classmethod
+    def util_table_name_has_fullname(
+        cls, table_name: str
+    ) -> bool:
+        return "." in table_name
+
+    @classmethod
+    def util_table_name_split_schema(
+        cls, table_name: str
+    ) -> Tuple[str, str]:
+        schema, table = table_name.split(".", 1)
+        return schema, table
+
+
+@pytest.fixture
+def dialect():
+    return MockDialect
+
+
+@pytest.fixture
+def worker():
+    return AsyncMock(spec=AsyncWorkerAbstract)
+
+
+@pytest.fixture
+def table_info():
+    return TableInfo(
+        table_name="schema.tbl",
+        schema="schema",
+        table="tbl",
+        partition_cols={
+            "dt": "string",
+            "region": "string",
+        },
+        custom_metadata={},
+    )
+
+
+@pytest.fixture
+def metadata(table_info):
+    return Metadata(
+        cols={"id": "int", "name": "string"},
+        table=table_info,
+    )
+
+
+# ------------------------------------
+# AsyncQuery
+# ------------------------------------
+
+class TestAsyncQuery:
+    async def test_from_table_name(self, dialect):
+        q = AsyncQuery.from_table_name(
+            "schema.tbl", dialect
+        )
+        assert q.query == "SELECT * FROM schema.tbl"
+        assert q.dialect is dialect
+
+    async def test_worker_raises_when_not_set(
+        self, dialect
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        )
+        with pytest.raises(RuntimeError):
+            _ = q.worker
+
+    async def test_set_worker_and_get(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        )
+        q.set_worker(worker)
+        assert q.worker is worker
+
+    async def test_set_worker_returns_self(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        )
+        assert q.set_worker(worker) is q
+
+    async def test_collect_delegates(
+        self, dialect, worker
+    ):
+        expected = pd.DataFrame({"a": [1]})
+        worker.run_query.return_value = expected
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        result = await q.collect()
+        worker.run_query.assert_called_once_with(
+            "SELECT 1"
+        )
+        pd.testing.assert_frame_equal(
+            result, expected
+        )
+
+    async def test_create_insert_delegates(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        result = await q.create_insert(
+            "schema.tbl", partition_cols=["dt"]
+        )
+        worker.create_insert.assert_called_once_with(
+            query="SELECT 1",
+            table_name="schema.tbl",
+            partition_cols=["dt"],
+        )
+        assert result is q
+
+    async def test_create_ctas_delegates(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        result = await q.create_ctas("schema.tbl")
+        worker.create_ctas.assert_called_once_with(
+            query="SELECT 1",
+            table_name="schema.tbl",
+            partition_cols=None,
+        )
+        assert result is q
+
+    async def test_metadata_delegates(
+        self, dialect, worker, metadata
+    ):
+        worker.get_query_metadata.return_value = (
+            metadata
+        )
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        result = await q.metadata()
+        worker.get_query_metadata.assert_called_once_with(
+            "SELECT 1"
+        )
+        assert result is metadata
+
+
+# ------------------------------------
+# _AsyncQueryBuilder (via AsyncQuery.q)
+# ------------------------------------
+
+class TestAsyncQueryBuilder:
+    async def test_q_returns_builder(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        assert q.q is not None
+
+    async def test_select_returns_wired_query(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        ).set_worker(worker)
+        result = q.q.select("schema.tbl")
+        assert isinstance(result, AsyncQuery)
+        assert result.dialect is dialect
+        assert result.worker_ is worker
+        assert result.query == (
+            "SELECT * FROM schema.tbl"
+        )
+
+    async def test_sample_returns_wired_query(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT * FROM t", dialect=dialect
+        ).set_worker(worker)
+        result = q.q.sample(10)
+        assert isinstance(result, AsyncQuery)
+        assert "LIMIT 10" in result.query
+        assert result.worker_ is worker
+
+    async def test_chaining_propagates_worker(
+        self, dialect, worker
+    ):
+        q = AsyncQuery(
+            query="SELECT * FROM t", dialect=dialect
+        ).set_worker(worker)
+        result = q.q.select("t").q.sample(5)
+        assert isinstance(result, AsyncQuery)
+        assert result.worker_ is worker
+
+    async def test_builder_without_worker(
+        self, dialect
+    ):
+        q = AsyncQuery(
+            query="SELECT 1", dialect=dialect
+        )
+        result = q.q.sample(1)
+        assert isinstance(result, AsyncQuery)
+        assert result.worker_ is None
+
+
+# ------------------------------------
+# AsyncTable
+# ------------------------------------
+
+class TestAsyncTable:
+    async def test_worker_raises_when_not_set(
+        self, dialect
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        )
+        with pytest.raises(RuntimeError):
+            _ = t.worker
+
+    async def test_set_worker_and_get(
+        self, dialect, worker
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        assert t.worker is worker
+
+    async def test_set_worker_returns_self(
+        self, dialect, worker
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        )
+        assert t.set_worker(worker) is t
+
+    async def test_drop_delegates(
+        self, dialect, worker
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        result = await t.drop()
+        worker.drop.assert_called_once_with(
+            "schema.tbl"
+        )
+        assert result is t
+
+    async def test_metadata_delegates(
+        self, dialect, worker, metadata
+    ):
+        worker.get_table_metadata.return_value = (
+            metadata
+        )
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        result = await t.metadata()
+        worker.get_table_metadata.assert_called_once_with(
+            "schema.tbl"
+        )
+        assert result is metadata
+
+    async def test_list_partitions_returns_dataframe(
+        self, dialect, worker, metadata
+    ):
+        worker.get_table_metadata.return_value = (
+            metadata
+        )
+        worker.list_partitions.return_value = [
+            ("2024-01-01", "us"),
+            ("2024-01-02", "eu"),
+        ]
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        df = await t.list_partitions()
+        assert list(df.columns) == ["dt", "region"]
+        assert len(df) == 2
+        assert df["dt"].iloc[0] == "2024-01-01"
+
+    async def test_list_partitions_passes_filters(
+        self, dialect, worker, metadata
+    ):
+        worker.get_table_metadata.return_value = (
+            metadata
+        )
+        worker.list_partitions.return_value = []
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        await t.list_partitions("2024-*", "us")
+        worker.list_partitions.assert_called_once_with(
+            "schema.tbl", "2024-*", "us"
+        )
+
+    async def test_list_partitions_raises_without_meta(
+        self, dialect, worker
+    ):
+        worker.get_table_metadata.return_value = (
+            Metadata(cols={})
+        )
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        with pytest.raises(RuntimeError):
+            await t.list_partitions()
+
+    async def test_drop_partitions_delegates(
+        self, dialect, worker
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        await t.drop_partitions("2024-*", "us")
+        worker.drop_partitions.assert_called_once_with(
+            "schema.tbl", "2024-*", "us"
+        )
+
+    async def test_query_property_returns_async_query(
+        self, dialect, worker
+    ):
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        q = t.query
+        assert isinstance(q, AsyncQuery)
+        assert q.dialect is dialect
+        assert q.worker_ is worker
+        assert q.query == (
+            "SELECT * FROM schema.tbl"
+        )
+
+    async def test_collect_delegates(
+        self, dialect, worker
+    ):
+        expected = pd.DataFrame({"a": [1]})
+        worker.run_query.return_value = expected
+        t = AsyncTable(
+            table_name="schema.tbl", dialect=dialect
+        ).set_worker(worker)
+        result = await t.collect()
+        pd.testing.assert_frame_equal(
+            result, expected
+        )
+
+
+# ------------------------------------
+# AsyncConnection
+# ------------------------------------
+
+class TestAsyncConnection:
+    async def test_worker_is_none_when_not_set(
+        self, dialect
+    ):
+        c = AsyncConnection(dialect=dialect)
+        assert c.worker is None
+
+    async def test_set_worker_and_get(
+        self, dialect, worker
+    ):
+        c = AsyncConnection(dialect=dialect)
+        c.set_worker(worker)
+        assert c.worker is worker
+
+    async def test_set_worker_returns_self(
+        self, dialect, worker
+    ):
+        c = AsyncConnection(dialect=dialect)
+        assert c.set_worker(worker) is c
+
+    async def test_query_returns_wired_query(
+        self, dialect, worker
+    ):
+        c = AsyncConnection(
+            dialect=dialect
+        ).set_worker(worker)
+        q = c.query("SELECT 1")
+        assert isinstance(q, AsyncQuery)
+        assert q.query == "SELECT 1"
+        assert q.dialect is dialect
+        assert q.worker_ is worker
+
+    async def test_table_returns_wired_table(
+        self, dialect, worker
+    ):
+        c = AsyncConnection(
+            dialect=dialect
+        ).set_worker(worker)
+        t = c.table("schema.tbl")
+        assert isinstance(t, AsyncTable)
+        assert t.table_name == "schema.tbl"
+        assert t.dialect is dialect
+        assert t.worker_ is worker
+
+    async def test_query_without_worker(
+        self, dialect
+    ):
+        c = AsyncConnection(dialect=dialect)
+        q = c.query("SELECT 1")
+        assert q.worker_ is None
+
+    async def test_table_without_worker(
+        self, dialect
+    ):
+        c = AsyncConnection(dialect=dialect)
+        t = c.table("schema.tbl")
+        assert t.worker_ is None

@@ -5,11 +5,15 @@ Delegates all operations to _operations.
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
+import asyncio
 import boto3
 import pandas as pd
 
 from ...metadata import Metadata
-from ...worker_abstract import WorkerAbstract
+from ...worker_abstract import (
+    AsyncWorkerAbstract,
+    WorkerAbstract,
+)
 from . import _operations as ops
 
 
@@ -251,4 +255,168 @@ class AwsAthenaWorker(WorkerAbstract):
         """
         ops.drop_partitions(
             self.session, table_name, *filters
+        )
+
+
+@dataclass
+class AsyncAwsAthenaWorker(AsyncWorkerAbstract):
+    """Async counterpart of AwsAthenaWorker.
+
+    Delegates all operations to the wrapped
+    sync worker via ``asyncio.to_thread``,
+    keeping the event loop free during I/O.
+
+    Attributes:
+        sync_worker: The underlying
+            AwsAthenaWorker to delegate to.
+    """
+
+    sync_worker: AwsAthenaWorker
+
+    async def run_query(
+        self, query: str
+    ) -> pd.DataFrame:
+        """Run a query, return a DataFrame.
+
+        Args:
+            query: SQL query string.
+
+        Returns:
+            A DataFrame with query results.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.run_query, query
+        )
+
+    async def create_insert(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> str:
+        """Create or insert into a table.
+
+        Args:
+            query: SELECT query to materialise.
+            table_name: Destination table name.
+            partition_cols: Partition keys.
+
+        Returns:
+            The resolved table name.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.create_insert,
+            query,
+            table_name,
+            partition_cols,
+        )
+
+    async def create_ctas(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> str:
+        """Create a table using CTAS.
+
+        Args:
+            query: SELECT query to materialise.
+            table_name: Name for the new table.
+            partition_cols: Partition keys.
+
+        Returns:
+            The resolved table name.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.create_ctas,
+            query,
+            table_name,
+            partition_cols,
+        )
+
+    async def get_query_metadata(
+        self, query: str
+    ) -> Metadata:
+        """Return metadata for a query result.
+
+        Args:
+            query: SQL query to inspect.
+
+        Returns:
+            Metadata for the result set.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.get_query_metadata,
+            query,
+        )
+
+    async def get_table_metadata(
+        self, table_name: str
+    ) -> Metadata:
+        """Return metadata for a table.
+
+        Args:
+            table_name: Fully qualified name.
+
+        Returns:
+            Metadata for the table.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.get_table_metadata,
+            table_name,
+        )
+
+    async def drop(
+        self, table_name: str
+    ) -> None:
+        """Drop a table.
+
+        Args:
+            table_name: Fully qualified name.
+        """
+        await asyncio.to_thread(
+            self.sync_worker.drop, table_name
+        )
+
+    async def list_partitions(
+        self,
+        table_name: str,
+        *filters: str,
+    ) -> List[Tuple[str, ...]]:
+        """List partitions, optionally filtered.
+
+        Args:
+            table_name: Fully qualified name.
+            *filters: fnmatch patterns, one per
+                partition column.
+
+        Returns:
+            List of partition value tuples.
+        """
+        return await asyncio.to_thread(
+            self.sync_worker.list_partitions,
+            table_name,
+            *filters,
+        )
+
+    async def drop_partitions(
+        self,
+        table_name: str,
+        *filters: str,
+    ) -> None:
+        """Drop partitions matching filters.
+
+        Args:
+            table_name: Fully qualified name.
+            *filters: fnmatch patterns, one per
+                partition column.
+        """
+        await asyncio.to_thread(
+            self.sync_worker.drop_partitions,
+            table_name,
+            *filters,
         )

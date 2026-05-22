@@ -186,3 +186,135 @@ class WorkerAbstract(ABC):
             Exception: If the table does not
                 exist or is not partitioned.
         """
+
+
+class AsyncWorkerAbstract(ABC):
+    """Async counterpart of WorkerAbstract.
+
+    All methods are coroutines. Concrete
+    implementations must use ``async def``
+    and must not block the event loop.
+    """
+
+    @abstractmethod
+    async def run_query(
+        self, query: str
+    ) -> pd.DataFrame:
+        """Run a SQL query against the database.
+
+        Args:
+            query: SQL query string.
+
+        Returns:
+            DataFrame with query results, or
+            an empty DataFrame for non-SELECT
+            statements.
+        """
+
+    @abstractmethod
+    async def create_insert(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> str:
+        """Create a table or insert into one.
+
+        Args:
+            query: SELECT query to materialise.
+            table_name: Destination table name.
+            partition_cols: Partition keys used
+                only when creating a new table.
+
+        Returns:
+            The resolved table name.
+        """
+
+    @abstractmethod
+    async def create_ctas(
+        self,
+        query: str,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> str:
+        """Create a table using CTAS.
+
+        Args:
+            query: SELECT query to materialise.
+            table_name: Name for the new table.
+            partition_cols: Partition keys.
+
+        Returns:
+            The resolved table name.
+        """
+
+    @abstractmethod
+    async def get_query_metadata(
+        self, query: str
+    ) -> Metadata:
+        """Return metadata for a query result.
+
+        Args:
+            query: SQL query to inspect.
+
+        Returns:
+            Metadata for the result set.
+        """
+
+    @abstractmethod
+    async def get_table_metadata(
+        self, table_name: str
+    ) -> Metadata:
+        """Return metadata for a physical table.
+
+        Args:
+            table_name: Fully qualified name.
+
+        Returns:
+            Metadata for the table.
+        """
+
+    @abstractmethod
+    async def drop(
+        self, table_name: str
+    ) -> None:
+        """Drop a table.
+
+        Args:
+            table_name: Fully qualified name.
+        """
+
+    @abstractmethod
+    async def list_partitions(
+        self,
+        table_name: str,
+        *filters: str,
+    ) -> List[Tuple[str, ...]]:
+        """List partitions, optionally filtered.
+
+        Args:
+            table_name: Fully qualified name.
+            *filters: fnmatch patterns, one per
+                partition column.
+
+        Returns:
+            List of partition value tuples.
+        """
+
+    @abstractmethod
+    async def drop_partitions(
+        self,
+        table_name: str,
+        *filters: str,
+    ) -> None:
+        """Drop partitions matching filters.
+
+        Args:
+            table_name: Fully qualified name.
+            *filters: fnmatch patterns, one per
+                partition column.
+        """

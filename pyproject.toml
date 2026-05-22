@@ -37,3 +37,6 @@ max-locals = 15
 max-branches = 12
 max-statements = 50
 max-attributes = 7
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

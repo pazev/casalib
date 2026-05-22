@@ -9,7 +9,10 @@ from .sql_dialect_abstract import (
     SqlDialectAbstract,
     SqlDialectProtocol,
 )
-from .worker_abstract import WorkerAbstract
+from .worker_abstract import (
+    AsyncWorkerAbstract,
+    WorkerAbstract,
+)
 
 
 class _QueryBuilder(SqlDialectProtocol["Query"]):
@@ -466,5 +469,438 @@ class Query:
             types of the result set.
         """
         return self.worker.get_query_metadata(
+            self.query
+        )
+
+
+class _AsyncQueryBuilder(
+    SqlDialectProtocol["AsyncQuery"]
+):
+    """Async proxy for a dialect instance.
+
+    Mirrors ``_QueryBuilder`` but returns
+    fully-wired ``AsyncQuery`` objects so
+    callers do not need to configure them
+    manually.
+
+    Attributes:
+        _instance: Instantiated dialect.
+        _dialect: Dialect type to attach.
+        _worker: Async worker to attach.
+    """
+
+    def __init__(
+        self,
+        dialect_instance: SqlDialectAbstract,
+        dialect: Type[SqlDialectAbstract],
+        worker: Optional[AsyncWorkerAbstract],
+    ) -> None:
+        self._instance = dialect_instance
+        self._dialect = dialect
+        self._worker = worker
+
+    def _wrap(
+        self, result: str
+    ) -> "AsyncQuery":
+        return AsyncQuery(
+            query=result,
+            dialect=self._dialect,
+        ).set_worker(self._worker)
+
+    def select(
+        self, table_name: str
+    ) -> "AsyncQuery":
+        """Generate a SELECT * query.
+
+        Args:
+            table_name: Fully qualified name.
+
+        Returns:
+            An AsyncQuery wrapping the SQL.
+        """
+        return self._wrap(
+            self._instance.select(table_name)
+        )
+
+    def agg(  # pylint: disable=too-many-arguments
+        self,
+        groupby: Optional[List[str]] = None,
+        *,
+        count_: Optional[List[str]] = None,
+        count_null_: Optional[
+            List[str]
+        ] = None,
+        count_distinct_: Optional[
+            List[str]
+        ] = None,
+        sum_: Optional[List[str]] = None,
+        mean_: Optional[List[str]] = None,
+        min_: Optional[List[str]] = None,
+        max_: Optional[List[str]] = None,
+        percentile_: Optional[
+            Dict[int, List[str]]
+        ] = None,
+        percentile_ignore_values_: Optional[
+            Dict[str, List[float]]
+        ] = None,
+        cols_before: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+        cols_after: Optional[
+            List[Union[str, Tuple[str, str]]]
+        ] = None,
+    ) -> "AsyncQuery":
+        """Generate an aggregation query.
+
+        Args:
+            groupby: Columns to GROUP BY.
+            count_: Columns to COUNT.
+            count_null_: Columns to count NULLs.
+            count_distinct_: COUNT DISTINCT cols.
+            sum_: Columns to SUM.
+            mean_: Columns to AVG.
+            min_: Columns to MIN.
+            max_: Columns to MAX.
+            percentile_: Percentile → cols map.
+            percentile_ignore_values_: Exclusion
+                map.
+            cols_before: Prepended expressions.
+            cols_after: Appended expressions.
+
+        Returns:
+            An AsyncQuery wrapping the SQL.
+        """
+        return self._wrap(
+            self._instance.agg(
+                groupby=groupby,
+                count_=count_,
+                count_null_=count_null_,
+                count_distinct_=(
+                    count_distinct_
+                ),
+                sum_=sum_,
+                mean_=mean_,
+                min_=min_,
+                max_=max_,
+                percentile_=percentile_,
+                percentile_ignore_values_=(
+                    percentile_ignore_values_
+                ),
+                cols_before=cols_before,
+                cols_after=cols_after,
+            )
+        )
+
+    def get_duplicates(
+        self, keys: List[str]
+    ) -> "AsyncQuery":
+        """Return rows with duplicate keys.
+
+        Args:
+            keys: Columns forming the key.
+
+        Returns:
+            An AsyncQuery of duplicated rows.
+        """
+        return self._wrap(
+            self._instance.get_duplicates(keys)
+        )
+
+    def jsonify(
+        self,
+        keys: List[str],
+        columns: List[str],
+    ) -> "AsyncQuery":
+        """Collapse columns into a JSON value.
+
+        Args:
+            keys: Columns to keep as-is.
+            columns: Columns to fold into JSON.
+
+        Returns:
+            An AsyncQuery with the JSON col.
+        """
+        return self._wrap(
+            self._instance.jsonify(
+                keys, columns
+            )
+        )
+
+    def sample(
+        self, num_samples: int
+    ) -> "AsyncQuery":
+        """Return a sample of rows.
+
+        Args:
+            num_samples: Number of rows.
+
+        Returns:
+            An AsyncQuery limited to that count.
+        """
+        return self._wrap(
+            self._instance.sample(num_samples)
+        )
+
+    def last_partitions(
+        self,
+        date_ingestion: str,
+        columns: List[str],
+    ) -> "AsyncQuery":
+        """Select the latest-partition rows.
+
+        Args:
+            date_ingestion: Ingestion date col.
+            columns: Partition key columns.
+
+        Returns:
+            An AsyncQuery of latest rows.
+        """
+        return self._wrap(
+            self._instance.last_partitions(
+                date_ingestion, columns
+            )
+        )
+
+    def enrich(
+        self,
+        other: Union[str, List[str]],
+        keys: List[
+            Union[str, Tuple[str, str]]
+        ],
+        prefix: Optional[
+            Union[str, List[str]]
+        ] = None,
+    ) -> "AsyncQuery":
+        """LEFT JOIN the query with other(s).
+
+        Args:
+            other: Query string(s) to join.
+            keys: Join conditions.
+            prefix: Optional column prefix(es).
+
+        Returns:
+            An AsyncQuery of the joined result.
+        """
+        return self._wrap(
+            self._instance.enrich(
+                other, keys, prefix
+            )
+        )
+
+    def get_diffs(
+        self,
+        other: str,
+        keys: List[
+            Union[str, Tuple[str, str]]
+        ],
+        columns: List[
+            Union[str, Tuple[str, str]]
+        ],
+    ) -> "AsyncQuery":
+        """Compare columns between two queries.
+
+        Args:
+            other: Second query to compare.
+            keys: Join keys.
+            columns: Columns to compare.
+
+        Returns:
+            An AsyncQuery showing diffs.
+        """
+        return self._wrap(
+            self._instance.get_diffs(
+                other, keys, columns
+            )
+        )
+
+    def op(
+        self,
+        add: Optional[Dict[str, str]] = None,
+        rename: Optional[
+            Dict[str, str]
+        ] = None,
+        select_only: Optional[
+            List[str]
+        ] = None,
+        exclude: Optional[List[str]] = None,
+    ) -> "AsyncQuery":
+        """Apply column-level operations.
+
+        Args:
+            add: Columns to add.
+            rename: Columns to rename.
+            select_only: Columns to keep.
+            exclude: Columns to drop.
+
+        Returns:
+            An AsyncQuery with transformations.
+        """
+        return self._wrap(
+            self._instance.op(
+                add=add,
+                rename=rename,
+                select_only=select_only,
+                exclude=exclude,
+            )
+        )
+
+
+@dataclass
+class AsyncQuery:
+    """Async counterpart of Query.
+
+    SQL building via ``.q`` is synchronous.
+    Terminal methods are coroutines.
+
+    Attributes:
+        query: SQL string.
+        dialect: Dialect class for SQL
+            generation.
+    """
+
+    query: str
+    dialect: Type[SqlDialectAbstract]
+    worker_: Optional[
+        AsyncWorkerAbstract
+    ] = field(
+        default=None, init=False, repr=False
+    )
+
+    @classmethod
+    def from_table_name(
+        cls,
+        table_name: str,
+        dialect: Type[SqlDialectAbstract],
+    ) -> "AsyncQuery":
+        """Create an AsyncQuery selecting all
+        rows from a table.
+
+        Args:
+            table_name: Fully qualified name.
+            dialect: Dialect class to use.
+
+        Returns:
+            An AsyncQuery wrapping SELECT *.
+        """
+        return cls(
+            query=dialect(
+                input_query=table_name
+            ).select(table_name),
+            dialect=dialect,
+        )
+
+    @property
+    def worker(self) -> AsyncWorkerAbstract:
+        """Return the async worker.
+
+        Returns:
+            The configured worker.
+
+        Raises:
+            RuntimeError: If not set.
+        """
+        if self.worker_ is not None:
+            return self.worker_
+        raise RuntimeError(
+            '`Worker` not set. Please check'
+        )
+
+    def set_worker(
+        self,
+        worker: Optional[AsyncWorkerAbstract],
+    ) -> "AsyncQuery":
+        """Set the async worker.
+
+        Args:
+            worker: Worker to attach, or None.
+
+        Returns:
+            Self, for chaining.
+        """
+        self.worker_ = worker
+        return self
+
+    @property
+    def q(self) -> _AsyncQueryBuilder:
+        """Return an async dialect builder.
+
+        Any AsyncQuery returned by the builder
+        will have the worker and dialect set.
+
+        Returns:
+            An _AsyncQueryBuilder wrapping the
+            instantiated dialect.
+        """
+        return _AsyncQueryBuilder(
+            dialect_instance=self.dialect(
+                input_query=self.query
+            ),
+            dialect=self.dialect,
+            worker=self.worker_,
+        )
+
+    async def collect(self) -> pd.DataFrame:
+        """Execute the query and return results.
+
+        Returns:
+            A DataFrame with the query results.
+        """
+        return await self.worker.run_query(
+            self.query
+        )
+
+    async def create_insert(
+        self,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> "AsyncQuery":
+        """Create or insert into a table.
+
+        Args:
+            table_name: Destination table name.
+            partition_cols: Partition keys.
+
+        Returns:
+            Self, for chaining.
+        """
+        await self.worker.create_insert(
+            query=self.query,
+            table_name=table_name,
+            partition_cols=partition_cols,
+        )
+        return self
+
+    async def create_ctas(
+        self,
+        table_name: str,
+        partition_cols: Optional[
+            List[str]
+        ] = None,
+    ) -> "AsyncQuery":
+        """Create a table using CTAS.
+
+        Args:
+            table_name: Name for the new table.
+            partition_cols: Partition keys.
+
+        Returns:
+            Self, for chaining.
+        """
+        await self.worker.create_ctas(
+            query=self.query,
+            table_name=table_name,
+            partition_cols=partition_cols,
+        )
+        return self
+
+    async def metadata(self) -> Metadata:
+        """Return metadata for the result set.
+
+        Returns:
+            Metadata for the query result.
+        """
+        return await self.worker.get_query_metadata(
             self.query
         )
