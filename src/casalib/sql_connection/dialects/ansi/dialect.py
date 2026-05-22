@@ -19,7 +19,10 @@ from typing import (
 from ...sql_dialect_abstract import (
     SqlDialectAbstract,
 )
-from .._helpers import normalise_keys
+from .._helpers import (
+    normalise_cols,
+    agg_select as agg_select_new
+)
 from .._render import make_template_render
 
 
@@ -48,7 +51,7 @@ def _join_on(
         SQL string like
         ``l.a = r.a AND l.b = r.b``.
     """
-    pairs = normalise_keys(keys)
+    pairs = normalise_cols(keys)
     return " AND ".join(
         f"{left}.{lk} = {right}.{rk}"
         for lk, rk in pairs
@@ -90,27 +93,27 @@ _SIMPLE_AGGS: List[Tuple[str, str]] = [
 
 
 def _agg_select(
-    groupby: Optional[List[str]],
-    count_: Optional[List[str]],
-    count_null_: Optional[List[str]],
-    count_distinct_: Optional[List[str]],
-    sum_: Optional[List[str]],
-    mean_: Optional[List[str]],
-    min_: Optional[List[str]],
-    max_: Optional[List[str]],
-    percentile_: Optional[Dict[int, List[str]]],
+    groupby: Optional[List[str]] = None,
+    *,
+    count_: Optional[List[str]] = None,
+    count_null_: Optional[List[str]] = None,
+    count_distinct_: Optional[List[str]] = None,
+    sum_: Optional[List[str]] = None,
+    mean_: Optional[List[str]] = None,
+    min_: Optional[List[str]] = None,
+    max_: Optional[List[str]] = None,
+    percentile_: Optional[Dict[int, List[str]]] = None,
     percentile_ignore_values_: Optional[
         Dict[str, List[float]]
-    ],
+    ] = None,
     cols_before: Optional[
         List[Union[str, Tuple[str, str]]]
-    ],
+    ] = None,
     cols_after: Optional[
         List[Union[str, Tuple[str, str]]]
-    ],
+    ] = None,
 ) -> str:
     # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-positional-arguments
     # pylint: disable=too-many-locals
     """Build the SELECT expression list for agg.
 
@@ -403,8 +406,8 @@ class AnsiDialect(SqlDialectAbstract):
             Union[str, Tuple[str, str]]
         ],
     ) -> str:
-        norm_keys = normalise_keys(keys)
-        norm_cols = normalise_keys(columns)
+        norm_keys = normalise_cols(keys)
+        norm_cols = normalise_cols(columns)
         join_on = _join_on(
             keys, left="l", right="r"
         )
