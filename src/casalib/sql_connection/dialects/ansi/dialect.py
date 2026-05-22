@@ -16,52 +16,22 @@ from typing import (
     Union,
 )
 
-from jinja2 import Environment, FileSystemLoader
-
 from ...sql_dialect_abstract import (
     SqlDialectAbstract,
 )
+from .._helpers import normalise_keys
+from .._render import make_template_render
 
-_TEMPLATES = (
-    Path(__file__).parent / "templates"
-)
-_env = Environment(
-    loader=FileSystemLoader(str(_TEMPLATES)),
-    trim_blocks=True,
-    lstrip_blocks=True,
-    keep_trailing_newline=True,
-)
 
+# ------------------
+# Load dialect info
+# ------------------
+_TEMPLATES = Path(__file__).parent / "templates"
+_render = make_template_render(_TEMPLATES)
 
 # ----------------------------------
 # Private helpers
 # ----------------------------------
-
-def _render(name: str, **ctx: object) -> str:
-    return _env.get_template(name).render(**ctx)
-
-
-def _normalise_keys(
-    keys: Sequence[Union[str, Tuple[str, str]]],
-) -> List[Tuple[str, str]]:
-    """Normalise key list to (left, right) pairs.
-
-    Args:
-        keys: Mix of bare column names and
-            (left_col, right_col) tuples.
-
-    Returns:
-        List of (left_col, right_col) pairs.
-    """
-    result = []
-    for k in keys:
-        if isinstance(k, tuple):
-            result.append(k)
-        else:
-            result.append((k, k))
-    return result
-
-
 def _join_on(
     keys: Sequence[Union[str, Tuple[str, str]]],
     left: str = "l",
@@ -78,7 +48,7 @@ def _join_on(
         SQL string like
         ``l.a = r.a AND l.b = r.b``.
     """
-    pairs = _normalise_keys(keys)
+    pairs = normalise_keys(keys)
     return " AND ".join(
         f"{left}.{lk} = {right}.{rk}"
         for lk, rk in pairs
@@ -433,8 +403,8 @@ class AnsiDialect(SqlDialectAbstract):
             Union[str, Tuple[str, str]]
         ],
     ) -> str:
-        norm_keys = _normalise_keys(keys)
-        norm_cols = _normalise_keys(columns)
+        norm_keys = normalise_keys(keys)
+        norm_cols = normalise_keys(columns)
         join_on = _join_on(
             keys, left="l", right="r"
         )

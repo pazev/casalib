@@ -16,26 +16,15 @@ from typing import (
     Optional,
 )
 
-from jinja2 import Environment, FileSystemLoader
+from ..ansi.dialect import AnsiDialect
+from .._render import make_template_render
 
-from ..ansi.dialect import (
-    AnsiDialect,
-    _render as _ansi_render,
+_ANSI_TEMPLATES = (
+    Path(__file__).parent.parent / "ansi" / "templates"
 )
-
-_TEMPLATES = (
-    Path(__file__).parent / "templates"
-)
-_env = Environment(
-    loader=FileSystemLoader(str(_TEMPLATES)),
-    trim_blocks=True,
-    lstrip_blocks=True,
-    keep_trailing_newline=True,
-)
-
-
-def _render(name: str, **ctx: object) -> str:
-    return _env.get_template(name).render(**ctx)
+_TEMPLATES = Path(__file__).parent / "templates"
+_ansi_render = make_template_render(_ANSI_TEMPLATES)
+_render = make_template_render(_TEMPLATES)
 
 
 def _op_select(
