@@ -1,5 +1,6 @@
 """Shared helpers for SQL dialect implementations."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum, auto
 from typing import (
     Dict,
     List,
@@ -35,15 +36,30 @@ def normalise_cols(
     return [_norm(k) for k in cols]
 
 
-# Aggregation procedure
-# =====================
+# Aggregation simplification
+# ==========================
+class AggOperations(Enum):
+    COUNT = auto()
+    COUNT_NULL = auto()
+    COUNT_DISTINCT = auto()
+    SUM = auto()
+    MEAN = auto()
+    MAX = auto()
+    MIN = auto()
+    PERCENTILE = auto()
+
+
+@dataclass(slots=True)
+class PercentileConfig:
+    percentile: int
+    ignore_values: List[float] = field(default_factory=list)
+
+
 @dataclass(slots=True)
 class AggCol:
     col: str
-    op: str
-
-    percentile: Optional[int] = None
-    ignore_values: Optional[List[float]] = None
+    op: AggOperations
+    percentile_config: Optional[PercentileConfig] = None
 
     def __lt__(self, other: "AggCol") -> bool:
         for fld in self.__dataclass_fields__:
@@ -57,44 +73,6 @@ class AggCol:
             return a < b
         return False
 
-    @classmethod
-    def _from_simple_ops(
-        cls, simple_agg: Dict[str, List[str]]
-    ) -> List["AggCol"]:
-        ''' Process the dict with data '''
-        return sorted([
-            cls(col, op)
-            for op, list_cols in simple_agg.items()
-            for col in list_cols
-        ])
-
-    @classmethod
-    def _from_percentiles(
-        cls,
-        percentiles: Dict[int, List[str]],
-        ignore_vals: Dict[str, List[float]],
-    ) -> List["AggCol"]:
-        ''' Create the percentiles from the input dicts '''
-        return sorted([
-            cls(col, 'percentile', percentile, ignore)
-            for percentile, list_cols in percentiles.items()
-            for col in list_cols
-            for ignore in [ignore_vals.get(col, [])]
-        ])
-
-    @classmethod
-    def process(
-        cls,
-        simple_agg: Dict[str, List[str]],
-        percentiles: Dict[int, List[str]],
-        ignore_vals: Dict[str, List[float]],
-    ) -> List["AggCol"]:
-        ''' Process the information '''
-        return sorted([
-            *cls._from_simple_ops(simple_agg),
-            *cls._from_percentiles(percentiles, ignore_vals)
-        ])
-
 
 class ProcessedAggDict(TypedDict):
     groupby: List[Tuple[str, str]]
@@ -102,6 +80,34 @@ class ProcessedAggDict(TypedDict):
     cols_after: List[Tuple[str, str]]
     ops: List[AggCol]
 
+
+def retrieve_agg_parameters(
+    simple_agg: Dict[str, List[str]],
+    percentiles: Dict[int, List[str]],
+    percentiles_ignore_vals: Dict[str, List[float]],
+) -> List[AggCol]:
+    simple_agg_cols = [
+        AggCol(col, AggOperations[op])
+        for op, list_cols in simple_agg.items()
+        for col in list_cols
+    ]
+
+    percentiles_cols = [
+        AggCol(
+            col=col,
+            op=AggOperations.PERCENTILE,
+            percentile_config=PercentileConfig(
+                percentile=percentile,
+                ignore_values=percentiles_ignore_vals.get(col, []),
+            )
+        )
+        for percentile, list_cols in percentiles.items()
+        for col in list_cols
+    ]
+
+    all_operations = sorted([*simple_agg_cols, *percentiles_cols])
+
+    return all_operations
 
 
 def agg_select(
@@ -155,22 +161,22 @@ def agg_select(
         string.
     """
     # Adjust aggregations
-    ops = AggCol.process(
+    ops = retrieve_agg_parameters(
         simple_agg={
-            'count_': count_ or [],
-            'count_null_': count_null_ or [],
-            'count_distinct_': count_distinct_ or [],
-            'sum_': sum_ or [],
-            'mean_': mean_ or [],
-            'min_': min_ or [],
-            'max_': max_ or [],
+            'COUNT': count_ or [],
+            'COUNT_NULL': count_null_ or [],
+            'COUNT_DISTINCT': count_distinct_ or [],
+            'SUM': sum_ or [],
+            'MEAN': mean_ or [],
+            'MIN': min_ or [],
+            'MAX': max_ or [],
         },
         percentiles=percentile_ or {},
-        ignore_vals=percentile_ignore_values_ or {},
+        percentiles_ignore_vals=percentile_ignore_values_ or {},
     )
-    return {
-        'groupby': normalise_cols(groupby or []),
-        'cols_before': normalise_cols(cols_before or []),
-        'cols_after': normalise_cols(cols_after or []),
-        'ops': ops,
-    }
+    return ProcessedAggDict(
+        groupby=normalise_cols(groupby or []),
+        cols_before=normalise_cols(cols_before or []),
+        cols_after=normalise_cols(cols_after or []),
+        ops=ops
+    )
