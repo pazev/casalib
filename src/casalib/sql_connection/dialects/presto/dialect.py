@@ -11,13 +11,16 @@ Presto-specific SQL:
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    ClassVar,
     Dict,
     List,
     Optional,
 )
 
 from ..ansi.dialect import AnsiDialect
+from .._dialect_def import DialectDefinition
 from .._render import make_template_render
+from .dialect_def import PrestoDialectDef
 
 _ANSI_TEMPLATES = (
     Path(__file__).parent.parent / "ansi" / "templates"
@@ -92,6 +95,8 @@ def _op_select(
 
 @dataclass
 class PrestoDialect(AnsiDialect):
+    _dialect_def: ClassVar[DialectDefinition] = PrestoDialectDef()
+
     """AnsiDialect implementation for
     Presto/Trino SQL.
 

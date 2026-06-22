@@ -38,7 +38,7 @@ def normalise_cols(
 
 # Aggregation simplification
 # ==========================
-class AggOperations(Enum):
+class AggOperationEnum(Enum):
     COUNT = auto()
     COUNT_NULL = auto()
     COUNT_DISTINCT = auto()
@@ -58,20 +58,31 @@ class PercentileConfig:
 @dataclass(slots=True)
 class AggCol:
     col: str
-    op: AggOperations
+    op: AggOperationEnum
     percentile_config: Optional[PercentileConfig] = None
 
     def __lt__(self, other: "AggCol") -> bool:
-        for fld in self.__dataclass_fields__:
-            a, b = getattr(self, fld), getattr(other, fld)
-            if a == b:
-                continue
-            if a is None:
-                return True
-            if b is None:
-                return False
-            return a < b
-        return False
+        if self.col < other.col:
+            return True
+        if self.col > other.col:
+            return False
+
+        if self.op.value < other.op.value:
+            return True
+        if self.op.value > other.op.value:
+            return False
+
+        if self.percentile_config is None and other.percentile_config is None:
+            return False
+        if self.percentile_config is None:
+            return True
+        if other.percentile_config is None:
+            return False
+
+        return (
+            self.percentile_config.percentile
+            < other.percentile_config.percentile
+        )
 
 
 class ProcessedAggDict(TypedDict):
@@ -87,7 +98,7 @@ def retrieve_agg_parameters(
     percentiles_ignore_vals: Dict[str, List[float]],
 ) -> List[AggCol]:
     simple_agg_cols = [
-        AggCol(col, AggOperations[op])
+        AggCol(col, AggOperationEnum[op])
         for op, list_cols in simple_agg.items()
         for col in list_cols
     ]
@@ -95,7 +106,7 @@ def retrieve_agg_parameters(
     percentiles_cols = [
         AggCol(
             col=col,
-            op=AggOperations.PERCENTILE,
+            op=AggOperationEnum.PERCENTILE,
             percentile_config=PercentileConfig(
                 percentile=percentile,
                 ignore_values=percentiles_ignore_vals.get(col, []),
@@ -110,7 +121,7 @@ def retrieve_agg_parameters(
     return all_operations
 
 
-def agg_select(
+def process_agg_args(
     groupby: Optional[List[str]] = None,
     *,
     count_: Optional[List[str]] = None,

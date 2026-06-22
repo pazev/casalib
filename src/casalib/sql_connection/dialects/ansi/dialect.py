@@ -8,6 +8,7 @@ left abstract for concrete subclasses.
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    ClassVar,
     Dict,
     List,
     Optional,
@@ -16,14 +17,11 @@ from typing import (
     Union,
 )
 
-from ...sql_dialect_abstract import (
-    SqlDialectAbstract,
-)
-from .._helpers import (
-    normalise_cols,
-    agg_select as agg_select_new
-)
+from ...sql_dialect_abstract import SqlDialectAbstract
+from .._dialect_def import DialectDefinition, render_agg_def
+from .._helpers import normalise_cols, process_agg_args
 from .._render import make_template_render
+from .dialect_def import AnsiDialectDef
 
 
 # ------------------
@@ -31,6 +29,7 @@ from .._render import make_template_render
 # ------------------
 _TEMPLATES = Path(__file__).parent / "templates"
 _render = make_template_render(_TEMPLATES)
+
 
 # ----------------------------------
 # Private helpers
@@ -56,136 +55,6 @@ def _join_on(
         f"{left}.{lk} = {right}.{rk}"
         for lk, rk in pairs
     )
-
-
-def _col_expr(
-    item: Union[str, Tuple[str, str]],
-) -> str:
-    """Render a column or (expr, alias) tuple
-    as a SQL SELECT expression.
-
-    Args:
-        item: Column name or
-            (expression, alias) tuple.
-
-    Returns:
-        SQL expression string.
-    """
-    if isinstance(item, tuple):
-        expr, alias = item
-        return f"{expr} AS {alias}"
-    return item
-
-
-_SIMPLE_AGGS: List[Tuple[str, str]] = [
-    ("COUNT({})", "__count"),
-    (
-        "SUM(CASE WHEN {} IS NULL"
-        " THEN 1 ELSE 0 END)",
-        "__count_null",
-    ),
-    ("COUNT(DISTINCT {})", "__count_distinct"),
-    ("SUM({})", "__sum"),
-    ("AVG({})", "__mean"),
-    ("MIN({})", "__min"),
-    ("MAX({})", "__max"),
-]
-
-
-def _agg_select(
-    groupby: Optional[List[str]] = None,
-    *,
-    count_: Optional[List[str]] = None,
-    count_null_: Optional[List[str]] = None,
-    count_distinct_: Optional[List[str]] = None,
-    sum_: Optional[List[str]] = None,
-    mean_: Optional[List[str]] = None,
-    min_: Optional[List[str]] = None,
-    max_: Optional[List[str]] = None,
-    percentile_: Optional[Dict[int, List[str]]] = None,
-    percentile_ignore_values_: Optional[
-        Dict[str, List[float]]
-    ] = None,
-    cols_before: Optional[
-        List[Union[str, Tuple[str, str]]]
-    ] = None,
-    cols_after: Optional[
-        List[Union[str, Tuple[str, str]]]
-    ] = None,
-) -> str:
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-locals
-    """Build the SELECT expression list for agg.
-
-    Args:
-        groupby: Columns to GROUP BY.
-        count_: Columns to COUNT (non-null).
-        count_null_: Columns to count NULLs.
-        count_distinct_: Columns to COUNT
-            DISTINCT.
-        sum_: Columns to SUM.
-        mean_: Columns to AVG.
-        min_: Columns to MIN.
-        max_: Columns to MAX.
-        percentile_: Percentile → columns map.
-            Uses ``approx_percentile``, which
-            is Presto/Trino-specific.
-        percentile_ignore_values_: Column →
-            values to exclude map.
-        cols_before: Expressions prepended to
-            SELECT.
-        cols_after: Expressions appended to
-            SELECT.
-
-    Returns:
-        Comma-separated SELECT expression
-        string.
-    """
-    parts: List[str] = []
-    ignore = percentile_ignore_values_ or {}
-
-    for item in cols_before or []:
-        parts.append(_col_expr(item))
-    for col in groupby or []:
-        parts.append(col)
-
-    col_lists: List[Optional[List[str]]] = [
-        count_, count_null_, count_distinct_,
-        sum_, mean_, min_, max_,
-    ]
-    for (tpl, suffix), cols in zip(
-        _SIMPLE_AGGS, col_lists
-    ):
-        for col in cols or []:
-            parts.append(
-                f"{tpl.format(col)} AS {col}{suffix}"
-            )
-
-    for p, cols in (percentile_ or {}).items():
-        pct = p / 100.0
-        for col in cols:
-            excl = ignore.get(col, [])
-            if excl:
-                vals = ", ".join(
-                    str(v) for v in excl
-                )
-                inner = (
-                    f"CASE WHEN {col}"
-                    f" NOT IN ({vals})"
-                    f" THEN {col}"
-                    f" ELSE NULL END"
-                )
-            else:
-                inner = col
-            parts.append(
-                f"approx_percentile"
-                f"({inner}, {pct})"
-                f" AS {col}__p{p}"
-            )
-    for item in cols_after or []:
-        parts.append(_col_expr(item))
-
-    return ",\n    ".join(parts)
 
 
 def _op_select(
@@ -266,17 +135,13 @@ class AnsiDialect(SqlDialectAbstract):
     standard ANSI-compliant. ``jsonify`` is
     engine-specific and left abstract.
 
-    Note:
-        ``agg`` with ``percentile_`` uses
-        ``approx_percentile``, a Presto/Trino
-        extension. Override ``agg`` in a
-        concrete subclass if targeting a
-        different engine.
-        ``op`` with ``exclude`` (and no
-        ``select_only``) raises ``ValueError``
-        because it requires ``SELECT * EXCEPT``,
-        which is not ANSI SQL.
+    ``op`` with ``exclude`` (and no
+    ``select_only``) raises ``ValueError``
+    because it requires ``SELECT * EXCEPT``,
+    which is not ANSI SQL.
     """
+
+    _dialect_def: ClassVar[DialectDefinition] = AnsiDialectDef()
 
     def select(self, table_name: str) -> str:
         return _render(
@@ -310,7 +175,7 @@ class AnsiDialect(SqlDialectAbstract):
             List[Union[str, Tuple[str, str]]]
         ] = None,
     ) -> str:
-        select_list = _agg_select(
+        processed = process_agg_args(
             groupby=groupby,
             count_=count_,
             count_null_=count_null_,
@@ -326,11 +191,13 @@ class AnsiDialect(SqlDialectAbstract):
             cols_before=cols_before,
             cols_after=cols_after,
         )
+        agg_def = render_agg_def(
+            processed, self._dialect_def
+        )
         return _render(
             "agg.sql",
             input_query=self.input_query,
-            select_list=select_list,
-            groupby=groupby,
+            agg_def=agg_def,
         )
 
     def get_duplicates(
