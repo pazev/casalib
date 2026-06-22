@@ -4,7 +4,7 @@ WITH __base AS (
 SELECT
     {{ keys | join(',\n    ') }},
     map_from_arrays(
-        ARRAY[{{ col_names }}],
-        ARRAY[{{ col_values }}]
+        ARRAY[{% for col in columns %}'{{ col }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        ARRAY[{% for col in columns %}CAST({{ col }} AS VARCHAR){% if not loop.last %}, {% endif %}{% endfor %}]
     ) AS __json
 FROM __base

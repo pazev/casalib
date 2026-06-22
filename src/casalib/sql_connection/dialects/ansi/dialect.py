@@ -1,12 +1,10 @@
-"""AnsiDialect — SqlDialectAbstract
-implementation for standard ANSI SQL.
+"""AnsiDialect — SqlDialectAbstract implementation for
+standard ANSI SQL.
 
-All templates use only ANSI-compliant SQL
-constructs. ``jsonify`` is engine-specific and
-left abstract for concrete subclasses.
+All parameter treatment is done here. All rendering is
+delegated to AnsiDialectDef.
 """
 from dataclasses import dataclass
-from pathlib import Path
 from typing import (
     ClassVar,
     Dict,
@@ -18,38 +16,18 @@ from typing import (
 )
 
 from ...sql_dialect_abstract import SqlDialectAbstract
-from .._dialect_def import DialectDefinition, render_agg_def
 from .._helpers import normalise_cols, process_agg_args
-from .._render import make_template_render
 from .dialect_def import AnsiDialectDef
 
 
-# ------------------
-# Load dialect info
-# ------------------
-_TEMPLATES = Path(__file__).parent / "templates"
-_render = make_template_render(_TEMPLATES)
-
-
 # ----------------------------------
-# Private helpers
+# Private helpers (parameter treatment)
 # ----------------------------------
 def _join_on(
     keys: Sequence[Union[str, Tuple[str, str]]],
     left: str = "l",
     right: str = "r",
 ) -> str:
-    """Build a SQL join ON clause string.
-
-    Args:
-        keys: Column pairs defining the join.
-        left: Alias for the left table.
-        right: Alias for the right table.
-
-    Returns:
-        SQL string like
-        ``l.a = r.a AND l.b = r.b``.
-    """
     pairs = normalise_cols(keys)
     return " AND ".join(
         f"{left}.{lk} = {right}.{rk}"
@@ -64,16 +42,6 @@ def _op_select(
     exclude: Optional[List[str]],
 ) -> str:
     """Build the SELECT expression for op.
-
-    Args:
-        add: ``{new_col: sql_expression}``.
-        rename: ``{new_name: old_name}``.
-        select_only: Final column names to keep.
-        exclude: Not supported without
-            ``select_only`` in ANSI SQL.
-
-    Returns:
-        SQL SELECT expression string.
 
     Raises:
         ValueError: If ``exclude`` is provided
@@ -100,7 +68,6 @@ def _op_select(
                 parts.append(col)
         return ",\n    ".join(parts)
 
-    # No select_only
     extras: List[str] = [
         f"{old} AS {new}"
         for new, old in rename.items()
@@ -125,29 +92,22 @@ def _op_select(
 # ----------------------------------
 # Dialect
 # ----------------------------------
-
 @dataclass
 class AnsiDialect(SqlDialectAbstract):
-    """SqlDialectAbstract implementation for
-    ANSI SQL.
+    """SqlDialectAbstract implementation for ANSI SQL.
 
-    Implements all methods whose SQL output is
-    standard ANSI-compliant. ``jsonify`` is
-    engine-specific and left abstract.
+    Parameter treatment happens here; all rendering is
+    delegated to AnsiDialectDef. jsonify uses the SQL:2016
+    JSON_OBJECT syntax.
 
-    ``op`` with ``exclude`` (and no
-    ``select_only``) raises ``ValueError``
-    because it requires ``SELECT * EXCEPT``,
-    which is not ANSI SQL.
+    op with exclude (and no select_only) raises ValueError
+    because it requires SELECT * EXCEPT, which is not ANSI SQL.
     """
 
-    _dialect_def: ClassVar[DialectDefinition] = AnsiDialectDef()
+    _dialect_def: ClassVar[AnsiDialectDef] = AnsiDialectDef()
 
     def select(self, table_name: str) -> str:
-        return _render(
-            "select.sql",
-            table_name=table_name,
-        )
+        return self._dialect_def.render_select(table_name)
 
     def agg(  # pylint: disable=too-many-arguments
         self,
@@ -191,13 +151,8 @@ class AnsiDialect(SqlDialectAbstract):
             cols_before=cols_before,
             cols_after=cols_after,
         )
-        agg_def = render_agg_def(
-            processed, self._dialect_def
-        )
-        return _render(
-            "agg.sql",
-            input_query=self.input_query,
-            agg_def=agg_def,
+        return self._dialect_def.render_agg(
+            processed, self.input_query
         )
 
     def get_duplicates(
@@ -206,18 +161,13 @@ class AnsiDialect(SqlDialectAbstract):
         join_on = _join_on(
             keys, left="base", right="counts"
         )
-        return _render(
-            "get_duplicates.sql",
-            input_query=self.input_query,
-            keys=keys,
-            join_on=join_on,
+        return self._dialect_def.render_get_duplicates(
+            self.input_query, keys, join_on
         )
 
     def sample(self, num_samples: int) -> str:
-        return _render(
-            "sample.sql",
-            input_query=self.input_query,
-            num_samples=num_samples,
+        return self._dialect_def.render_sample(
+            self.input_query, num_samples
         )
 
     def last_partitions(
@@ -226,16 +176,13 @@ class AnsiDialect(SqlDialectAbstract):
         columns: List[str],
     ) -> str:
         join_on = _join_on(
-            columns,
-            left="base",
-            right="__latest",
+            columns, left="base", right="__latest"
         )
-        return _render(
-            "last_partitions.sql",
-            input_query=self.input_query,
-            date_ingestion=date_ingestion,
-            columns=columns,
-            join_on=join_on,
+        return self._dialect_def.render_last_partitions(
+            self.input_query,
+            date_ingestion,
+            columns,
+            join_on,
         )
 
     def enrich(
@@ -258,11 +205,8 @@ class AnsiDialect(SqlDialectAbstract):
             )
             for i in range(len(others))
         ]
-        return _render(
-            "enrich.sql",
-            input_query=self.input_query,
-            others=others,
-            join_ons=join_ons,
+        return self._dialect_def.render_enrich(
+            self.input_query, others, join_ons
         )
 
     def get_diffs(
@@ -291,14 +235,13 @@ class AnsiDialect(SqlDialectAbstract):
             f"(l.{lc} IS DISTINCT FROM r.{rc})"
             for lc, rc in norm_cols
         )
-        return _render(
-            "get_diffs.sql",
-            input_query=self.input_query,
-            other=other,
-            join_on=join_on,
-            key_cols=key_cols,
-            diff_cols=diff_cols,
-            diff_where=diff_where,
+        return self._dialect_def.render_get_diffs(
+            self.input_query,
+            other,
+            join_on,
+            key_cols,
+            diff_cols,
+            diff_where,
         )
 
     def op(
@@ -314,10 +257,17 @@ class AnsiDialect(SqlDialectAbstract):
             select_only=select_only,
             exclude=exclude,
         )
-        return _render(
-            "op.sql",
-            input_query=self.input_query,
-            select_list=select_list,
+        return self._dialect_def.render_op(
+            self.input_query, select_list
+        )
+
+    def jsonify(
+        self,
+        keys: List[str],
+        columns: List[str],
+    ) -> str:
+        return self._dialect_def.render_jsonify(
+            self.input_query, keys, columns
         )
 
     @classmethod

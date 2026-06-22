@@ -1,15 +1,12 @@
-"""PrestoDialect — AnsiDialect subclass for
-Presto/Trino SQL.
+"""PrestoDialect — AnsiDialect subclass for Presto/Trino SQL.
 
-Overrides only the methods that require
-Presto-specific SQL:
-- ``op``: adds ``SELECT * EXCEPT`` support for
-  the ``exclude`` parameter.
-- ``jsonify``: uses ``map_from_arrays`` and
-  ``ARRAY`` literals.
+Overrides only the methods that require Presto-specific
+parameter treatment:
+- op: adds SELECT * EXCEPT support for the exclude parameter.
+
+jsonify rendering is handled by PrestoDialectDef via _dialect_def.
 """
 from dataclasses import dataclass
-from pathlib import Path
 from typing import (
     ClassVar,
     Dict,
@@ -18,16 +15,7 @@ from typing import (
 )
 
 from ..ansi.dialect import AnsiDialect
-from .._dialect_def import DialectDefinition
-from .._render import make_template_render
 from .dialect_def import PrestoDialectDef
-
-_ANSI_TEMPLATES = (
-    Path(__file__).parent.parent / "ansi" / "templates"
-)
-_TEMPLATES = Path(__file__).parent / "templates"
-_ansi_render = make_template_render(_ANSI_TEMPLATES)
-_render = make_template_render(_TEMPLATES)
 
 
 def _op_select(
@@ -37,19 +25,10 @@ def _op_select(
     exclude: Optional[List[str]],
 ) -> str:
     """Build the SELECT expression for op,
-    including ``SELECT * EXCEPT`` support.
+    including SELECT * EXCEPT support.
 
     Requires Presto Engine v3 / Trino when
-    ``exclude`` is used without ``select_only``.
-
-    Args:
-        add: ``{new_col: sql_expression}``.
-        rename: ``{new_name: old_name}``.
-        select_only: Final column names to keep.
-        exclude: Final column names to drop.
-
-    Returns:
-        SQL SELECT expression string.
+    exclude is used without select_only.
     """
     add = add or {}
     rename = rename or {}
@@ -68,7 +47,6 @@ def _op_select(
                 parts.append(col)
         return ",\n    ".join(parts)
 
-    # No select_only — use SELECT * EXCEPT
     excluded: List[str] = (
         list(rename.values()) + list(exclude or [])
     )
@@ -95,20 +73,19 @@ def _op_select(
 
 @dataclass
 class PrestoDialect(AnsiDialect):
-    _dialect_def: ClassVar[DialectDefinition] = PrestoDialectDef()
+    """AnsiDialect subclass for Presto/Trino SQL.
 
-    """AnsiDialect implementation for
-    Presto/Trino SQL.
-
-    Overrides ``op`` to support
-    ``SELECT * EXCEPT`` and ``jsonify`` to use
-    ``map_from_arrays`` with ``ARRAY`` literals.
+    Overrides op to support SELECT * EXCEPT.
+    jsonify uses map_from_arrays via PrestoDialectDef.
 
     Note:
-        ``op`` with ``exclude`` (and no
-        ``select_only``) requires Presto 0.217+
-        or Trino.
+        op with exclude (and no select_only) requires
+        Presto 0.217+ or Trino.
     """
+
+    _dialect_def: ClassVar[PrestoDialectDef] = (  # type: ignore[assignment]
+        PrestoDialectDef()
+    )
 
     def op(
         self,
@@ -123,28 +100,6 @@ class PrestoDialect(AnsiDialect):
             select_only=select_only,
             exclude=exclude,
         )
-        return _ansi_render(
-            "op.sql",
-            input_query=self.input_query,
-            select_list=select_list,
-        )
-
-    def jsonify(
-        self,
-        keys: List[str],
-        columns: List[str],
-    ) -> str:
-        col_names = ", ".join(
-            f"'{c}'" for c in columns
-        )
-        col_values = ", ".join(
-            f"CAST({c} AS VARCHAR)"
-            for c in columns
-        )
-        return _render(
-            "jsonify.sql",
-            input_query=self.input_query,
-            keys=keys,
-            col_names=col_names,
-            col_values=col_values,
+        return self._dialect_def.render_op(
+            self.input_query, select_list
         )

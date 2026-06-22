@@ -1,12 +1,23 @@
-"""DialectDefinition ABC and agg rendering dispatch."""
+"""DialectDefinition ABC and agg expression dispatch."""
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import (
     List,
     Tuple,
     TypedDict,
 )
 
-from ._helpers import AggCol, AggOperationEnum, ProcessedAggDict
+from jinja2 import Environment, StrictUndefined, Template
+
+from ._helpers import AggCol, AggOperationEnum
+
+
+_JINJA_ENV = Environment(
+    undefined=StrictUndefined,
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=True,
+)
 
 
 class RenderedAggDict(TypedDict):
@@ -19,9 +30,14 @@ class RenderedAggDict(TypedDict):
 class DialectDefinition(ABC):
     """Defines dialect-specific SQL rendering primitives.
 
-    Concrete defaults cover universal ANSI SQL ops.
+    Concrete defaults cover universal ANSI SQL agg ops.
     Override only the methods that differ for your engine.
     """
+
+    def _load_template(self, template_path: Path) -> Template:
+        return _JINJA_ENV.from_string(
+            template_path.read_text()
+        )
 
     def render_count(self, col: str) -> Tuple[str, str]:
         return f"COUNT({col})", f"{col}__count"
@@ -51,42 +67,36 @@ class DialectDefinition(ABC):
     def render_percentile(self, agg_col: AggCol) -> Tuple[str, str]:
         """Render a PERCENTILE aggregation. Engine-specific."""
 
+    @abstractmethod
+    def render_jsonify(
+        self,
+        input_query: str,
+        keys: List[str],
+        columns: List[str],
+    ) -> str:
+        """Render a jsonify query. Engine-specific."""
 
-def _dispatch(
-    dialect_def: DialectDefinition,
-    agg_col: AggCol,
-) -> Tuple[str, str]:
-    op = agg_col.op
-    col = agg_col.col
-    if op == AggOperationEnum.COUNT:
-        return dialect_def.render_count(col)
-    if op == AggOperationEnum.COUNT_NULL:
-        return dialect_def.render_count_null(col)
-    if op == AggOperationEnum.COUNT_DISTINCT:
-        return dialect_def.render_count_distinct(col)
-    if op == AggOperationEnum.SUM:
-        return dialect_def.render_sum(col)
-    if op == AggOperationEnum.MEAN:
-        return dialect_def.render_mean(col)
-    if op == AggOperationEnum.MIN:
-        return dialect_def.render_min(col)
-    if op == AggOperationEnum.MAX:
-        return dialect_def.render_max(col)
-    if op == AggOperationEnum.PERCENTILE:
-        return dialect_def.render_percentile(agg_col)
-    raise ValueError(f"Unknown AggOperationEnum value: {op}")
-
-
-def render_agg_def(
-    processed: ProcessedAggDict,
-    dialect_def: DialectDefinition,
-) -> RenderedAggDict:
-    return RenderedAggDict(
-        groupby=processed['groupby'],
-        cols_before=processed['cols_before'],
-        cols_after=processed['cols_after'],
-        ops=[
-            _dispatch(dialect_def, ac)
-            for ac in processed['ops']
-        ],
-    )
+    def _dispatch_agg(
+        self, agg_col: AggCol
+    ) -> Tuple[str, str]:
+        op = agg_col.op
+        col = agg_col.col
+        if op == AggOperationEnum.COUNT:
+            return self.render_count(col)
+        if op == AggOperationEnum.COUNT_NULL:
+            return self.render_count_null(col)
+        if op == AggOperationEnum.COUNT_DISTINCT:
+            return self.render_count_distinct(col)
+        if op == AggOperationEnum.SUM:
+            return self.render_sum(col)
+        if op == AggOperationEnum.MEAN:
+            return self.render_mean(col)
+        if op == AggOperationEnum.MIN:
+            return self.render_min(col)
+        if op == AggOperationEnum.MAX:
+            return self.render_max(col)
+        if op == AggOperationEnum.PERCENTILE:
+            return self.render_percentile(agg_col)
+        raise ValueError(
+            f"Unknown AggOperationEnum value: {op}"
+        )
