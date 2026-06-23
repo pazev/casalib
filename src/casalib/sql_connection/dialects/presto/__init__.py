@@ -1,4 +1,4 @@
 """Presto/Trino SQL dialect."""
-from .dialect_def import PrestoDialectDef
+from .dialect import PrestoDialect
 
-__all__ = ["PrestoDialectDef"]
+__all__ = ["PrestoDialect"]

@@ -4,7 +4,7 @@ from typing import Optional
 import boto3
 
 from ..connection import AsyncConnection, Connection
-from ..dialects import PrestoDialect
+from ..dialects.presto import PrestoDialect
 from ..workers.athena import (
     AsyncAwsAthenaWorker,
     AwsAthenaWorker,

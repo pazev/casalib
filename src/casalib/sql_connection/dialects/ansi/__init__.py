@@ -1,4 +1,4 @@
 """ANSI SQL dialect."""
-from .dialect_def import AnsiDialectDef
+from .dialect import AnsiDialect
 
-__all__ = ["AnsiDialectDef"]
+__all__ = ["AnsiDialect"]
