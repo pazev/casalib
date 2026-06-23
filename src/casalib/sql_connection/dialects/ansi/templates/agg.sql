@@ -5,49 +5,48 @@ input_query_ AS (
 ,
 cols_before_ AS (
     SELECT
-        *
-        {%- if agg_def.cols_before %}
-        ,
-        {%- for sql_code, alias in agg_def.cols_before %}
+        *{% if agg_def.cols_before %},
+        {% for sql_code, alias in agg_def.cols_before %}
         {{sql_code}} AS {{alias}}{%if not loop.last%},{%endif%}
-        {%- endfor %}
-        {%- endif %}
+        {% endfor %}
+        {% endif %}
+
+    FROM
+        input_query_
 )
 ,
 agg_ AS (
     SELECT
-        {%- if agg_def.groupby %}
-        {%- for _, alias in agg_def.groupby %}
-        {{alias}}{%if not loop.last%},{%endif%}
-        {%- endfor %}
-        {%- endif %}
-        {%- if agg_def.groupby and agg_def.ops %}
-        ,
-        {%- endif %}
-        {%- if agg_def.ops %}
-        {%- for sql_code, alias in agg_def.ops %}
-        {{sql_code}} as {{alias}}{%if not loop.last%},{%endif%}
-        {%- endfor %}
-        {%- endif %}
+        {% if agg_def.groupby %}
+        {% for _, alias in agg_def.groupby %}
+        {{alias}},
+        {% endfor %}
+        {% endif %}
+        {% if agg_def.ops %}
+        {% for sql_code, alias in agg_def.ops %}
+        {{sql_code}} as {{alias}},
+        {% endfor %}
+        {% endif %}
+        COUNT(*) as count_rows_
     FROM
         cols_before_
-    {%- if agg_def.groupby %}
+    {% if agg_def.groupby %}
     GROUP BY
-        {%- for _, alias in agg_def.groupby %}
-        {{alias}}{%if not loop.last%},{%endif%}
-        {%- endfor %}
+        {% for _, alias in agg_def.groupby %}
+        {{loop.index}}{%if not loop.last%},{%endif%}
+
+        {% endfor %}
     {%- endif %}
 )
 ,
 cols_after_ AS (
     SELECT
-        *
-        {%- if agg_def.cols_after %}
-        ,
-        {%- for sql_code, alias in agg_def.cols_after %}
+        *{% if agg_def.cols_after %},
+        {% for sql_code, alias in agg_def.cols_after %}
         {{sql_code}} as {{alias}}{%if not loop.last%},{%endif%}
-        {%- endfor %}
-        {%- endif %}
+        {% endfor %}
+        {% endif %}
+
     FROM
         agg_
 )
