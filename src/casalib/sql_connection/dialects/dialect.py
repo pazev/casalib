@@ -1,8 +1,9 @@
-"""AnsiDialect — SqlDialectAbstract implementation for
-standard ANSI SQL.
+"""Dialect — the single SqlDialectAbstract implementation.
 
-All parameter treatment is done here. All rendering is
-delegated to AnsiDialectDef.
+Parameter treatment shared by all engines lives here.
+All rendering is delegated to the paired dialect_def.
+Engine-specific behaviour (unsupported arguments, etc.)
+is handled by the dialect_def, not here.
 """
 from dataclasses import dataclass
 from typing import (
@@ -15,14 +16,11 @@ from typing import (
     Union,
 )
 
-from ...sql_dialect_abstract import SqlDialectAbstract
-from .._helpers import normalise_cols, process_agg_args
-from .dialect_def import AnsiDialectDef
+from ..sql_dialect_abstract import SqlDialectAbstract
+from ._helpers import normalise_cols, process_agg_args
+from .ansi.dialect_def import AnsiDialectDef
 
 
-# ----------------------------------
-# Private helpers (parameter treatment)
-# ----------------------------------
 def _join_on(
     keys: Sequence[Union[str, Tuple[str, str]]],
     left: str = "l",
@@ -35,79 +33,23 @@ def _join_on(
     )
 
 
-def _op_select(
-    add: Optional[Dict[str, str]],
-    rename: Optional[Dict[str, str]],
-    select_only: Optional[List[str]],
-    exclude: Optional[List[str]],
-) -> str:
-    """Build the SELECT expression for op.
-
-    Raises:
-        ValueError: If ``exclude`` is provided
-            without ``select_only``. Dropping
-            columns by name without an explicit
-            column list requires
-            ``SELECT * EXCEPT``, which is not
-            ANSI SQL.
-    """
-    add = add or {}
-    rename = rename or {}
-
-    if select_only:
-        parts: List[str] = []
-        for col in select_only:
-            if col in rename:
-                old = rename[col]
-                parts.append(f"{old} AS {col}")
-            elif col in add:
-                parts.append(
-                    f"{add[col]} AS {col}"
-                )
-            else:
-                parts.append(col)
-        return ",\n    ".join(parts)
-
-    extras: List[str] = [
-        f"{old} AS {new}"
-        for new, old in rename.items()
-    ] + [
-        f"{expr} AS {new}"
-        for new, expr in add.items()
-    ]
-
-    if exclude:
-        raise ValueError(
-            "exclude without select_only requires"
-            " SELECT * EXCEPT, which is not ANSI"
-            " SQL. Use a dialect that supports it"
-            " (e.g. PrestoDialect)."
-        )
-
-    if not extras:
-        return "*"
-    return "*, " + ", ".join(extras)
-
-
-# ----------------------------------
-# Dialect
-# ----------------------------------
 @dataclass
-class AnsiDialect(SqlDialectAbstract):
-    """SqlDialectAbstract implementation for ANSI SQL.
+class Dialect(SqlDialectAbstract):
+    """Single dialect class for all SQL engines.
 
-    Parameter treatment happens here; all rendering is
-    delegated to AnsiDialectDef. jsonify uses the SQL:2016
-    JSON_OBJECT syntax.
-
-    op with exclude (and no select_only) raises ValueError
-    because it requires SELECT * EXCEPT, which is not ANSI SQL.
+    Treatment of arguments common to all engines
+    is done here. Engine-specific rendering and
+    validation is delegated to _dialect_def.
+    Subclasses set _dialect_def to the appropriate
+    AnsiDialectDef subclass.
     """
 
-    _dialect_def: ClassVar[AnsiDialectDef] = AnsiDialectDef()
+    _dialect_def: ClassVar[AnsiDialectDef]
 
     def select(self, table_name: str) -> str:
-        return self._dialect_def.render_select(table_name)
+        return self._dialect_def.render_select(
+            table_name
+        )
 
     def agg(  # pylint: disable=too-many-arguments
         self,
@@ -251,14 +193,12 @@ class AnsiDialect(SqlDialectAbstract):
         select_only: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> str:
-        select_list = _op_select(
-            add=add,
-            rename=rename,
-            select_only=select_only,
-            exclude=exclude,
-        )
         return self._dialect_def.render_op(
-            self.input_query, select_list
+            self.input_query,
+            add,
+            rename,
+            select_only,
+            exclude,
         )
 
     def jsonify(

@@ -1,5 +1,24 @@
 """SQL dialect implementations."""
-from .ansi.dialect import AnsiDialect
-from .presto.dialect import PrestoDialect
+from dataclasses import dataclass
+from typing import ClassVar
 
-__all__ = ["AnsiDialect", "PrestoDialect"]
+from .dialect import Dialect
+from .ansi.dialect_def import AnsiDialectDef
+from .presto.dialect_def import PrestoDialectDef
+
+
+@dataclass
+class AnsiDialect(Dialect):
+    _dialect_def: ClassVar[AnsiDialectDef] = (
+        AnsiDialectDef()
+    )
+
+
+@dataclass
+class PrestoDialect(Dialect):
+    _dialect_def: ClassVar[PrestoDialectDef] = (  # type: ignore[assignment]
+        PrestoDialectDef()
+    )
+
+
+__all__ = ["Dialect", "AnsiDialect", "PrestoDialect"]

@@ -1,6 +1,6 @@
 """AnsiDialectDef — DialectDefinition for ANSI SQL."""
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .._dialect_def import DialectDefinition, RenderedAggDict
 from .._helpers import AggCol, ProcessedAggDict
@@ -136,9 +136,63 @@ class AnsiDialectDef(DialectDefinition):
             diff_where=diff_where,
         )
 
-    def render_op(
-        self, input_query: str, select_list: str
+    def _build_op_select(
+        self,
+        add: Optional[Dict[str, str]],
+        rename: Optional[Dict[str, str]],
+        select_only: Optional[List[str]],
+        exclude: Optional[List[str]],
     ) -> str:
+        add = add or {}
+        rename = rename or {}
+
+        if select_only:
+            parts: List[str] = []
+            for col in select_only:
+                if col in rename:
+                    parts.append(
+                        f"{rename[col]} AS {col}"
+                    )
+                elif col in add:
+                    parts.append(
+                        f"{add[col]} AS {col}"
+                    )
+                else:
+                    parts.append(col)
+            return ",\n    ".join(parts)
+
+        extras: List[str] = [
+            f"{old} AS {new}"
+            for new, old in rename.items()
+        ] + [
+            f"{expr} AS {new}"
+            for new, expr in add.items()
+        ]
+
+        if exclude:
+            raise ValueError(
+                "exclude without select_only"
+                " requires SELECT * EXCEPT,"
+                " which is not ANSI SQL. Use a"
+                " dialect that supports it"
+                " (e.g. PrestoDialect)."
+            )
+
+        if not extras:
+            return "*"
+        return "*, " + ", ".join(extras)
+
+    def render_op(
+        self,
+        input_query: str,
+        add: Optional[Dict[str, str]],
+        rename: Optional[Dict[str, str]],
+        select_only: Optional[List[str]],
+        exclude: Optional[List[str]],
+    ) -> str:
+        select_list = self._build_op_select(
+            add, rename, select_only, exclude
+        )
         return self._load_template(
             _TEMPLATE_FLD / "op.sql"
         ).render(
