@@ -23,7 +23,9 @@ from .helpers import (
 
 @dataclass
 class RenderedAgg:
-    """Fully-rendered agg definition for the SQL template."""
+    """
+    Fully-rendered agg definition for the SQL template.
+    """
 
     groupby: List[Tuple[str, str]]
     cols_before: List[Tuple[str, str]]

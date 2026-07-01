@@ -11,7 +11,7 @@ from ..workers.athena import (
 )
 
 
-def make_athena(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def make_athena(  # pylint: disable=too-many-arguments
     database: str,
     s3_output: str,
     region: str,
@@ -73,7 +73,7 @@ def make_athena(  # pylint: disable=too-many-arguments,too-many-positional-argum
     ).set_worker(worker)
 
 
-def make_athena_async(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def make_athena_async(  # pylint: disable=too-many-arguments
     database: str,
     s3_output: str,
     region: str,

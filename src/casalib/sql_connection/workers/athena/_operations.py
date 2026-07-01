@@ -231,7 +231,7 @@ def _managed_execution(
         raise
 
 
-def run_query(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def run_query(  # pylint: disable=too-many-arguments
     session: boto3.Session,
     query: str,
     database: str,
@@ -392,7 +392,7 @@ def _reorder_query(
 # awswrangler / boto3 operations
 # ----------------------------------
 
-def _insert_into_existing(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def _insert_into_existing(  # pylint: disable=too-many-arguments
     session: boto3.Session,
     query: str,
     table_name: str,
@@ -460,7 +460,7 @@ def _insert_into_existing(  # pylint: disable=too-many-arguments,too-many-positi
     )
 
 
-def create_insert(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def create_insert(  # pylint: disable=too-many-arguments
     session: boto3.Session,
     query: str,
     table_name: str,
@@ -577,7 +577,7 @@ def create_ctas(
     return table_name
 
 
-def get_query_metadata(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+def get_query_metadata(  # pylint: disable=too-many-arguments
     session: boto3.Session,
     query: str,
     database: str,

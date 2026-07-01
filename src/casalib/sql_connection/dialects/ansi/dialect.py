@@ -8,6 +8,11 @@ from .dialect_def import AnsiDialectDef
 
 @dataclass
 class AnsiDialect(Dialect):
-    """Dialect for ANSI SQL. Rendering delegated to AnsiDialectDef."""
+    """
+    Dialect for ANSI SQL. Rendering delegated to
+    AnsiDialectDef.
+    """
 
-    _dialect_def: ClassVar[AnsiDialectDef] = AnsiDialectDef()
+    _dialect_def: ClassVar[AnsiDialectDef] = (
+        AnsiDialectDef()
+    )
