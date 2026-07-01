@@ -2,7 +2,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import jinja2
 
@@ -16,6 +23,8 @@ from .helpers import (
 
 @dataclass
 class RenderedAgg:
+    """Fully-rendered agg definition for the SQL template."""
+
     groupby: List[Tuple[str, str]]
     cols_before: List[Tuple[str, str]]
     cols_after: List[Tuple[str, str]]
@@ -25,13 +34,14 @@ class RenderedAgg:
     def from_agg_def(
         cls,
         agg_def: ProcessedAggDef,
-        _dispatch: Callable[[AggCol], Tuple[str, str]]
+        _dispatch: Callable[[AggCol], Tuple[str, str]],
     ) -> "RenderedAgg":
+        """Build a RenderedAgg by dispatching each op."""
         return cls(
             groupby=agg_def.groupby,
             cols_before=agg_def.cols_before,
             cols_after=agg_def.cols_after,
-            ops=[_dispatch(op) for op in agg_def.ops]
+            ops=[_dispatch(op) for op in agg_def.ops],
         )
 
 
@@ -46,49 +56,48 @@ class DialectDefinition(ABC):
     # =============
     @abstractmethod
     def _get_select_template(self) -> Path:
-        """ Return the path to load the select template """
+        """Return the path to the select template."""
 
     @abstractmethod
     def _get_agg_template(self) -> Path:
-        """ Return the path to load the agg template """
+        """Return the path to the agg template."""
 
     @abstractmethod
     def _get_sample_template(self) -> Path:
-        """ Return the path to load the sample template """
+        """Return the path to the sample template."""
 
     @abstractmethod
     def _get_get_duplicates_template(self) -> Path:
-        """ Return the path to load the get_duplicates template """
+        """Return the path to get_duplicates template."""
 
     @abstractmethod
     def _get_last_partition_template(self) -> Path:
-        """ Return the last partition template """
+        """Return the path to last_partition template."""
 
     @abstractmethod
     def _get_enrich_template(self) -> Path:
-        """ Return the enrich template """
+        """Return the path to the enrich template."""
 
     @abstractmethod
     def _get_jsonify_template(self) -> Path:
-        """ Return the jsonify template """
+        """Return the path to the jsonify template."""
 
     @abstractmethod
     def _get_missing_keys_template(self) -> Path:
-        """ Return the missing keys template """
+        """Return the path to the missing_keys template."""
 
     @abstractmethod
     def _get_get_diffs_template(self) -> Path:
-        """ Return the get_diffs template """
+        """Return the path to the get_diffs template."""
 
     @abstractmethod
     def _get_build_op_template(self) -> Path:
-        """ Return the build_op template """
+        """Return the path to the build_op template."""
 
     # How to load template
     # ====================
     def _env(self) -> jinja2.environment.Environment:
-        '''  '''
-        import jinja2
+        """Return a configured Jinja2 environment."""
         return jinja2.Environment(
             undefined=jinja2.StrictUndefined,
             trim_blocks=True,
@@ -98,57 +107,83 @@ class DialectDefinition(ABC):
 
     def _load_template(
         self,
-        template_path: Union[str, Path]
+        template_path: Union[str, Path],
     ) -> jinja2.Template:
+        """Load a template from a file path."""
         return self._env().from_string(
-            Path(template_path).read_text()
+            Path(template_path).read_text(encoding="utf-8")
         )
 
-    def _from_string(self, template_str: str) -> jinja2.Template:
+    def _from_string(
+        self, template_str: str
+    ) -> jinja2.Template:
+        """Compile a template from a string."""
         return self._env().from_string(template_str)
 
     # How to render agg functions
     # ===========================
-    def render_count(self, col: AggCol) -> Tuple[str, str]:
+    def render_count(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render COUNT."""
         return (
             f"COUNT({col.col})",
-            f"{col.col}__count"
+            f"{col.col}__count",
         )
 
-    def render_count_null(self, col: AggCol) -> Tuple[str, str]:
+    def render_count_null(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render count of NULLs via SUM(CASE ...)."""
         return (
-            f"SUM(CASE WHEN {col.col} IS NULL THEN 1 ELSE 0 END)",
+            f"SUM(CASE WHEN {col.col}"
+            f" IS NULL THEN 1 ELSE 0 END)",
             f"{col.col}__count_null",
         )
 
-    def render_count_distinct(self, col: AggCol) -> Tuple[str, str]:
+    def render_count_distinct(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render COUNT DISTINCT."""
         return (
             f"COUNT(DISTINCT {col.col})",
-            f"{col.col}__count_distinct"
+            f"{col.col}__count_distinct",
         )
 
-    def render_sum(self, col: AggCol) -> Tuple[str, str]:
+    def render_sum(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render SUM."""
         return (
             f"SUM({col.col})",
-            f"{col.col}__sum"
+            f"{col.col}__sum",
         )
 
-    def render_mean(self, col: AggCol) -> Tuple[str, str]:
+    def render_mean(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render AVG."""
         return (
             f"AVG({col.col})",
-            f"{col.col}__mean"
+            f"{col.col}__mean",
         )
 
-    def render_min(self, col: AggCol) -> Tuple[str, str]:
+    def render_min(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render MIN."""
         return (
             f"MIN({col.col})",
-            f"{col.col}__min"
+            f"{col.col}__min",
         )
 
-    def render_max(self, col: AggCol) -> Tuple[str, str]:
+    def render_max(
+        self, col: AggCol
+    ) -> Tuple[str, str]:
+        """Render MAX."""
         return (
             f"MAX({col.col})",
-            f"{col.col}__max"
+            f"{col.col}__max",
         )
 
     def render_percentile(
@@ -156,7 +191,7 @@ class DialectDefinition(ABC):
         agg_col: AggCol,
         func: str = 'approx_percentile',
     ) -> Tuple[str, str]:
-        """ Render a PERCENTILE aggregation. """
+        """Render a PERCENTILE aggregation."""
         cfg = agg_col.percentile_config
 
         if cfg is None:
@@ -164,16 +199,18 @@ class DialectDefinition(ABC):
                 '`percentile_config` cannot be None'
             )
 
-        func = 'approx_percentile'
-
-        # Templates
-        noign = self._from_string('{{func}}({{col}}, {{perc}})')
-        ign = self._from_string(
-            '''{{func}}('''
-            '''CASE WHEN {{col}} NOT IN ({{ign | join(', ')}}'''
-            ''') THEN {{col}} END, {{perc}})'''
+        noign = self._from_string(
+            '{{func}}({{col}}, {{perc}})'
         )
-        template_to_use = ign if cfg.ignore_values else noign
+        ign = self._from_string(
+            '{{func}}('
+            'CASE WHEN {{col}} NOT IN'
+            ' ({{ign | join(\', \')}})'
+            ' THEN {{col}} END, {{perc}})'
+        )
+        template_to_use = (
+            ign if cfg.ignore_values else noign
+        )
 
         return (
             template_to_use.render(
@@ -182,52 +219,61 @@ class DialectDefinition(ABC):
                 perc=cfg.percentile,
                 ign=cfg.ignore_values,
             ),
-            f'{agg_col.col}__p{cfg.percentile}'
+            f'{agg_col.col}__p{cfg.percentile}',
         )
 
     def _dispatch_agg(
         self, agg_col: AggCol
     ) -> Tuple[str, str]:
-        dict_ops = {
+        """Dispatch an AggCol to its render method."""
+        dispatch: Dict[
+            AggOperationEnum,
+            Callable[[AggCol], Tuple[str, str]],
+        ] = {
             AggOperationEnum.COUNT: self.render_count,
-            AggOperationEnum.COUNT_DISTINCT: self.render_count_distinct,
-            AggOperationEnum.COUNT_NULL: self.render_count_null,
+            AggOperationEnum.COUNT_DISTINCT: (
+                self.render_count_distinct
+            ),
+            AggOperationEnum.COUNT_NULL: (
+                self.render_count_null
+            ),
             AggOperationEnum.MAX: self.render_max,
             AggOperationEnum.MIN: self.render_min,
             AggOperationEnum.MEAN: self.render_mean,
             AggOperationEnum.SUM: self.render_sum,
-            AggOperationEnum.PERCENTILE: self.render_percentile,
+            AggOperationEnum.PERCENTILE: (
+                self.render_percentile
+            ),
         }
 
-        if agg_col.op not in dict_ops:
+        if agg_col.op not in dispatch:
             raise ValueError(
-                f"Unknown AggOperationEnum value: {agg_col.op}"
+                f"Unknown AggOperationEnum: {agg_col.op}"
             )
 
-        return dict_ops[agg_col.op](agg_col)
+        return dispatch[agg_col.op](agg_col)
 
     # Render query
+    # ============
     def render_select(self, table_name: str) -> str:
-        ''' Render select '''
-        template = self._load_template(
+        """Render a SELECT * from a table."""
+        return self._load_template(
             self._get_select_template()
-        )
-        return template.render(table_name=table_name)
+        ).render(table_name=table_name)
 
     def render_agg(
         self,
         processed: ProcessedAggDef,
         input_query: str,
     ) -> str:
-        """ Render agg query """
-        template = self._load_template(
-            self._get_agg_template()
-        )
+        """Render an aggregation query."""
         agg_def = RenderedAgg.from_agg_def(
             processed,
-            self._dispatch_agg
+            self._dispatch_agg,
         )
-        return template.render(
+        return self._load_template(
+            self._get_agg_template()
+        ).render(
             input_query=input_query,
             agg_def=agg_def,
         )
@@ -235,13 +281,12 @@ class DialectDefinition(ABC):
     def render_sample(
         self,
         input_query: str,
-        num_samples: int = 100
+        num_samples: int = 100,
     ) -> str:
-        ''' Render sample '''
-        template = self._load_template(
+        """Render a LIMIT/TABLESAMPLE query."""
+        return self._load_template(
             self._get_sample_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             num_samples=num_samples,
         )
@@ -250,13 +295,12 @@ class DialectDefinition(ABC):
         self,
         input_query: str,
         keys: List[str],
-        join_on: str
+        join_on: str,
     ) -> str:
-        ''' Render get_duplicates '''
-        template = self._load_template(
+        """Render a duplicate-detection query."""
+        return self._load_template(
             self._get_get_duplicates_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             keys=keys,
             join_on=join_on,
@@ -269,11 +313,10 @@ class DialectDefinition(ABC):
         columns: List[str],
         join_on: str,
     ) -> str:
-        ''' Render last_partitions '''
-        template = self._load_template(
+        """Render a latest-partition filter query."""
+        return self._load_template(
             self._get_last_partition_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             date_ingestion=date_ingestion,
             columns=columns,
@@ -286,11 +329,10 @@ class DialectDefinition(ABC):
         other_queries: List[str],
         join_ons: List[str],
     ) -> str:
-        ''' Render enrich '''
-        template = self._load_template(
+        """Render a multi-join enrichment query."""
+        return self._load_template(
             self._get_enrich_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             other_queries=other_queries,
             join_ons=join_ons,
@@ -302,11 +344,10 @@ class DialectDefinition(ABC):
         keys: List[str],
         columns: List[str],
     ) -> str:
-        """Render a jsonify query. """
-        template = self._load_template(
+        """Render a JSON serialisation query."""
+        return self._load_template(
             self._get_jsonify_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             keys=keys,
             columns=columns,
@@ -318,11 +359,10 @@ class DialectDefinition(ABC):
         other_query: str,
         join_on: List[Tuple[str, str]],
     ) -> str:
-        ''' Render missing_keys '''
-        template = self._load_template(
+        """Render a missing-key detection query."""
+        return self._load_template(
             self._get_missing_keys_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             other_query=other_query,
             join_on=join_on,
@@ -333,23 +373,23 @@ class DialectDefinition(ABC):
         input_query: str,
         other_query: str,
         join_on: List[Union[str, Tuple[str, str]]],
-        compare_cols: List[Union[str, Tuple[str, str]]],
+        compare_cols: List[
+            Union[str, Tuple[str, str]]
+        ],
     ) -> str:
-        ''' Render get_diffs '''
-        template = self._load_template(
-            self._get_get_diffs_template()
-        )
+        """Render a side-by-side diff query."""
         join_on_ = normalise_cols(join_on)
         compare_cols_ = normalise_cols(compare_cols)
-
-        return template.render(
+        return self._load_template(
+            self._get_get_diffs_template()
+        ).render(
             input_query=input_query,
             other_query=other_query,
             join_on=join_on_,
             compare_cols=compare_cols_,
         )
 
-    def render_build_op(
+    def render_build_op(  # pylint: disable=too-many-arguments
         self,
         input_query: str,
         add: Optional[Dict[str, str]],
@@ -357,11 +397,10 @@ class DialectDefinition(ABC):
         select_only: Optional[List[str]],
         exclude: Optional[List[str]],
     ) -> str:
-        ''' Render build_op '''
-        template = self._load_template(
+        """Render a column projection/rename query."""
+        return self._load_template(
             self._get_build_op_template()
-        )
-        return template.render(
+        ).render(
             input_query=input_query,
             add=add,
             rename=rename,

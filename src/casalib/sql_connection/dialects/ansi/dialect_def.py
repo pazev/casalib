@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from ..dialect_def import DialectDefinition
+from ..helpers import AggCol, PercentileConfig
 
 _TEMPLATE_FLD = Path(__file__).parent / "templates"
 
@@ -47,6 +48,30 @@ class AnsiDialectDef(DialectDefinition):
 
     def _get_build_op_template(self) -> Path:
         return _TEMPLATE_FLD / "op.sql"
+
+    def render_percentile(
+        self,
+        agg_col: AggCol,
+        func: str = 'approx_percentile',
+    ) -> Tuple[str, str]:
+        cfg = agg_col.percentile_config
+        assert cfg is not None
+        original_pct = cfg.percentile
+        corrected = AggCol(
+            col=agg_col.col,
+            op=agg_col.op,
+            percentile_config=PercentileConfig(
+                percentile=original_pct / 100.0,
+                ignore_values=cfg.ignore_values,
+            ),
+        )
+        sql_expr, _ = super().render_percentile(
+            corrected, func
+        )
+        return (
+            sql_expr,
+            f"{agg_col.col}__p{int(original_pct)}",
+        )
 
     # ANSI-specific select-list building for op
     # ==========================================
@@ -96,7 +121,7 @@ class AnsiDialectDef(DialectDefinition):
             return "*"
         return "*, " + ", ".join(extras)
 
-    def render_build_op(
+    def render_build_op(  # pylint: disable=too-many-arguments
         self,
         input_query: str,
         add: Optional[Dict[str, str]],

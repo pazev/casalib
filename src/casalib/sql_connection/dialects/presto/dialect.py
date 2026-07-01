@@ -10,6 +10,6 @@ from .dialect_def import PrestoDialectDef
 class PrestoDialect(Dialect):
     """Dialect for Presto/Trino SQL. Rendering delegated to PrestoDialectDef."""
 
-    _dialect_def: ClassVar[PrestoDialectDef] = (  # type: ignore[assignment]
+    _dialect_def: ClassVar[PrestoDialectDef] = (
         PrestoDialectDef()
     )

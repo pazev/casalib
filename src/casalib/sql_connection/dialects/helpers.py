@@ -2,7 +2,12 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import (
-    Dict, List, Optional, Sequence, Tuple, Union,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
 )
 
 
@@ -11,9 +16,7 @@ from typing import (
 def normalise_cols(
     cols: Sequence[Union[str, Tuple[str, str]]],
 ) -> List[Tuple[str, str]]:
-    """
-    Normalise columns, to always be in the format
-    (left, right). If string, returns (left, right).
+    """Normalise columns to (left, right) pairs.
 
     Args:
         cols: Mix of bare column names and
@@ -32,9 +35,11 @@ def normalise_cols(
     return [_norm(k) for k in cols]
 
 
-# Aggregation simplification
-# ==========================
+# Aggregation helpers
+# ===================
 class AggOperationEnum(Enum):
+    """Supported aggregation operations."""
+
     COUNT = auto()
     COUNT_NULL = auto()
     COUNT_DISTINCT = auto()
@@ -47,42 +52,43 @@ class AggOperationEnum(Enum):
 
 @dataclass(slots=True)
 class PercentileConfig:
-    percentile: int
-    ignore_values: List[float] = field(default_factory=list)
+    """Configuration for a percentile aggregation."""
+
+    percentile: float
+    ignore_values: List[float] = field(
+        default_factory=list
+    )
 
 
 @dataclass(slots=True)
 class AggCol:
+    """A single column + aggregation operation."""
+
     col: str
     op: AggOperationEnum
     percentile_config: Optional[PercentileConfig] = None
 
     def __lt__(self, other: "AggCol") -> bool:
-        if self.col < other.col:
+        """Order by col, then op, then percentile."""
+        if self.col != other.col:
+            return self.col < other.col
+        if self.op.value != other.op.value:
+            return self.op.value < other.op.value
+        s_pct = self.percentile_config
+        o_pct = other.percentile_config
+        if s_pct is None and o_pct is None:
+            return False
+        if s_pct is None:
             return True
-        if self.col > other.col:
+        if o_pct is None:
             return False
-
-        if self.op.value < other.op.value:
-            return True
-        if self.op.value > other.op.value:
-            return False
-
-        if self.percentile_config is None and other.percentile_config is None:
-            return False
-        if self.percentile_config is None:
-            return True
-        if other.percentile_config is None:
-            return False
-
-        return (
-            self.percentile_config.percentile
-            < other.percentile_config.percentile
-        )
+        return s_pct.percentile < o_pct.percentile
 
 
 @dataclass(slots=True)
 class ProcessedAggDef:
+    """Parsed and validated agg arguments."""
+
     groupby: List[Tuple[str, str]]
     cols_before: List[Tuple[str, str]]
     cols_after: List[Tuple[str, str]]
@@ -94,6 +100,7 @@ def retrieve_agg_parameters(
     percentiles: Dict[int, List[str]],
     percentiles_ignore_vals: Dict[str, List[float]],
 ) -> List[AggCol]:
+    """Build a sorted list of AggCol from raw inputs."""
     simple_agg_cols = [
         AggCol(col, op)
         for op, list_cols in simple_agg.items()
@@ -106,19 +113,19 @@ def retrieve_agg_parameters(
             op=AggOperationEnum.PERCENTILE,
             percentile_config=PercentileConfig(
                 percentile=percentile,
-                ignore_values=percentiles_ignore_vals.get(col, []),
-            )
+                ignore_values=(
+                    percentiles_ignore_vals.get(col, [])
+                ),
+            ),
         )
         for percentile, list_cols in percentiles.items()
         for col in list_cols
     ]
 
-    all_operations = sorted([*simple_agg_cols, *percentiles_cols])
-
-    return all_operations
+    return sorted([*simple_agg_cols, *percentiles_cols])
 
 
-def process_agg_args(
+def process_agg_args(  # pylint: disable=too-many-arguments
     groupby: Optional[List[str]] = None,
     *,
     count_: Optional[List[str]] = None,
@@ -139,47 +146,44 @@ def process_agg_args(
         List[Union[str, Tuple[str, str]]]
     ] = None,
 ) -> ProcessedAggDef:
-    # pylint: disable=too-many-arguments
-    """
-    Build the SELECT expression list for agg.
+    """Build a ProcessedAggDef from user-facing agg args.
 
     Args:
         groupby: Columns to GROUP BY.
         count_: Columns to COUNT (non-null).
         count_null_: Columns to count NULLs.
-        count_distinct_: Columns to COUNT
-            DISTINCT.
+        count_distinct_: Columns to COUNT DISTINCT.
         sum_: Columns to SUM.
         mean_: Columns to AVG.
         min_: Columns to MIN.
         max_: Columns to MAX.
         percentile_: Percentile → columns map.
-            Uses ``approx_percentile``, which
-            is Presto/Trino-specific.
         percentile_ignore_values_: Column →
-            values to exclude map.
-        cols_before: Expressions prepended to
-            SELECT.
-        cols_after: Expressions appended to
-            SELECT.
+            values-to-exclude map.
+        cols_before: Expressions prepended to SELECT.
+        cols_after: Expressions appended to SELECT.
 
     Returns:
-        Comma-separated SELECT expression
-        string.
+        ProcessedAggDef ready for rendering.
     """
-    # Adjust aggregations
     ops = retrieve_agg_parameters(
         simple_agg={
             AggOperationEnum.COUNT: count_ or [],
-            AggOperationEnum.COUNT_NULL: count_null_ or [],
-            AggOperationEnum.COUNT_DISTINCT: count_distinct_ or [],
+            AggOperationEnum.COUNT_NULL: (
+                count_null_ or []
+            ),
+            AggOperationEnum.COUNT_DISTINCT: (
+                count_distinct_ or []
+            ),
             AggOperationEnum.SUM: sum_ or [],
             AggOperationEnum.MEAN: mean_ or [],
             AggOperationEnum.MIN: min_ or [],
             AggOperationEnum.MAX: max_ or [],
         },
         percentiles=percentile_ or {},
-        percentiles_ignore_vals=percentile_ignore_values_ or {},
+        percentiles_ignore_vals=(
+            percentile_ignore_values_ or {}
+        ),
     )
     return ProcessedAggDef(
         groupby=normalise_cols(groupby or []),
