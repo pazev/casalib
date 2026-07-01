@@ -192,6 +192,7 @@ class DialectDefinition(ABC):
         self,
         agg_col: AggCol,
         func: str = 'approx_percentile',
+        perc_adj_factor: float = 1.0,
     ) -> Tuple[str, str]:
         """Render a PERCENTILE aggregation."""
         cfg = agg_col.percentile_config
@@ -202,13 +203,13 @@ class DialectDefinition(ABC):
             )
 
         noign = self._from_string(
-            '{{func}}({{col}}, {{perc}})'
+            '{{func}}({{col}}, {{perc / perc_adj_factor}})'
         )
         ign = self._from_string(
             '{{func}}('
             'CASE WHEN {{col}} NOT IN'
             ' ({{ign | join(\', \')}})'
-            ' THEN {{col}} END, {{perc}})'
+            ' THEN {{col}} END, {{perc / perc_adj_factor}})'
         )
         template_to_use = (
             ign if cfg.ignore_values else noign
@@ -220,6 +221,7 @@ class DialectDefinition(ABC):
                 col=agg_col.col,
                 perc=cfg.percentile,
                 ign=cfg.ignore_values,
+                perc_adj_factor=perc_adj_factor
             ),
             f'{agg_col.col}__p{cfg.percentile}',
         )

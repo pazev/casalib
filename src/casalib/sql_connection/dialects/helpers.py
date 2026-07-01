@@ -54,7 +54,7 @@ class AggOperationEnum(Enum):
 class PercentileConfig:
     """Configuration for a percentile aggregation."""
 
-    percentile: float
+    percentile: int
     ignore_values: List[float] = field(
         default_factory=list
     )
