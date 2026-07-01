@@ -12,9 +12,12 @@ class PrestoDialectDef(AnsiDialectDef):
 
     Inherits all rendering from AnsiDialectDef.
     Overrides _build_op_select to support SELECT * EXCEPT
-    and render_jsonify to use map_from_arrays with ARRAY
-    literals.
+    and _get_jsonify_template to use map_from_arrays with
+    ARRAY literals.
     """
+
+    def _get_jsonify_template(self) -> Path:
+        return _TEMPLATE_FLD / "jsonify.sql"
 
     def _build_op_select(
         self,
@@ -62,18 +65,4 @@ class PrestoDialectDef(AnsiDialectDef):
         return (
             f"* EXCEPT ({excl_str}),\n    "
             + ",\n    ".join(extras)
-        )
-
-    def render_jsonify(
-        self,
-        input_query: str,
-        keys: List[str],
-        columns: List[str],
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "jsonify.sql"
-        ).render(
-            input_query=input_query,
-            keys=keys,
-            columns=columns,
         )

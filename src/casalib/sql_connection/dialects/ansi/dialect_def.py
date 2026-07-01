@@ -49,13 +49,13 @@ class AnsiDialectDef(DialectDefinition):
     def _get_build_op_template(self) -> Path:
         return _TEMPLATE_FLD / "op.sql"
 
-    def render_percentile(
+    def _render_agg_percentile(
         self,
         agg_col: AggCol,
         func: str = 'approx_percentile',
         perc_adj_factor: float = 100.0,
     ) -> Tuple[str, str]:
-        return super().render_percentile(
+        return super()._render_agg_percentile(
             agg_col, func, perc_adj_factor
         )
 

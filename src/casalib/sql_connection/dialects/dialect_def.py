@@ -122,9 +122,49 @@ class DialectDefinition(ABC):
         """Compile a template from a string."""
         return self._env().from_string(template_str)
 
+    # Generators for some SQL common functions
+    # ========================================
+    def _render_case_not_in(
+        self,
+        col: str,
+        ignore_values: Optional[List[float]] = None,
+    ) -> str:
+        """ Render how the case when is rendered """
+        noign = self._from_string('{{col}}')
+        ign = self._from_string(
+            '''CASE WHEN {{col}} NOT IN'''
+            ''' ({{ign | join(', ')}})'''
+            ''' THEN {{col}} END'''
+        )
+        template_to_use = (
+            ign if ignore_values else noign
+        )
+        return template_to_use.render(
+            col=col, ign=ignore_values,
+        )
+
+    def _render_percentile_function(
+        self,
+        col: str,
+        perc: int,
+        func: str = 'approx_percentile',
+        perc_adj_factor: float = 1.0,
+    ) -> str:
+        """Render the percentile function call."""
+        temp = self._from_string(
+            '{{func}}({{col}}, '
+            '{{perc / perc_adj_factor}})'
+        )
+        return temp.render(
+            func=func,
+            col=col,
+            perc=perc,
+            perc_adj_factor=perc_adj_factor,
+        )
+
     # How to render agg functions
     # ===========================
-    def render_count(
+    def _render_agg_count(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render COUNT."""
@@ -133,7 +173,7 @@ class DialectDefinition(ABC):
             f"{col.col}__count",
         )
 
-    def render_count_null(
+    def _render_agg_count_null(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render count of NULLs via SUM(CASE ...)."""
@@ -143,7 +183,7 @@ class DialectDefinition(ABC):
             f"{col.col}__count_null",
         )
 
-    def render_count_distinct(
+    def _render_agg_count_distinct(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render COUNT DISTINCT."""
@@ -152,7 +192,7 @@ class DialectDefinition(ABC):
             f"{col.col}__count_distinct",
         )
 
-    def render_sum(
+    def _render_agg_sum(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render SUM."""
@@ -161,7 +201,7 @@ class DialectDefinition(ABC):
             f"{col.col}__sum",
         )
 
-    def render_mean(
+    def _render_agg_mean(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render AVG."""
@@ -170,7 +210,7 @@ class DialectDefinition(ABC):
             f"{col.col}__mean",
         )
 
-    def render_min(
+    def _render_agg_min(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render MIN."""
@@ -179,7 +219,7 @@ class DialectDefinition(ABC):
             f"{col.col}__min",
         )
 
-    def render_max(
+    def _render_agg_max(
         self, col: AggCol
     ) -> Tuple[str, str]:
         """Render MAX."""
@@ -188,7 +228,7 @@ class DialectDefinition(ABC):
             f"{col.col}__max",
         )
 
-    def render_percentile(
+    def _render_agg_percentile(
         self,
         agg_col: AggCol,
         func: str = 'approx_percentile',
@@ -202,27 +242,19 @@ class DialectDefinition(ABC):
                 '`percentile_config` cannot be None'
             )
 
-        noign = self._from_string(
-            '{{func}}({{col}}, {{perc / perc_adj_factor}})'
+        adj_col = self._render_case_not_in(
+            col=agg_col.col, ignore_values=cfg.ignore_values
         )
-        ign = self._from_string(
-            '{{func}}('
-            'CASE WHEN {{col}} NOT IN'
-            ' ({{ign | join(\', \')}})'
-            ' THEN {{col}} END, {{perc / perc_adj_factor}})'
-        )
-        template_to_use = (
-            ign if cfg.ignore_values else noign
+
+        sql_code = self._render_percentile_function(
+            col=adj_col,
+            perc=cfg.percentile,
+            func=func,
+            perc_adj_factor=perc_adj_factor,
         )
 
         return (
-            template_to_use.render(
-                func=func,
-                col=agg_col.col,
-                perc=cfg.percentile,
-                ign=cfg.ignore_values,
-                perc_adj_factor=perc_adj_factor
-            ),
+            sql_code,
             f'{agg_col.col}__p{cfg.percentile}',
         )
 
@@ -234,19 +266,19 @@ class DialectDefinition(ABC):
             AggOperationEnum,
             Callable[[AggCol], Tuple[str, str]],
         ] = {
-            AggOperationEnum.COUNT: self.render_count,
+            AggOperationEnum.COUNT: self._render_agg_count,
             AggOperationEnum.COUNT_DISTINCT: (
-                self.render_count_distinct
+                self._render_agg_count_distinct
             ),
             AggOperationEnum.COUNT_NULL: (
-                self.render_count_null
+                self._render_agg_count_null
             ),
-            AggOperationEnum.MAX: self.render_max,
-            AggOperationEnum.MIN: self.render_min,
-            AggOperationEnum.MEAN: self.render_mean,
-            AggOperationEnum.SUM: self.render_sum,
+            AggOperationEnum.MAX: self._render_agg_max,
+            AggOperationEnum.MIN: self._render_agg_min,
+            AggOperationEnum.MEAN: self._render_agg_mean,
+            AggOperationEnum.SUM: self._render_agg_sum,
             AggOperationEnum.PERCENTILE: (
-                self.render_percentile
+                self._render_agg_percentile
             ),
         }
 
