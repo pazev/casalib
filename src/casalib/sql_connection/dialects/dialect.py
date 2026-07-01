@@ -18,7 +18,7 @@ from typing import (
 
 from ..sql_dialect_abstract import SqlDialectAbstract
 from .helpers import normalise_cols, process_agg_args
-from .ansi.dialect_def import AnsiDialectDef
+from .dialect_def import DialectDefinition
 
 
 def _join_on(
@@ -44,7 +44,7 @@ class Dialect(SqlDialectAbstract):
     AnsiDialectDef subclass.
     """
 
-    _dialect_def: ClassVar[AnsiDialectDef]
+    _dialect_def: ClassVar[DialectDefinition]
 
     def select(self, table_name: str) -> str:
         return self._dialect_def.render_select(

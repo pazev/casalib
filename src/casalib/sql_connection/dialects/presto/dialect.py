@@ -1,6 +1,5 @@
 """PrestoDialect — Dialect for Presto/Trino SQL."""
 from dataclasses import dataclass
-from typing import ClassVar
 
 from ..dialect import Dialect
 from .dialect_def import PrestoDialectDef
@@ -13,6 +12,4 @@ class PrestoDialect(Dialect):
     PrestoDialectDef.
     """
 
-    _dialect_def: ClassVar[PrestoDialectDef] = (
-        PrestoDialectDef()
-    )
+    _dialect_def = PrestoDialectDef()
