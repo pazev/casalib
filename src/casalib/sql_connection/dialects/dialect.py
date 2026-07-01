@@ -17,7 +17,7 @@ from typing import (
 )
 
 from ..sql_dialect_abstract import SqlDialectAbstract
-from ._helpers import normalise_cols, process_agg_args
+from .helpers import normalise_cols, process_agg_args
 from .ansi.dialect_def import AnsiDialectDef
 
 
@@ -159,31 +159,11 @@ class Dialect(SqlDialectAbstract):
             Union[str, Tuple[str, str]]
         ],
     ) -> str:
-        norm_keys = normalise_cols(keys)
-        norm_cols = normalise_cols(columns)
-        join_on = _join_on(
-            keys, left="l", right="r"
-        )
-        key_cols = ",\n    ".join(
-            f"COALESCE(l.{lk}, r.{rk}) AS {lk}"
-            for lk, rk in norm_keys
-        )
-        diff_cols = ",\n    ".join(
-            f"l.{lc} AS {lc}__left,"
-            f"\n    r.{rc} AS {rc}__right"
-            for lc, rc in norm_cols
-        )
-        diff_where = "\n    OR ".join(
-            f"(l.{lc} IS DISTINCT FROM r.{rc})"
-            for lc, rc in norm_cols
-        )
         return self._dialect_def.render_get_diffs(
             self.input_query,
             other,
-            join_on,
-            key_cols,
-            diff_cols,
-            diff_where,
+            keys,
+            columns,
         )
 
     def op(
@@ -193,7 +173,7 @@ class Dialect(SqlDialectAbstract):
         select_only: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> str:
-        return self._dialect_def.render_op(
+        return self._dialect_def.render_build_op(
             self.input_query,
             add,
             rename,

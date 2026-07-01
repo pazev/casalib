@@ -2,8 +2,7 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from .._dialect_def import DialectDefinition, RenderedAggDict
-from .._helpers import AggCol, ProcessedAggDict
+from ..dialect_def import DialectDefinition
 
 _TEMPLATE_FLD = Path(__file__).parent / "templates"
 
@@ -17,125 +16,40 @@ class AnsiDialectDef(DialectDefinition):
     engine-specific syntax.
     """
 
-    def render_percentile(
-        self, agg_col: AggCol
-    ) -> Tuple[str, str]:
-        cfg = agg_col.percentile_config
-        assert cfg is not None
-        col = agg_col.col
-        pct = cfg.percentile / 100.0
-        if cfg.ignore_values:
-            vals = ", ".join(
-                str(v) for v in cfg.ignore_values
-            )
-            inner = (
-                f"CASE WHEN {col} NOT IN ({vals})"
-                f" THEN {col} ELSE NULL END"
-            )
-        else:
-            inner = col
-        return (
-            f"approx_percentile({inner}, {pct})",
-            f"{col}__p{cfg.percentile}",
-        )
+    # Template paths
+    # ==============
+    def _get_select_template(self) -> Path:
+        return _TEMPLATE_FLD / "select.sql"
 
-    def render_select(self, table_name: str) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "select.sql"
-        ).render(table_name=table_name)
+    def _get_agg_template(self) -> Path:
+        return _TEMPLATE_FLD / "agg.sql"
 
-    def render_agg(
-        self,
-        processed: ProcessedAggDict,
-        input_query: str,
-    ) -> str:
-        agg_def = RenderedAggDict(
-            groupby=processed['groupby'],
-            cols_before=processed['cols_before'],
-            cols_after=processed['cols_after'],
-            ops=[
-                self._dispatch_agg(ac)
-                for ac in processed['ops']
-            ],
-        )
-        return self._load_template(
-            _TEMPLATE_FLD / "agg.sql"
-        ).render(input_query=input_query, agg_def=agg_def)
+    def _get_sample_template(self) -> Path:
+        return _TEMPLATE_FLD / "sample.sql"
 
-    def render_sample(
-        self, input_query: str, num_samples: int
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "sample.sql"
-        ).render(
-            input_query=input_query,
-            num_samples=num_samples,
-        )
+    def _get_get_duplicates_template(self) -> Path:
+        return _TEMPLATE_FLD / "get_duplicates.sql"
 
-    def render_get_duplicates(
-        self,
-        input_query: str,
-        keys: List[str],
-        join_on: str,
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "get_duplicates.sql"
-        ).render(
-            input_query=input_query,
-            keys=keys,
-            join_on=join_on,
-        )
+    def _get_last_partition_template(self) -> Path:
+        return _TEMPLATE_FLD / "last_partitions.sql"
 
-    def render_last_partitions(
-        self,
-        input_query: str,
-        date_ingestion: str,
-        columns: List[str],
-        join_on: str,
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "last_partitions.sql"
-        ).render(
-            input_query=input_query,
-            date_ingestion=date_ingestion,
-            columns=columns,
-            join_on=join_on,
-        )
+    def _get_enrich_template(self) -> Path:
+        return _TEMPLATE_FLD / "enrich.sql"
 
-    def render_enrich(
-        self,
-        input_query: str,
-        others: List[str],
-        join_ons: List[str],
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "enrich.sql"
-        ).render(
-            input_query=input_query,
-            others=others,
-            join_ons=join_ons,
-        )
+    def _get_jsonify_template(self) -> Path:
+        return _TEMPLATE_FLD / "jsonify.sql"
 
-    def render_get_diffs(
-        self,
-        input_query: str,
-        other: str,
-        join_on: str,
-        key_cols: str,
-        diff_cols: str,
-        diff_where: str,
-    ) -> str:
-        return self._load_template(
-            _TEMPLATE_FLD / "get_diffs.sql"
-        ).render(
-            input_query=input_query,
-            other=other,
-            join_on=join_on,
-            key_cols=key_cols,
-            diff_cols=diff_cols,
-            diff_where=diff_where,
-        )
+    def _get_missing_keys_template(self) -> Path:
+        return _TEMPLATE_FLD / "missing_keys.sql"
 
+    def _get_get_diffs_template(self) -> Path:
+        return _TEMPLATE_FLD / "get_diffs.sql"
+
+    def _get_build_op_template(self) -> Path:
+        return _TEMPLATE_FLD / "op.sql"
+
+    # ANSI-specific select-list building for op
+    # ==========================================
     def _build_op_select(
         self,
         add: Optional[Dict[str, str]],
@@ -182,7 +96,7 @@ class AnsiDialectDef(DialectDefinition):
             return "*"
         return "*, " + ", ".join(extras)
 
-    def render_op(
+    def render_build_op(
         self,
         input_query: str,
         add: Optional[Dict[str, str]],
@@ -198,22 +112,4 @@ class AnsiDialectDef(DialectDefinition):
         ).render(
             input_query=input_query,
             select_list=select_list,
-        )
-
-    def render_jsonify(
-        self,
-        input_query: str,
-        keys: List[str],
-        columns: List[str],
-    ) -> str:
-        json_args = ",\n        ".join(
-            f"'{col}' VALUE CAST({col} AS VARCHAR)"
-            for col in columns
-        )
-        return self._load_template(
-            _TEMPLATE_FLD / "jsonify.sql"
-        ).render(
-            input_query=input_query,
-            keys=keys,
-            json_args=json_args,
         )

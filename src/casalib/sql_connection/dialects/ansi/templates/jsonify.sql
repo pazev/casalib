@@ -4,6 +4,7 @@ WITH __base AS (
 SELECT
     {{ keys | join(',\n    ') }},
     JSON_OBJECT(
-        {{ json_args }}
+        {% for col in columns %}'{{ col }}' VALUE CAST({{ col }} AS VARCHAR){% if not loop.last %},
+        {% endif %}{% endfor %}
     ) AS __json
 FROM __base

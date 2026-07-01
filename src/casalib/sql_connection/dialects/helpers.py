@@ -2,16 +2,12 @@
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import (
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    Union,
+    Dict, List, Optional, Sequence, Tuple, Union,
 )
 
 
+# Normalization function
+# ======================
 def normalise_cols(
     cols: Sequence[Union[str, Tuple[str, str]]],
 ) -> List[Tuple[str, str]]:
@@ -85,7 +81,8 @@ class AggCol:
         )
 
 
-class ProcessedAggDict(TypedDict):
+@dataclass(slots=True)
+class ProcessedAggDef:
     groupby: List[Tuple[str, str]]
     cols_before: List[Tuple[str, str]]
     cols_after: List[Tuple[str, str]]
@@ -93,12 +90,12 @@ class ProcessedAggDict(TypedDict):
 
 
 def retrieve_agg_parameters(
-    simple_agg: Dict[str, List[str]],
+    simple_agg: Dict[AggOperationEnum, List[str]],
     percentiles: Dict[int, List[str]],
     percentiles_ignore_vals: Dict[str, List[float]],
 ) -> List[AggCol]:
     simple_agg_cols = [
-        AggCol(col, AggOperationEnum[op])
+        AggCol(col, op)
         for op, list_cols in simple_agg.items()
         for col in list_cols
     ]
@@ -141,9 +138,8 @@ def process_agg_args(
     cols_after: Optional[
         List[Union[str, Tuple[str, str]]]
     ] = None,
-) -> ProcessedAggDict:
+) -> ProcessedAggDef:
     # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-locals
     """
     Build the SELECT expression list for agg.
 
@@ -174,20 +170,20 @@ def process_agg_args(
     # Adjust aggregations
     ops = retrieve_agg_parameters(
         simple_agg={
-            'COUNT': count_ or [],
-            'COUNT_NULL': count_null_ or [],
-            'COUNT_DISTINCT': count_distinct_ or [],
-            'SUM': sum_ or [],
-            'MEAN': mean_ or [],
-            'MIN': min_ or [],
-            'MAX': max_ or [],
+            AggOperationEnum.COUNT: count_ or [],
+            AggOperationEnum.COUNT_NULL: count_null_ or [],
+            AggOperationEnum.COUNT_DISTINCT: count_distinct_ or [],
+            AggOperationEnum.SUM: sum_ or [],
+            AggOperationEnum.MEAN: mean_ or [],
+            AggOperationEnum.MIN: min_ or [],
+            AggOperationEnum.MAX: max_ or [],
         },
         percentiles=percentile_ or {},
         percentiles_ignore_vals=percentile_ignore_values_ or {},
     )
-    return ProcessedAggDict(
+    return ProcessedAggDef(
         groupby=normalise_cols(groupby or []),
         cols_before=normalise_cols(cols_before or []),
         cols_after=normalise_cols(cols_after or []),
-        ops=ops
+        ops=ops,
     )
