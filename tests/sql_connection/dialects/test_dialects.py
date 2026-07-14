@@ -83,7 +83,7 @@ class TestAggColOrdering:
         a = self._col("a", AggOperationEnum.COUNT)
         b = self._col("b", AggOperationEnum.COUNT)
         assert a < b
-        assert not b < a
+        assert not b < a  # pylint: disable=C0117
 
     def test_order_by_op_same_col(self) -> None:
         """Different ops on same col are ordered."""
@@ -113,7 +113,7 @@ class TestAggColOrdering:
         """Two identical AggCols are not less-than."""
         a = AggCol(col="x", op=AggOperationEnum.COUNT)
         b = AggCol(col="x", op=AggOperationEnum.COUNT)
-        assert not a < b
+        assert not a < b  # pylint: disable=C0117
 
     def test_percentile_ordered_by_value(self) -> None:
         """Lower percentile value sorts before higher."""
@@ -224,10 +224,10 @@ class TestProcessAggArgs:
     def test_all_none_gives_empty(self) -> None:
         """No arguments produce empty ProcessedAggDef."""
         result = process_agg_args()
-        assert result.ops == []
-        assert result.groupby == []
-        assert result.cols_before == []
-        assert result.cols_after == []
+        assert not result.ops
+        assert not result.groupby
+        assert not result.cols_before
+        assert not result.cols_after
 
     def test_percentile_with_ignore(self) -> None:
         """percentile_ and ignore values wire through."""
@@ -284,24 +284,26 @@ class TestRenderedAgg:
         )
         assert rendered.groupby == [("g", "g")]
         assert len(rendered.ops) == 1
-        sql_code, alias = rendered.ops[0]
-        assert "SUM(x)" in sql_code
-        assert alias == "x__sum"
+        op = rendered.ops[0]
+        assert "SUM(x)" in op.sql_code
+        assert op.alias == "x__sum"
 
 
-# _render_case_not_in
+# _render_case_not_in_float
 
 class TestRenderCaseNotIn:
-    """Tests for _render_case_not_in."""
+    """Tests for _render_case_not_in_float."""
 
     def test_no_ignore(self) -> None:
         """Without ignore_values col is returned as-is."""
-        result = ANSI._render_case_not_in("amount")
+        result = ANSI._render_case_not_in_float(
+            "amount"
+        )
         assert result == "amount"
 
     def test_with_ignore(self) -> None:
         """With ignore_values a CASE WHEN is built."""
-        result = ANSI._render_case_not_in(
+        result = ANSI._render_case_not_in_float(
             "amount",
             ignore_values=[0.0, -1.0],
         )
@@ -312,24 +314,41 @@ class TestRenderCaseNotIn:
         assert "amount" in result
 
 
-# _render_agg_percentile (low-level render)
+# _render_agg_percentile_sql_code (low-level render)
 
 class TestRenderPercentileFunction:
-    """Tests for AnsiDialectDef._render_agg_percentile."""
+    """Tests for _render_agg_percentile_sql_code."""
 
     def test_divides_by_100(self) -> None:
         """Integer percentile is divided by 100."""
-        result = ANSI._render_agg_percentile(
-            "col", 50
+        r = ANSI._render_agg_percentile_sql_code(
+            "col", "col", 50
         )
-        assert result == "approx_percentile(col, 0.5)"
+        assert r.sql_code == (
+            "approx_percentile(col, 0.5)"
+        )
+        assert r.alias == "col__p50"
 
     def test_p95(self) -> None:
         """p95 renders as 0.95."""
-        result = ANSI._render_agg_percentile(
-            "col", 95
+        r = ANSI._render_agg_percentile_sql_code(
+            "col", "col", 95
         )
-        assert result == "approx_percentile(col, 0.95)"
+        assert r.sql_code == (
+            "approx_percentile(col, 0.95)"
+        )
+        assert r.alias == "col__p95"
+
+    def test_sql_code_differs_from_col(self) -> None:
+        """sql_code used in expression, col for alias."""
+        r = ANSI._render_agg_percentile_sql_code(
+            "amount",
+            "CASE WHEN amount NOT IN (0) "
+            "THEN amount END",
+            90,
+        )
+        assert "CASE WHEN" in r.sql_code
+        assert r.alias == "amount__p90"
 
 
 # _render_agg_* functions
@@ -348,60 +367,58 @@ class TestRenderAggFunctions:
     def test_count(self) -> None:
         """COUNT renders COUNT(col) and __count alias."""
         col = self._col("id")
-        sql, alias = ANSI._render_agg_count(col)
-        assert sql == "COUNT(id)"
-        assert alias == "id__count"
+        r = ANSI._render_agg_count(col)
+        assert r.sql_code == "COUNT(id)"
+        assert r.alias == "id__count"
 
     def test_count_null(self) -> None:
         """COUNT_NULL renders SUM(CASE WHEN IS NULL)."""
         col = self._col("x")
-        sql, alias = ANSI._render_agg_count_null(col)
-        assert "IS NULL" in sql
-        assert "SUM(CASE" in sql
-        assert alias == "x__count_null"
+        r = ANSI._render_agg_count_null(col)
+        assert "IS NULL" in r.sql_code
+        assert "SUM(CASE" in r.sql_code
+        assert r.alias == "x__count_null"
 
     def test_count_distinct(self) -> None:
         """COUNT_DISTINCT renders COUNT(DISTINCT col)."""
         col = self._col("u")
-        sql, alias = (
-            ANSI._render_agg_count_distinct(col)
-        )
-        assert sql == "COUNT(DISTINCT u)"
-        assert alias == "u__count_distinct"
+        r = ANSI._render_agg_count_distinct(col)
+        assert r.sql_code == "COUNT(DISTINCT u)"
+        assert r.alias == "u__count_distinct"
 
     def test_sum(self) -> None:
         """SUM renders SUM(col) and __sum alias."""
         col = self._col("amount")
-        sql, alias = ANSI._render_agg_sum(col)
-        assert sql == "SUM(amount)"
-        assert alias == "amount__sum"
+        r = ANSI._render_agg_sum(col)
+        assert r.sql_code == "SUM(amount)"
+        assert r.alias == "amount__sum"
 
     def test_mean(self) -> None:
         """MEAN renders AVG(col) and __mean alias."""
         col = self._col("score")
-        sql, alias = ANSI._render_agg_mean(col)
-        assert sql == "AVG(score)"
-        assert alias == "score__mean"
+        r = ANSI._render_agg_mean(col)
+        assert r.sql_code == "AVG(score)"
+        assert r.alias == "score__mean"
 
     def test_min(self) -> None:
         """MIN renders MIN(col) and __min alias."""
         col = self._col("dt")
-        sql, alias = ANSI._render_agg_min(col)
-        assert sql == "MIN(dt)"
-        assert alias == "dt__min"
+        r = ANSI._render_agg_min(col)
+        assert r.sql_code == "MIN(dt)"
+        assert r.alias == "dt__min"
 
     def test_max(self) -> None:
         """MAX renders MAX(col) and __max alias."""
         col = self._col("dt")
-        sql, alias = ANSI._render_agg_max(col)
-        assert sql == "MAX(dt)"
-        assert alias == "dt__max"
+        r = ANSI._render_agg_max(col)
+        assert r.sql_code == "MAX(dt)"
+        assert r.alias == "dt__max"
 
 
-# _render_agg_percentile_function (full pipeline)
+# _render_agg_percentile (full pipeline)
 
 class TestRenderAggPercentile:
-    """Tests for _render_agg_percentile_function."""
+    """Tests for _render_agg_percentile."""
 
     def _perc_col(
         self,
@@ -422,38 +439,26 @@ class TestRenderAggPercentile:
     def test_ansi_divides_by_100(self) -> None:
         """ANSI converts integer 95 to fraction 0.95."""
         agg_col = self._perc_col("price", 95)
-        sql, alias = (
-            ANSI._render_agg_percentile_function(
-                agg_col
-            )
-        )
-        assert "0.95" in sql
-        assert alias == "price__p95"
+        r = ANSI._render_agg_percentile(agg_col)
+        assert "0.95" in r.sql_code
+        assert r.alias == "price__p95"
 
     def test_ansi_p50(self) -> None:
         """ANSI percentile 50 becomes 0.5."""
         agg_col = self._perc_col("score", 50)
-        sql, _ = (
-            ANSI._render_agg_percentile_function(
-                agg_col
-            )
-        )
-        assert "0.5" in sql
+        r = ANSI._render_agg_percentile(agg_col)
+        assert "0.5" in r.sql_code
 
     def test_ansi_with_ignore_values(self) -> None:
         """ignore_values wraps col in CASE WHEN NOT IN."""
         agg_col = self._perc_col(
             "amount", 90, ignore=[0.0]
         )
-        sql, alias = (
-            ANSI._render_agg_percentile_function(
-                agg_col
-            )
-        )
-        assert "CASE WHEN" in sql
-        assert "0.0" in sql
-        assert "0.9" in sql
-        assert alias == "amount__p90"
+        r = ANSI._render_agg_percentile(agg_col)
+        assert "CASE WHEN" in r.sql_code
+        assert "0.0" in r.sql_code
+        assert "0.9" in r.sql_code
+        assert r.alias == "amount__p90"
 
     def test_raises_without_config(self) -> None:
         """PERCENTILE without percentile_config raises."""
@@ -465,9 +470,7 @@ class TestRenderAggPercentile:
             ValueError,
             match="percentile_config",
         ):
-            ANSI._render_agg_percentile_function(
-                agg_col
-            )
+            ANSI._render_agg_percentile(agg_col)
 
 
 # _dispatch_agg
@@ -514,16 +517,16 @@ class TestDispatchAgg:
     ) -> None:
         """Each op dispatches to correct render method."""
         agg_col = self._make(op)
-        _, alias = ANSI._dispatch_agg(agg_col)
-        assert alias.endswith(expected_alias_suffix)
+        r = ANSI._dispatch_agg(agg_col)
+        assert r.alias.endswith(expected_alias_suffix)
 
     def test_dispatch_percentile(self) -> None:
         """PERCENTILE op returns expected alias."""
         agg_col = self._make(
             AggOperationEnum.PERCENTILE, perc=75
         )
-        _, alias = ANSI._dispatch_agg(agg_col)
-        assert alias == "x__p75"
+        r = ANSI._dispatch_agg(agg_col)
+        assert r.alias == "x__p75"
 
 
 # render_select

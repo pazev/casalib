@@ -6,8 +6,8 @@ input_query_ AS (
 cols_before_ AS (
     SELECT
         *{% if agg_def.cols_before %},
-        {% for sql_code, alias in agg_def.cols_before %}
-        {{sql_code}} AS {{alias}}{%if not loop.last%},{%endif%}
+        {% for col in agg_def.cols_before %}
+        {{col.sql_code}} AS {{col.alias}}{%if not loop.last%},{%endif%}
         {% endfor %}
         {% endif %}
 
@@ -23,8 +23,8 @@ agg_ AS (
         {% endfor %}
         {% endif %}
         {% if agg_def.ops %}
-        {% for sql_code, alias in agg_def.ops %}
-        {{sql_code}} as {{alias}},
+        {% for col in agg_def.ops %}
+        {{col.sql_code}} as {{col.alias}},
         {% endfor %}
         {% endif %}
         COUNT(*) as count_rows_
@@ -42,8 +42,8 @@ agg_ AS (
 cols_after_ AS (
     SELECT
         *{% if agg_def.cols_after %},
-        {% for sql_code, alias in agg_def.cols_after %}
-        {{sql_code}} as {{alias}}{%if not loop.last%},{%endif%}
+        {% for col in agg_def.cols_after %}
+        {{col.sql_code}} as {{col.alias}}{%if not loop.last%},{%endif%}
         {% endfor %}
         {% endif %}
 

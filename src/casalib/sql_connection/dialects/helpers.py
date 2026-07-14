@@ -86,6 +86,14 @@ class AggCol:
 
 
 @dataclass(slots=True)
+class RenderedCol:
+    """A rendered SQL expression with its alias."""
+
+    sql_code: str
+    alias: str
+
+
+@dataclass(slots=True)
 class ProcessedAggDef:
     """Parsed and validated agg arguments."""
 

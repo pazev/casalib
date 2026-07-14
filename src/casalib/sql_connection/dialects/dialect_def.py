@@ -17,6 +17,7 @@ from .helpers import (
     AggCol,
     AggOperationEnum,
     ProcessedAggDef,
+    RenderedCol,
     normalise_cols,
 )
 
@@ -28,21 +29,27 @@ class RenderedAgg:
     """
 
     groupby: List[Tuple[str, str]]
-    cols_before: List[Tuple[str, str]]
-    cols_after: List[Tuple[str, str]]
-    ops: List[Tuple[str, str]]
+    cols_before: List[RenderedCol]
+    cols_after: List[RenderedCol]
+    ops: List[RenderedCol]
 
     @classmethod
     def from_agg_def(
         cls,
         agg_def: ProcessedAggDef,
-        _dispatch: Callable[[AggCol], Tuple[str, str]],
+        _dispatch: Callable[[AggCol], RenderedCol],
     ) -> "RenderedAgg":
         """Build a RenderedAgg by dispatching each op."""
         return cls(
             groupby=agg_def.groupby,
-            cols_before=agg_def.cols_before,
-            cols_after=agg_def.cols_after,
+            cols_before=[
+                RenderedCol(sql_code=s, alias=a)
+                for s, a in agg_def.cols_before
+            ],
+            cols_after=[
+                RenderedCol(sql_code=s, alias=a)
+                for s, a in agg_def.cols_after
+            ],
             ops=[_dispatch(op) for op in agg_def.ops],
         )
 
@@ -122,10 +129,10 @@ class DialectDefinition(ABC):
     def _get_build_op_template(self) -> Path:
         """Return the path to the build_op template."""
 
-    # Generators for some SQL common functions
-    # ========================================
+    # Agg primitive renderers (abstract)
+    # ===================================
     @abstractmethod
-    def _render_case_not_in(
+    def _render_case_not_in_float(
         self,
         col: str,
         ignore_values: Optional[List[float]] = None,
@@ -133,47 +140,49 @@ class DialectDefinition(ABC):
         """ Render how the case when is rendered """
 
     @abstractmethod
-    def _render_agg_percentile(
-        self,
-        col: str,
-        perc: int,
-    ) -> str:
+    def _render_agg_percentile_sql_code(
+        self, col: str, sql_code: str, perc: int,
+    ) -> RenderedCol:
         """Render the percentile function call."""
 
     @abstractmethod
-    def _render_agg_count(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_count(self, col: AggCol) -> RenderedCol:
         """Render COUNT."""
 
     @abstractmethod
-    def _render_agg_count_null(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_count_null(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render count of NULLs via SUM(CASE ...)."""
 
     @abstractmethod
-    def _render_agg_count_distinct(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_count_distinct(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render COUNT DISTINCT."""
 
     @abstractmethod
-    def _render_agg_sum(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_sum(self, col: AggCol) -> RenderedCol:
         """Render SUM."""
 
     @abstractmethod
-    def _render_agg_mean(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_mean(self, col: AggCol) -> RenderedCol:
         """Render AVG."""
 
     @abstractmethod
-    def _render_agg_min(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_min(self, col: AggCol) -> RenderedCol:
         """Render MIN."""
 
     @abstractmethod
-    def _render_agg_max(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_max(self, col: AggCol) -> RenderedCol:
         """Render MAX."""
 
-    # Render the percentile function
-    # ==============================
-    def _render_agg_percentile_function(
+    # Agg orchestration
+    # =================
+    def _render_agg_percentile(
         self,
         agg_col: AggCol
-    ) -> Tuple[str, str]:
+    ) -> RenderedCol:
         """Render a PERCENTILE aggregation."""
         cfg = agg_col.percentile_config
 
@@ -182,41 +191,46 @@ class DialectDefinition(ABC):
                 '`percentile_config` cannot be None'
             )
 
-        adj_col = self._render_case_not_in(
+        adj_col = self._render_case_not_in_float(
             col=agg_col.col, ignore_values=cfg.ignore_values
         )
-
-        sql_code = self._render_agg_percentile(
-            col=adj_col,
+        return self._render_agg_percentile_sql_code(
+            col=agg_col.col,
+            sql_code=adj_col,
             perc=cfg.percentile,
-        )
-
-        return (
-            sql_code,
-            f'{agg_col.col}__p{cfg.percentile}',
         )
 
     def _dispatch_agg(
         self, agg_col: AggCol
-    ) -> Tuple[str, str]:
+    ) -> RenderedCol:
         """Dispatch an AggCol to its render method."""
         dispatch: Dict[
             AggOperationEnum,
-            Callable[[AggCol], Tuple[str, str]],
+            Callable[[AggCol], RenderedCol],
         ] = {
-            AggOperationEnum.COUNT: self._render_agg_count,
+            AggOperationEnum.COUNT: (
+                self._render_agg_count
+            ),
             AggOperationEnum.COUNT_DISTINCT: (
                 self._render_agg_count_distinct
             ),
             AggOperationEnum.COUNT_NULL: (
                 self._render_agg_count_null
             ),
-            AggOperationEnum.MAX: self._render_agg_max,
-            AggOperationEnum.MIN: self._render_agg_min,
-            AggOperationEnum.MEAN: self._render_agg_mean,
-            AggOperationEnum.SUM: self._render_agg_sum,
+            AggOperationEnum.SUM: (
+                self._render_agg_sum
+            ),
+            AggOperationEnum.MEAN: (
+                self._render_agg_mean
+            ),
+            AggOperationEnum.MIN: (
+                self._render_agg_min
+            ),
+            AggOperationEnum.MAX: (
+                self._render_agg_max
+            ),
             AggOperationEnum.PERCENTILE: (
-                self._render_agg_percentile_function
+                self._render_agg_percentile
             ),
         }
 

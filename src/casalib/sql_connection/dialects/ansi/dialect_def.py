@@ -1,9 +1,9 @@
 """AnsiDialectDef — DialectDefinition for ANSI SQL."""
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from ..dialect_def import DialectDefinition
-from ..helpers import AggCol
+from ..helpers import AggCol, RenderedCol
 
 _TEMPLATE_FLD = Path(__file__).parent / "templates"
 
@@ -49,86 +49,107 @@ class AnsiDialectDef(DialectDefinition):
     def _get_build_op_template(self) -> Path:
         return _TEMPLATE_FLD / "op.sql"
 
-    # Generators for some SQL common functions
-    # ========================================
-    def _render_case_not_in(
+    # Agg primitive renderers
+    # =======================
+    def _render_case_not_in_float(
         self,
         col: str,
         ignore_values: Optional[List[float]] = None,
     ) -> str:
-        """ Render how the case when is rendered """
-        noign = self._from_string('{{col}}')
+        """Wrap col in CASE WHEN NOT IN if needed."""
+        if ignore_values is None:
+            return col
+
         ign = self._from_string(
             '''CASE WHEN {{col}} NOT IN'''
             ''' ({{ign | join(', ')}})'''
             ''' THEN {{col}} END'''
         )
-        template_to_use = (
-            ign if ignore_values else noign
-        )
-        return template_to_use.render(
+        return ign.render(
             col=col, ign=ignore_values,
         )
 
-    def _render_agg_percentile(self, col: str, perc: int) -> str:
+    def _render_agg_percentile_sql_code(
+        self, col: str, sql_code: str, perc: int,
+    ) -> RenderedCol:
         """Render the percentile function call."""
         temp = self._from_string(
-            'approx_percentile({{col}}, '
-            '{{perc_adj}})'
+            'approx_percentile({{sql_code}}, {{perc_adj}})'
         )
-        return temp.render(
-            col=col,
-            perc_adj=perc / 100,
+        sql_code_rendered = temp.render(
+            sql_code=sql_code, perc_adj=perc / 100.0,
+        )
+        return RenderedCol(
+            sql_code=sql_code_rendered,
+            alias=f'{col}__p{perc}',
         )
 
-    def _render_agg_count(self, col: AggCol) -> Tuple[str, str]:
+    # Agg renderers
+    # =============
+    def _render_agg_count(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render COUNT."""
-        return (
-            f"COUNT({col.col})",
-            f"{col.col}__count",
+        return RenderedCol(
+            sql_code=f"COUNT({col.col})",
+            alias=f"{col.col}__count",
         )
 
-    def _render_agg_count_null(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_count_null(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render count of NULLs via SUM(CASE ...)."""
-        return (
-            f"SUM(CASE WHEN {col.col}"
-            f" IS NULL THEN 1 ELSE 0 END)",
-            f"{col.col}__count_null",
+        return RenderedCol(
+            sql_code=(
+                f"SUM(CASE WHEN {col.col}"
+                f" IS NULL THEN 1 ELSE 0 END)"
+            ),
+            alias=f"{col.col}__count_null",
         )
 
-    def _render_agg_count_distinct(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_count_distinct(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render COUNT DISTINCT."""
-        return (
-            f"COUNT(DISTINCT {col.col})",
-            f"{col.col}__count_distinct",
+        return RenderedCol(
+            sql_code=f"COUNT(DISTINCT {col.col})",
+            alias=f"{col.col}__count_distinct",
         )
 
-    def _render_agg_sum(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_sum(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render SUM."""
-        return (
-            f"SUM({col.col})",
-            f"{col.col}__sum",
+        return RenderedCol(
+            sql_code=f"SUM({col.col})",
+            alias=f"{col.col}__sum",
         )
 
-    def _render_agg_mean(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_mean(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render AVG."""
-        return (
-            f"AVG({col.col})",
-            f"{col.col}__mean",
+        return RenderedCol(
+            sql_code=f"AVG({col.col})",
+            alias=f"{col.col}__mean",
         )
 
-    def _render_agg_min(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_min(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render MIN."""
-        return (
-            f"MIN({col.col})",
-            f"{col.col}__min",
+        return RenderedCol(
+            sql_code=f"MIN({col.col})",
+            alias=f"{col.col}__min",
         )
 
-    def _render_agg_max(self, col: AggCol) -> Tuple[str, str]:
+    def _render_agg_max(
+        self, col: AggCol
+    ) -> RenderedCol:
         """Render MAX."""
-        return (
-            f"MAX({col.col})",
-            f"{col.col}__max",
+        return RenderedCol(
+            sql_code=f"MAX({col.col})",
+            alias=f"{col.col}__max",
         )
 
     # ANSI-specific select-list building for op
@@ -191,7 +212,7 @@ class AnsiDialectDef(DialectDefinition):
             add, rename, select_only, exclude
         )
         return self._load_template(
-            _TEMPLATE_FLD / "op.sql"
+            self._get_build_op_template()
         ).render(
             input_query=input_query,
             select_list=select_list,
