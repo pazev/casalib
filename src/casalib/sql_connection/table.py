@@ -5,7 +5,7 @@ from typing import Optional, Type
 import pandas as pd
 
 from .metadata import Metadata
-from .query import AsyncQuery, Query
+from .query import AsyncQuery, Query, _QueryBuilder
 from .sql_dialect_abstract import SqlDialectAbstract
 from .worker_abstract import (
     AsyncWorkerAbstract,
@@ -151,6 +151,11 @@ class Table:
         )
         q.set_worker(self.worker)
         return q
+
+    @property
+    def q(self) -> _QueryBuilder:
+        """ Return a QueryBuilder object """
+        return self.query.q
 
     def collect(self) -> pd.DataFrame:
         """Collect all data from the table as a

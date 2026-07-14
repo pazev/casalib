@@ -36,17 +36,24 @@ class _QueryBuilder(SqlDialectProtocol["Query"]):
     def __init__(
         self,
         dialect_instance: SqlDialectAbstract,
-        dialect: Type[SqlDialectAbstract],
         worker: Optional[WorkerAbstract],
     ) -> None:
         self._instance = dialect_instance
-        self._dialect = dialect
         self._worker = worker
+
+    def __repr__(self) -> str:
+        """Show dialect and worker."""
+        return (
+            f"{self.__class__.__name__}("
+            f"dialect="
+            f"{self._instance.__class__.__name__}"
+            f", worker={self._worker!r})"
+        )
 
     def _wrap(self, result: str) -> "Query":
         return Query(
             query=result,
-            dialect=self._dialect,
+            dialect=self._instance.__class__,
         ).set_worker(self._worker)
 
     def select(self, table_name: str) -> "Query":
@@ -401,7 +408,6 @@ class Query:
             dialect_instance=self.dialect(
                 input_query=self.query
             ),
-            dialect=self.dialect,
             worker=self.worker_,
         )
 
@@ -492,19 +498,26 @@ class _AsyncQueryBuilder(
     def __init__(
         self,
         dialect_instance: SqlDialectAbstract,
-        dialect: Type[SqlDialectAbstract],
         worker: Optional[AsyncWorkerAbstract],
     ) -> None:
         self._instance = dialect_instance
-        self._dialect = dialect
         self._worker = worker
+
+    def __repr__(self) -> str:
+        """Show dialect and worker."""
+        return (
+            f"{self.__class__.__name__}("
+            f"dialect="
+            f"{self._instance.__class__.__name__}"
+            f", worker={self._worker!r})"
+        )
 
     def _wrap(
         self, result: str
     ) -> "AsyncQuery":
         return AsyncQuery(
             query=result,
-            dialect=self._dialect,
+            dialect=self._instance.__class__,
         ).set_worker(self._worker)
 
     def select(
@@ -835,7 +848,6 @@ class AsyncQuery:
             dialect_instance=self.dialect(
                 input_query=self.query
             ),
-            dialect=self.dialect,
             worker=self.worker_,
         )
 

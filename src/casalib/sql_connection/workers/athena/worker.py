@@ -45,9 +45,7 @@ class AwsAthenaWorker(WorkerAbstract):
     workgroup: str = "primary"
     poll_interval: float = 0.5
     catalog: str = "AwsDataCatalog"
-    session_: Optional[boto3.Session] = field(
-        default=None, repr=False
-    )
+    session_: Optional[boto3.Session] = field(default=None)
 
     @property
     def session(self) -> boto3.Session:
