@@ -312,31 +312,24 @@ class TestRenderCaseNotIn:
         assert "amount" in result
 
 
-# _render_percentile_function
+# _render_agg_percentile (low-level render)
 
 class TestRenderPercentileFunction:
-    """Tests for _render_percentile_function."""
+    """Tests for AnsiDialectDef._render_agg_percentile."""
 
-    def test_default_no_adj(self) -> None:
-        """Default factor passes percentile as-is."""
-        result = ANSI._render_percentile_function(
+    def test_divides_by_100(self) -> None:
+        """Integer percentile is divided by 100."""
+        result = ANSI._render_agg_percentile(
             "col", 50
         )
-        assert result == "approx_percentile(col, 50.0)"
+        assert result == "approx_percentile(col, 0.5)"
 
-    def test_adj_factor_100(self) -> None:
-        """Factor 100 converts integer to fraction."""
-        result = ANSI._render_percentile_function(
-            "col", 95, perc_adj_factor=100.0
+    def test_p95(self) -> None:
+        """p95 renders as 0.95."""
+        result = ANSI._render_agg_percentile(
+            "col", 95
         )
         assert result == "approx_percentile(col, 0.95)"
-
-    def test_custom_func(self) -> None:
-        """Custom func name replaces approx_percentile."""
-        result = ANSI._render_percentile_function(
-            "col", 50, func="percentile_approx"
-        )
-        assert result.startswith("percentile_approx(")
 
 
 # _render_agg_* functions
@@ -405,10 +398,10 @@ class TestRenderAggFunctions:
         assert alias == "dt__max"
 
 
-# _render_agg_percentile
+# _render_agg_percentile_function (full pipeline)
 
 class TestRenderAggPercentile:
-    """Tests for _render_agg_percentile conversion."""
+    """Tests for _render_agg_percentile_function."""
 
     def _perc_col(
         self,
@@ -429,8 +422,10 @@ class TestRenderAggPercentile:
     def test_ansi_divides_by_100(self) -> None:
         """ANSI converts integer 95 to fraction 0.95."""
         agg_col = self._perc_col("price", 95)
-        sql, alias = ANSI._render_agg_percentile(
-            agg_col
+        sql, alias = (
+            ANSI._render_agg_percentile_function(
+                agg_col
+            )
         )
         assert "0.95" in sql
         assert alias == "price__p95"
@@ -438,7 +433,11 @@ class TestRenderAggPercentile:
     def test_ansi_p50(self) -> None:
         """ANSI percentile 50 becomes 0.5."""
         agg_col = self._perc_col("score", 50)
-        sql, _ = ANSI._render_agg_percentile(agg_col)
+        sql, _ = (
+            ANSI._render_agg_percentile_function(
+                agg_col
+            )
+        )
         assert "0.5" in sql
 
     def test_ansi_with_ignore_values(self) -> None:
@@ -446,8 +445,10 @@ class TestRenderAggPercentile:
         agg_col = self._perc_col(
             "amount", 90, ignore=[0.0]
         )
-        sql, alias = ANSI._render_agg_percentile(
-            agg_col
+        sql, alias = (
+            ANSI._render_agg_percentile_function(
+                agg_col
+            )
         )
         assert "CASE WHEN" in sql
         assert "0.0" in sql
@@ -464,7 +465,9 @@ class TestRenderAggPercentile:
             ValueError,
             match="percentile_config",
         ):
-            ANSI._render_agg_percentile(agg_col)
+            ANSI._render_agg_percentile_function(
+                agg_col
+            )
 
 
 # _dispatch_agg

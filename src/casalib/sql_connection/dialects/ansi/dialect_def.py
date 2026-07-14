@@ -49,14 +49,86 @@ class AnsiDialectDef(DialectDefinition):
     def _get_build_op_template(self) -> Path:
         return _TEMPLATE_FLD / "op.sql"
 
-    def _render_agg_percentile(
+    # Generators for some SQL common functions
+    # ========================================
+    def _render_case_not_in(
         self,
-        agg_col: AggCol,
-        func: str = 'approx_percentile',
-        perc_adj_factor: float = 100.0,
-    ) -> Tuple[str, str]:
-        return super()._render_agg_percentile(
-            agg_col, func, perc_adj_factor
+        col: str,
+        ignore_values: Optional[List[float]] = None,
+    ) -> str:
+        """ Render how the case when is rendered """
+        noign = self._from_string('{{col}}')
+        ign = self._from_string(
+            '''CASE WHEN {{col}} NOT IN'''
+            ''' ({{ign | join(', ')}})'''
+            ''' THEN {{col}} END'''
+        )
+        template_to_use = (
+            ign if ignore_values else noign
+        )
+        return template_to_use.render(
+            col=col, ign=ignore_values,
+        )
+
+    def _render_agg_percentile(self, col: str, perc: int) -> str:
+        """Render the percentile function call."""
+        temp = self._from_string(
+            'approx_percentile({{col}}, '
+            '{{perc_adj}})'
+        )
+        return temp.render(
+            col=col,
+            perc_adj=perc / 100,
+        )
+
+    def _render_agg_count(self, col: AggCol) -> Tuple[str, str]:
+        """Render COUNT."""
+        return (
+            f"COUNT({col.col})",
+            f"{col.col}__count",
+        )
+
+    def _render_agg_count_null(self, col: AggCol) -> Tuple[str, str]:
+        """Render count of NULLs via SUM(CASE ...)."""
+        return (
+            f"SUM(CASE WHEN {col.col}"
+            f" IS NULL THEN 1 ELSE 0 END)",
+            f"{col.col}__count_null",
+        )
+
+    def _render_agg_count_distinct(self, col: AggCol) -> Tuple[str, str]:
+        """Render COUNT DISTINCT."""
+        return (
+            f"COUNT(DISTINCT {col.col})",
+            f"{col.col}__count_distinct",
+        )
+
+    def _render_agg_sum(self, col: AggCol) -> Tuple[str, str]:
+        """Render SUM."""
+        return (
+            f"SUM({col.col})",
+            f"{col.col}__sum",
+        )
+
+    def _render_agg_mean(self, col: AggCol) -> Tuple[str, str]:
+        """Render AVG."""
+        return (
+            f"AVG({col.col})",
+            f"{col.col}__mean",
+        )
+
+    def _render_agg_min(self, col: AggCol) -> Tuple[str, str]:
+        """Render MIN."""
+        return (
+            f"MIN({col.col})",
+            f"{col.col}__min",
+        )
+
+    def _render_agg_max(self, col: AggCol) -> Tuple[str, str]:
+        """Render MAX."""
+        return (
+            f"MAX({col.col})",
+            f"{col.col}__max",
         )
 
     # ANSI-specific select-list building for op

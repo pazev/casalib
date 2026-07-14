@@ -54,6 +54,32 @@ class DialectDefinition(ABC):
     Override only the methods that differ for your engine.
     """
 
+    # How to load template
+    # ====================
+    def _env(self) -> jinja2.environment.Environment:
+        """Return a configured Jinja2 environment."""
+        return jinja2.Environment(
+            undefined=jinja2.StrictUndefined,
+            trim_blocks=True,
+            lstrip_blocks=True,
+            keep_trailing_newline=True,
+        )
+
+    def _load_template(
+        self,
+        template_path: Union[str, Path],
+    ) -> jinja2.Template:
+        """Load a template from a file path."""
+        return self._env().from_string(
+            Path(template_path).read_text(encoding="utf-8")
+        )
+
+    def _from_string(
+        self, template_str: str
+    ) -> jinja2.Template:
+        """Compile a template from a string."""
+        return self._env().from_string(template_str)
+
     # Template path
     # =============
     @abstractmethod
@@ -96,143 +122,57 @@ class DialectDefinition(ABC):
     def _get_build_op_template(self) -> Path:
         """Return the path to the build_op template."""
 
-    # How to load template
-    # ====================
-    def _env(self) -> jinja2.environment.Environment:
-        """Return a configured Jinja2 environment."""
-        return jinja2.Environment(
-            undefined=jinja2.StrictUndefined,
-            trim_blocks=True,
-            lstrip_blocks=True,
-            keep_trailing_newline=True,
-        )
-
-    def _load_template(
-        self,
-        template_path: Union[str, Path],
-    ) -> jinja2.Template:
-        """Load a template from a file path."""
-        return self._env().from_string(
-            Path(template_path).read_text(encoding="utf-8")
-        )
-
-    def _from_string(
-        self, template_str: str
-    ) -> jinja2.Template:
-        """Compile a template from a string."""
-        return self._env().from_string(template_str)
-
     # Generators for some SQL common functions
     # ========================================
+    @abstractmethod
     def _render_case_not_in(
         self,
         col: str,
         ignore_values: Optional[List[float]] = None,
     ) -> str:
         """ Render how the case when is rendered """
-        noign = self._from_string('{{col}}')
-        ign = self._from_string(
-            '''CASE WHEN {{col}} NOT IN'''
-            ''' ({{ign | join(', ')}})'''
-            ''' THEN {{col}} END'''
-        )
-        template_to_use = (
-            ign if ignore_values else noign
-        )
-        return template_to_use.render(
-            col=col, ign=ignore_values,
-        )
 
-    def _render_percentile_function(
+    @abstractmethod
+    def _render_agg_percentile(
         self,
         col: str,
         perc: int,
-        func: str = 'approx_percentile',
-        perc_adj_factor: float = 1.0,
     ) -> str:
         """Render the percentile function call."""
-        temp = self._from_string(
-            '{{func}}({{col}}, '
-            '{{perc / perc_adj_factor}})'
-        )
-        return temp.render(
-            func=func,
-            col=col,
-            perc=perc,
-            perc_adj_factor=perc_adj_factor,
-        )
 
-    # How to render agg functions
-    # ===========================
-    def _render_agg_count(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_count(self, col: AggCol) -> Tuple[str, str]:
         """Render COUNT."""
-        return (
-            f"COUNT({col.col})",
-            f"{col.col}__count",
-        )
 
-    def _render_agg_count_null(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_count_null(self, col: AggCol) -> Tuple[str, str]:
         """Render count of NULLs via SUM(CASE ...)."""
-        return (
-            f"SUM(CASE WHEN {col.col}"
-            f" IS NULL THEN 1 ELSE 0 END)",
-            f"{col.col}__count_null",
-        )
 
-    def _render_agg_count_distinct(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_count_distinct(self, col: AggCol) -> Tuple[str, str]:
         """Render COUNT DISTINCT."""
-        return (
-            f"COUNT(DISTINCT {col.col})",
-            f"{col.col}__count_distinct",
-        )
 
-    def _render_agg_sum(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_sum(self, col: AggCol) -> Tuple[str, str]:
         """Render SUM."""
-        return (
-            f"SUM({col.col})",
-            f"{col.col}__sum",
-        )
 
-    def _render_agg_mean(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_mean(self, col: AggCol) -> Tuple[str, str]:
         """Render AVG."""
-        return (
-            f"AVG({col.col})",
-            f"{col.col}__mean",
-        )
 
-    def _render_agg_min(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_min(self, col: AggCol) -> Tuple[str, str]:
         """Render MIN."""
-        return (
-            f"MIN({col.col})",
-            f"{col.col}__min",
-        )
 
-    def _render_agg_max(
-        self, col: AggCol
-    ) -> Tuple[str, str]:
+    @abstractmethod
+    def _render_agg_max(self, col: AggCol) -> Tuple[str, str]:
         """Render MAX."""
-        return (
-            f"MAX({col.col})",
-            f"{col.col}__max",
-        )
 
-    def _render_agg_percentile(
+    # Render the percentile function
+    # ==============================
+    def _render_agg_percentile_function(
         self,
-        agg_col: AggCol,
-        func: str = 'approx_percentile',
-        perc_adj_factor: float = 1.0,
+        agg_col: AggCol
     ) -> Tuple[str, str]:
         """Render a PERCENTILE aggregation."""
         cfg = agg_col.percentile_config
@@ -246,11 +186,9 @@ class DialectDefinition(ABC):
             col=agg_col.col, ignore_values=cfg.ignore_values
         )
 
-        sql_code = self._render_percentile_function(
+        sql_code = self._render_agg_percentile(
             col=adj_col,
             perc=cfg.percentile,
-            func=func,
-            perc_adj_factor=perc_adj_factor,
         )
 
         return (
@@ -278,7 +216,7 @@ class DialectDefinition(ABC):
             AggOperationEnum.MEAN: self._render_agg_mean,
             AggOperationEnum.SUM: self._render_agg_sum,
             AggOperationEnum.PERCENTILE: (
-                self._render_agg_percentile
+                self._render_agg_percentile_function
             ),
         }
 
